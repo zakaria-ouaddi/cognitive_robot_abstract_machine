@@ -96,16 +96,8 @@ class Collision:
     new_b_P_pb_idx: int = 11
     new_b_P_pb_slice = slice(11,14)
 
-    map_P_pa_idx: int = 14
-    map_P_pa_slice = slice(14,17)
-    map_P_pb_idx: int = 17
-    map_P_pb_slice = slice(17,20)
-    a_P_pa_idx: int = 20
-    a_P_pa_slice = slice(20,23)
-    b_P_pb_idx: int = 23
-    b_P_pb_slice = slice(23,26)
-
-
+    self_data_slice = slice(4, 14)
+    external_data_slice = slice(0, 8)
 
     data: np.ndarray
 
@@ -128,11 +120,6 @@ class Collision:
 
             0, 0, 1,  # new_b_V_n
             0, 0, 0,  # new_b_P_pb
-
-            0, 0, 0,  # map_P_pa
-            0, 0, 0,  # map_P_pb
-            0, 0, 0,  # a_P_pa
-            0, 0, 0,  # b_P_pb
         ],
             dtype=float)
 
@@ -153,11 +140,11 @@ class Collision:
 
     @property
     def self_data(self) -> np.ndarray:
-        return self.data[self.contact_distance_idx:self.map_P_pa_idx]
+        return self.data[self.self_data_slice]
 
     @property
     def external_and_self_data(self) -> np.ndarray:
-        return self.data[:self.map_P_pa_idx]
+        return self.data[self.external_data_slice]
 
     @property
     def contact_distance(self) -> float:
@@ -172,24 +159,6 @@ class Collision:
         return self.data[self.hash_idx]
 
     @property
-    def map_P_pa(self) -> np.ndarray:
-        a = self.data[self.map_P_pa_slice]
-        return np.array([a[0], a[1], a[2], 1])
-
-    @map_P_pa.setter
-    def map_P_pa(self, value: np.ndarray):
-        self.data[self.map_P_pa_slice] = value[:3]
-
-    @property
-    def map_P_pb(self) -> np.ndarray:
-        a = self.data[self.map_P_pb_slice]
-        return np.array([a[0], a[1], a[2], 1])
-
-    @map_P_pb.setter
-    def map_P_pb(self, value: np.ndarray):
-        self.data[self.map_P_pb_slice] = value[:3]
-
-    @property
     def map_V_n(self) -> np.ndarray:
         a = self.data[self.map_V_n_slice]
         return np.array([a[0], a[1], a[2], 0])
@@ -197,24 +166,6 @@ class Collision:
     @map_V_n.setter
     def map_V_n(self, value: np.ndarray):
         self.data[self.map_V_n_slice] = value[:3]
-
-    @property
-    def a_P_pa(self) -> np.ndarray:
-        a = self.data[self.a_P_pa_slice]
-        return np.array([a[0], a[1], a[2], 1])
-
-    @a_P_pa.setter
-    def a_P_pa(self, value: np.ndarray):
-        self.data[self.a_P_pa_slice] = value[:3]
-
-    @property
-    def b_P_pb(self) -> np.ndarray:
-        a = self.data[self.b_P_pb_slice]
-        return np.array([a[0], a[1], a[2], 1])
-
-    @b_P_pb.setter
-    def b_P_pb(self, value: np.ndarray):
-        self.data[self.b_P_pb_slice] = value[:3]
 
     @property
     def new_a_P_pa(self):
