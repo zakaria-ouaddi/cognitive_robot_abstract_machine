@@ -300,20 +300,18 @@ class Collisions:
 
         new_b_T_r = god_map.world.compute_fk_np(new_link_b, robot.root_link_name)
         root_T_map = god_map.world.compute_fk_np(robot.root_link_name, god_map.world.root_link_name)
-        new_b_T_map = np.dot(new_b_T_r, root_T_map)
-        collision.new_b_V_n = np.dot(new_b_T_map, collision.map_V_n)
+        new_b_T_map = new_b_T_r @ root_T_map
+        collision.new_b_V_n = new_b_T_map @ collision.map_V_n
 
         if collision.map_P_pa is not None:
             new_a_T_r = god_map.world.compute_fk_np(new_link_a, robot.root_link_name)
-            new_a_P_pa = np.dot(np.dot(new_a_T_r, root_T_map), collision.map_P_pa)
-            new_b_P_pb = np.dot(new_b_T_map, collision.map_P_pb)
+            collision.new_a_P_pa = new_a_T_r @ root_T_map @ collision.map_P_pa
+            collision.new_b_P_pb = new_b_T_map @ collision.map_P_pb
         else:
             new_a_T_a = god_map.world.compute_fk_np(new_link_a, collision.original_link_a)
-            new_a_P_pa = np.dot(new_a_T_a, collision.a_P_pa)
+            collision.new_a_P_pa = new_a_T_a @ collision.a_P_pa
             new_b_T_b = god_map.world.compute_fk_np(new_link_b, collision.original_link_b)
-            new_b_P_pb = np.dot(new_b_T_b, collision.b_P_pb)
-        collision.new_a_P_pa = new_a_P_pa
-        collision.new_b_P_pb = new_b_P_pb
+            collision.new_b_P_pb = new_b_T_b @ collision.b_P_pb
         return collision
 
     @profile
@@ -332,12 +330,11 @@ class Collisions:
         collision.link_a = new_a
         if collision.map_P_pa is not None:
             new_a_T_map = god_map.world.compute_fk_np(new_a, god_map.world.root_link_name)
-            new_a_P_a = np.dot(new_a_T_map, collision.map_P_pa)
+            collision.new_a_P_pa = new_a_T_map @ collision.map_P_pa
         else:
             new_a_T_a = god_map.world.compute_fk_np(new_a, collision.original_link_a)
-            new_a_P_a = np.dot(new_a_T_a, collision.a_P_pa)
+            collision.new_a_P_pa = new_a_T_a @ collision.a_P_pa
 
-        collision.new_a_P_pa = new_a_P_a
         return collision
 
     @profile

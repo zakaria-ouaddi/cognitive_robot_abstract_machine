@@ -374,6 +374,7 @@ class WorldTree(WorldTreeInterface):
         clear_memo(self.compose_fk_expression)
         clear_memo(self.compute_chain)
         clear_memo(self.is_link_controlled)
+        clear_memo(self.search_for_parent_joint)
         for free_variable in self.free_variables.values():
             free_variable.reset_cache()
 
@@ -1043,6 +1044,7 @@ class WorldTree(WorldTreeInterface):
     def get_controlled_parent_joint_of_joint(self, joint_name: PrefixName) -> PrefixName:
         return self.search_for_parent_joint(joint_name, self.is_joint_controlled)
 
+    @memoize
     def search_for_parent_joint(self,
                                 joint_name: PrefixName,
                                 stop_when: Optional[Callable[[PrefixName], bool]] = None) -> PrefixName:
