@@ -46,7 +46,7 @@ class CannotResolveSymbol(Task):
     def __init__(self, name: str, joint_name: str):
         super().__init__(name=name)
         self.data = {}
-        s = symbol_manager.get_symbol(self.ref_str + '.data[2]')
+        s = symbol_manager.register_symbol_provider('s', provider=lambda: self.data[2])
         joint_name = god_map.world.search_for_joint_name(joint_name)
         joint = god_map.world.joints[joint_name]
         joint_position = joint.get_symbol(Derivatives.position)

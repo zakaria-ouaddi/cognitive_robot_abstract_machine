@@ -43,10 +43,8 @@ class Pointing(Task):
         self.tip_V_pointing_axis.scale(1)
 
         root_T_tip = god_map.world.compose_fk_expression(self.root, self.tip)
-        root_P_goal_point = symbol_manager.get_expr(self.ref_str +
-                                                    '.root_P_goal_point',
-                                                    input_type_hint=np.ndarray,
-                                                    output_type_hint=cas.Point3)
+        root_P_goal_point = symbol_manager.register_point3(name=f'{self.name}.root_P_goal_point',
+                                                           provider=lambda: self.root_P_goal_point)
         root_P_goal_point.reference_frame = self.root
         tip_V_pointing_axis = cas.Vector3(self.tip_V_pointing_axis)
 
@@ -104,10 +102,8 @@ class PointingCone(Task):
         self.tip_V_pointing_axis.scale(1)
 
         root_T_tip = god_map.world.compose_fk_expression(self.root, self.tip)
-        root_P_goal_point = symbol_manager.get_expr(self.ref_str +
-                                                    '.root_P_goal_point',
-                                                    input_type_hint=np.ndarray,
-                                                    output_type_hint=cas.Point3)
+        root_P_goal_point = symbol_manager.register_point3(name=f'{self.name}.root_P_goal_point',
+                                                           provider=lambda: self.root_P_goal_point)
         root_P_goal_point.reference_frame = self.root
         tip_V_pointing_axis = cas.Vector3(self.tip_V_pointing_axis)
 

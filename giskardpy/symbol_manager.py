@@ -4,6 +4,7 @@ import numpy as np
 from line_profiler.explicit_profiler import profile
 
 import giskardpy.casadi_wrapper as cas
+from giskardpy.data_types.exceptions import GiskardException
 from giskardpy.god_map import god_map
 from giskardpy.utils.singleton import SingletonMeta
 
@@ -89,11 +90,21 @@ class SymbolManager(metaclass=SingletonMeta):
             else:
                 return np.array([self.symbol_to_provider[s]() for s in symbols], dtype=float)
         except Exception as e:
-            for s in symbols:
+            # Flatten symbols for error checking
+            flattened_symbols = []
+            if len(symbols) > 0 and isinstance(symbols[0], list):
+                # symbols is a list of lists
+                for sublist in symbols:
+                    flattened_symbols.extend(sublist)
+            else:
+                # symbols is already a flat list
+                flattened_symbols = symbols
+
+            for s in flattened_symbols:
                 try:
                     np.array([self.symbol_to_provider[s]()])
                 except Exception as e2:
-                    raise KeyError(f'Cannot resolve {s} ({e2.__class__.__name__}: {str(e2)})')
+                    raise GiskardException(f'Cannot resolve {s} ({e2.__class__.__name__}: {str(e2)})')
             raise e
 
     def resolve_expr(self, expr: cas.CompiledFunction):

@@ -85,16 +85,16 @@ class CollisionAvoidanceGroupThresholds:
 class Collision:
     hash_idx: int = 0
     map_V_n_idx: int = 1
-    map_V_n_slice = slice(1,4)
+    map_V_n_slice = slice(1, 4)
 
     contact_distance_idx: int = 4
     new_a_P_pa_idx: int = 5
-    new_a_P_pa_slice = slice(5,8)
+    new_a_P_pa_slice = slice(5, 8)
 
     new_b_V_n_idx: int = 8
-    new_b_V_n_slice = slice(8,11)
+    new_b_V_n_slice = slice(8, 11)
     new_b_P_pb_idx: int = 11
-    new_b_P_pb_slice = slice(11,14)
+    new_b_P_pb_slice = slice(11, 14)
 
     self_data_slice = slice(4, 14)
     external_data_slice = slice(0, 8)
@@ -240,6 +240,7 @@ class Collisions:
     all_collisions: Set[Collision]
     self_collision: Dict[Tuple[PrefixName, PrefixName], SortedCollisionResults]
     external_collision: Dict[PrefixName, SortedCollisionResults]
+    external_collision_long_key: Dict[Tuple[PrefixName, PrefixName], Collision]
 
     @profile
     def __init__(self, collision_list_size):
@@ -1098,15 +1099,38 @@ class CollisionWorldSynchronizer:
         return symbol_manager.register_point3(name=f'closest_point({link_name})[{idx}].new_a_P_pa',
                                               provider=provider)
 
-    def external_contact_distance_symbol(self, link_name: PrefixName, idx: int) -> cas.Symbol:
-        provider = lambda n=link_name, i=idx: self.closest_points.get_external_collisions(n)[i].contact_distance
-        return symbol_manager.register_symbol_provider(name=f'closest_point({link_name})[{idx}].contact_distance',
-                                                       provider=provider)
+    def external_contact_distance_symbol(self,
+                                         link_name: PrefixName,
+                                         idx: Optional[int] = None,
+                                         link_b_name: Optional[PrefixName] = None) -> cas.Symbol:
+        if link_b_name is None:
+            assert idx is not None
+            provider = lambda n=link_name, i=idx: self.closest_points.get_external_collisions(n)[i].contact_distance
+            return symbol_manager.register_symbol_provider(name=f'closest_point({link_name})[{idx}].contact_distance',
+                                                           provider=provider)
+        assert link_b_name is not None
+        provider = lambda l1=link_name, l2=link_b_name: (
+            self.closest_points.get_external_collisions_long_key(l1, l2).contact_distance)
+        return symbol_manager.register_symbol_provider(
+            name=f'closest_point({link_name}, {link_b_name}).contact_distance',
+            provider=provider)
 
-    def external_link_b_hash_symbol(self, link_name: PrefixName, idx: int) -> cas.Symbol:
-        provider = lambda n=link_name, i=idx: self.closest_points.get_external_collisions(n)[i].link_b_hash
-        return symbol_manager.register_symbol_provider(name=f'closest_point({link_name})[{idx}].link_b_hash',
-                                                       provider=provider)
+    def external_link_b_hash_symbol(self,
+                                    link_name: PrefixName,
+                                    idx: Optional[int] = None,
+                                    link_b_name: Optional[PrefixName] = None) -> cas.Symbol:
+        if link_b_name is None:
+            assert idx is not None
+            provider = lambda n=link_name, i=idx: self.closest_points.get_external_collisions(n)[i].link_b_hash
+            return symbol_manager.register_symbol_provider(name=f'closest_point({link_name})[{idx}].link_b_hash',
+                                                           provider=provider)
+        assert link_b_name is not None
+        provider = lambda l1=link_name, l2=link_b_name: (
+            self.closest_points.get_external_collisions_long_key(l1, l2).link_b_hash)
+        return symbol_manager.register_symbol_provider(
+            name=f'closest_point({link_name}, {link_b_name}).link_b_hash',
+            provider=provider
+        )
 
     def external_number_of_collisions_symbol(self, link_name: PrefixName) -> cas.Symbol:
         provider = lambda n=link_name: self.closest_points.get_number_of_external_collisions(n)

@@ -281,7 +281,7 @@ class CollisionAvoidanceHint(Goal):
         max_velocity = self.max_velocity
         max_threshold = self.threshold
         spring_threshold = self.threshold2
-        link_b_hash = self.get_link_b()
+        link_b_hash = self.get_link_b_hash()
         actual_distance_capped = cas.max(actual_distance, 0)
 
         root_T_a = god_map.world.compose_fk_expression(self.root_link, self.link_name)
@@ -313,12 +313,10 @@ class CollisionAvoidanceHint(Goal):
         self.observation_expression = cas.TrinaryUnknown
 
     def get_actual_distance(self):
-        expr = f'god_map.closest_point.get_external_collisions_long_key(\'{self.key[0]}\', \'{self.key[1]}\').contact_distance'
-        return symbol_manager.get_symbol(expr)
+        return god_map.collision_scene.external_contact_distance_symbol(link_name=self.key[0], link_b_name=self.key[1])
 
-    def get_link_b(self):
-        expr = f'god_map.closest_point.get_external_collisions_long_key(\'{self.key[0]}\', \'{self.key[1]}\').link_b_hash'
-        return symbol_manager.get_symbol(expr)
+    def get_link_b_hash(self):
+        return god_map.collision_scene.external_link_b_hash_symbol(link_name=self.key[0], link_b_name=self.key[1])
 
 
 # use cases
