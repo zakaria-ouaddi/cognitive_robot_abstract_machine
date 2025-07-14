@@ -1,21 +1,19 @@
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Tuple, Union
 
 import semantic_world.spatial_types.spatial_types as cas
-from giskardpy.data_types.data_types import Derivatives, PrefixName
 from giskardpy.data_types.exceptions import GoalInitalizationException
 from giskardpy.god_map import god_map
-from giskardpy.model.joints import OneDofJoint, JustinTorso
 from giskardpy.motion_statechart.monitors.joint_monitors import JointGoalReached
 from giskardpy.motion_statechart.tasks.task import Task, WEIGHT_BELOW_CA
-from giskardpy.qp.pos_in_vel_limits import b_profile
-from giskardpy.utils.math import find_best_jerk_limit
+from semantic_world.connections import Has1DOFState, RevoluteConnection
+from semantic_world.prefixed_name import PrefixedName
+from semantic_world.spatial_types.derivatives import Derivatives
 
 
 class JointPositionList(Task):
     def __init__(self, *,
                  name: str,
-                 goal_state: Dict[str, float],
-                 group_name: Optional[str] = None,
+                 goal_state: Dict[Union[PrefixedName, str], float],
                  threshold: float = 0.01,
                  weight: Optional[float] = None,
                  max_velocity: Optional[float] = None,
@@ -28,115 +26,44 @@ class JointPositionList(Task):
         self.current_positions = []
         self.goal_positions = []
         self.velocity_limits = []
-        self.joint_names = []
+        self.connections = []
         self.max_velocity = max_velocity
         self.weight = weight
         if len(goal_state) == 0:
             raise GoalInitalizationException(f'Can\'t initialize {self} with no joints.')
 
         for joint_name, goal_position in goal_state.items():
-            joint_name = god_map.world.search_for_joint_name(joint_name, group_name)
-            self.joint_names.append(joint_name)
+            connection = god_map.world.get_connection_by_name(joint_name)
+            self.connections.append(connection)
+            if not isinstance(connection, Has1DOFState):
+                raise GoalInitalizationException(f'Connection {joint_name} must be of type Has1DOFState')
 
-            ll_pos, ul_pos = god_map.world.compute_joint_limits(joint_name, Derivatives.position)
-            # if ll_pos is not None:
-            #     goal_position = cas.limit(goal_position, ll_pos, ul_pos)
+            ul_pos = connection.dof.get_upper_limit(Derivatives.position)
+            ll_pos = connection.dof.get_lower_limit(Derivatives.position)
+            if ll_pos is not None:
+                goal_position = cas.limit(goal_position, ll_pos, ul_pos)
 
-            ll_vel, ul_vel = god_map.world.compute_joint_limits(joint_name, Derivatives.velocity)
+            ul_vel = connection.dof.get_upper_limit(Derivatives.velocity)
+            ll_vel = connection.dof.get_lower_limit(Derivatives.velocity)
             velocity_limit = cas.limit(max_velocity, ll_vel, ul_vel)
 
-            joint: OneDofJoint = god_map.world.joints[joint_name]
-            self.current_positions.append(joint.get_symbol(Derivatives.position))
+            self.current_positions.append(connection.dof.get_symbol(Derivatives.position))
             self.goal_positions.append(goal_position)
             self.velocity_limits.append(velocity_limit)
 
-        for name, current, goal, velocity_limit in zip(self.joint_names, self.current_positions,
+        for connection, current, goal, velocity_limit in zip(self.connections, self.current_positions,
                                                        self.goal_positions, self.velocity_limits):
-            if god_map.world.is_joint_continuous(name):
+            if (isinstance(connection, RevoluteConnection)
+                    and connection.dof.has_position_limits()):
                 error = cas.shortest_angular_distance(current, goal)
             else:
                 error = goal - current
 
-            self.add_equality_constraint(name=f'{self.name}/{name}',
+            self.add_equality_constraint(name=f'{self.name}/{connection.name}',
                                          reference_velocity=velocity_limit,
                                          equality_bound=error,
                                          weight=self.weight,
                                          task_expression=current)
-            ll_pos, ul_pos = god_map.world.compute_joint_limits(name, Derivatives.position)
-            # god_map.debug_expression_manager.add_debug_expression(f'{self.name}/target', goal,
-            #                                                       derivatives_to_plot=[
-            #                                                           Derivatives.position,
-            #                                                           # Derivatives.velocity
-            #                                                       ])
-            # cap = self.max_velocity*god_map.qp_controller.mpc_dt * (god_map.qp_controller.prediction_horizon-2)
-            # god_map.debug_expression_manager.add_debug_expression(f'{self.name}/upper_cap', goal + cap,
-            #                                                       derivatives_to_plot=[
-            #                                                           Derivatives.position,
-            #                                                           # Derivatives.velocity
-            #                                                       ])
-            # god_map.debug_expression_manager.add_debug_expression(f'{self.name}/lower_cap', goal - cap,
-            #                                                       derivatives_to_plot=[
-            #                                                           Derivatives.position,
-            #                                                           # Derivatives.velocity
-            #                                                       ])
-            # god_map.debug_expression_manager.add_debug_expression(f'{name}/lower_limit', cas.Expression(ll_pos),
-            #                                                       derivatives_to_plot=[
-            #                                                           Derivatives.position,
-            #                                                           # Derivatives.velocity
-            #                                                       ])
-            # if god_map.qp_controller.qp_formulation.is_mpc() and ul_pos is not None:
-            #     god_map.debug_expression_manager.add_debug_expression(f'{name}/joint_bounds', cas.Expression(ul_pos),
-            #                                                           derivatives_to_plot=[
-            #                                                               Derivatives.position,
-            #                                                               # Derivatives.velocity
-            #                                                           ])
-            #     current_vel = god_map.world.joints[name].free_variable.get_symbol(Derivatives.velocity)
-            #     current_acc = god_map.world.joints[name].free_variable.get_symbol(Derivatives.acceleration)
-            #     jerk_limit = find_best_jerk_limit(god_map.qp_controller.prediction_horizon, god_map.qp_controller.mpc_dt, god_map.world.compute_joint_limits(name, Derivatives.velocity)[1])
-            #     lb, ub = b_profile(current_pos=current,
-            #                        current_vel=current_vel,
-            #                        current_acc=current_acc,
-            #                        pos_limits=(ll_pos, ul_pos),
-            #                        vel_limits=god_map.world.compute_joint_limits(name, Derivatives.velocity),
-            #                        acc_limits=god_map.world.compute_joint_limits(name, Derivatives.acceleration),
-            #                        jerk_limits=(-jerk_limit, jerk_limit),
-            #                        dt=god_map.qp_controller.mpc_dt,
-            #                        ph=god_map.qp_controller.prediction_horizon)
-            #     god_map.debug_expression_manager.add_debug_expression(f'{name}/upper_vel',
-            #                                                           ub[0],
-            #                                                           derivative=Derivatives.velocity,
-            #                                                           color='r--',
-            #                                                           derivatives_to_plot=[Derivatives.velocity])
-            #     god_map.debug_expression_manager.add_debug_expression(f'{name}/lower_vel',
-            #                                                           lb[0],
-            #                                                           derivative=Derivatives.velocity,
-            #                                                           color='r--',
-            #                                                           derivatives_to_plot=[Derivatives.velocity])
-            #     god_map.debug_expression_manager.add_debug_expression(f'{name}/upper_jerk',
-            #                                                           ub[god_map.qp_controller.prediction_horizon*2],
-            #                                                           derivative=Derivatives.jerk,
-            #                                                           color='r--',
-            #                                                           derivatives_to_plot=[Derivatives.jerk])
-            #     god_map.debug_expression_manager.add_debug_expression(f'{name}/lower_jerk',
-            #                                                           lb[god_map.qp_controller.prediction_horizon*2],
-            #                                                           derivative=Derivatives.jerk,
-            #                                                           color='r--',
-            #                                                           derivatives_to_plot=[Derivatives.jerk])
-            # god_map.debug_expression_manager.add_debug_expression(f'{name}/weight',
-            #                                                       weight,
-            #                                                       derivative=Derivatives.position,
-            #                                                       color='r--',
-            #                                                       derivatives_to_plot=[Derivatives.position])
-            # for d in Derivatives.range(Derivatives.position, Derivatives.jerk):
-            #     if d == Derivatives.position:
-            #         variable_name = f'{name}/current'
-            #     else:
-            #         variable_name = f'{name}/current/{d}'
-            #     god_map.debug_expression_manager.add_debug_expression(variable_name,
-            #                                                           god_map.world.joints[name].get_symbol(d),
-            #                                                           derivative=d,
-            #                                                           color='r--',
-            #                                                           derivatives_to_plot=[d])
         joint_monitor = JointGoalReached(goal_state=goal_state,
                                          threshold=threshold)
         self.observation_expression = joint_monitor.observation_expression
@@ -260,7 +187,7 @@ class JointPositionLimitList(Task):
 
 class JustinTorsoLimit(Task):
     def __init__(self,
-                 joint_name: PrefixName,
+                 joint_name: PrefixedName,
                  lower_limit: Optional[float] = None,
                  upper_limit: Optional[float] = None,
                  weight: float = WEIGHT_BELOW_CA,

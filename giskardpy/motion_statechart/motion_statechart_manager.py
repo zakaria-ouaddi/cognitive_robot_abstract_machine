@@ -4,25 +4,25 @@ from collections import OrderedDict
 from functools import cached_property
 from itertools import chain
 from typing import List, Tuple, Dict, Optional, Union, Iterable, Set
-from line_profiler import profile
 
 import numpy as np
+from line_profiler import profile
 
 import semantic_world.spatial_types.spatial_types as cas
 from giskardpy.data_types.data_types import LifeCycleState, ObservationState
-from giskardpy.data_types.exceptions import GiskardException, GoalInitalizationException, UnknownGoalException
-from giskardpy.motion_statechart.goals.goal import Goal
+from giskardpy.data_types.exceptions import GiskardException, GoalInitalizationException
 from giskardpy.god_map import god_map
+from giskardpy.motion_statechart.goals.goal import Goal
 from giskardpy.motion_statechart.graph_node import MotionStatechartNode
 from giskardpy.motion_statechart.helpers import compile_graph_node_state_updater, MotionGraphNodeStateManager
 from giskardpy.motion_statechart.monitors.monitors import Monitor, EndMotion, CancelMotion
 from giskardpy.motion_statechart.monitors.payload_monitors import PayloadMonitor
 from giskardpy.motion_statechart.tasks.task import Task
+from giskardpy.qp.constraint import DerivativeEqualityConstraint
 from giskardpy.qp.constraint import EqualityConstraint, InequalityConstraint, DerivativeInequalityConstraint
 from giskardpy.qp.weight_gain import QuadraticWeightGain, LinearWeightGain
-from semantic_world.spatial_types.symbol_manager import symbol_manager
 from giskardpy.utils.utils import get_all_classes_in_package, ImmutableDict
-from giskardpy.qp.constraint import DerivativeEqualityConstraint
+from semantic_world.spatial_types.symbol_manager import symbol_manager
 
 
 def monitor_list_to_monitor_name_tuple(monitors: Iterable[Union[str, Monitor]]) -> Tuple[str, ...]:
@@ -227,7 +227,7 @@ class MotionStatechartManager:
                      + monitor_obs_expr.free_symbols()
                      + goal_obs_expr.free_symbols())
 
-        for s in itertools.chain(god_map.world.get_state_symbols(),
+        for s in itertools.chain(god_map.world.get_world_state_symbols(),
                                  self.task_state.get_life_cycle_state_symbols(),
                                  self.monitor_state.get_life_cycle_state_symbols(),
                                  self.goal_state.get_life_cycle_state_symbols(),

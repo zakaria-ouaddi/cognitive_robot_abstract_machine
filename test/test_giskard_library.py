@@ -7,7 +7,7 @@ from rustworkx import NoPathFound
 import semantic_world.spatial_types.spatial_types as cas
 from giskardpy.god_map import god_map
 from giskardpy.middleware import set_middleware
-from giskardpy.model.collision_avoidance_config import CollisionAvoidanceConfig
+from giskardpy.model.collision_avoidance_config import CollisionAvoidanceConfig, DisableCollisionAvoidanceConfig
 from giskardpy.model.collision_avoidance_config import DefaultCollisionAvoidanceConfig
 from giskardpy.model.collision_world_syncer import CollisionCheckerLib
 from giskardpy.model.utils import hacky_urdf_parser_fix
@@ -224,7 +224,7 @@ def pr2_world() -> World:
 def giskard_pr2() -> GiskardWrapper:
     urdf = open('urdfs/pr2.urdf', 'r').read()
     giskard = GiskardWrapper(world_config=WorldWithOmniDriveRobot(urdf=urdf),
-                             collision_avoidance_config=PR2CollisionAvoidance(),
+                             collision_avoidance_config=DisableCollisionAvoidanceConfig(),
                              qp_controller_config=QPControllerConfig())
     return giskard
 

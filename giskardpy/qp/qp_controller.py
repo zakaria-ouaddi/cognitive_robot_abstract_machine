@@ -163,8 +163,6 @@ class QPController:
              quadratic_weight_gains: List[QuadraticWeightGain] = None,
              linear_weight_gains: List[LinearWeightGain] = None):
         self.free_variables = free_variables
-        self.certain_free_variables = [x for x in free_variables if not x.is_base]
-        self.uncertain_free_variables = [x for x in free_variables if x.is_base]
         self.qp_adapter = self.qp_solver.required_adapter_type(
             world_state_symbols=god_map.world.get_state_symbols(),
             task_life_cycle_symbols=god_map.motion_statechart_manager.task_state.get_life_cycle_state_symbols(),

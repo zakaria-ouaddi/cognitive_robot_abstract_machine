@@ -1,22 +1,25 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import semantic_world.spatial_types.spatial_types as cas
 from giskardpy.data_types.exceptions import GoalInitalizationException
 from giskardpy.motion_statechart.monitors.monitors import Monitor
 from giskardpy.god_map import god_map
-from giskardpy.data_types.data_types import Derivatives, PrefixName
+from semantic_world.connections import Has1DOFState, RevoluteConnection
+from semantic_world.prefixed_name import PrefixedName
+from semantic_world.spatial_types.derivatives import Derivatives
 
 
 class JointGoalReached(Monitor):
     def __init__(self,
-                 goal_state: Dict[str, float],
+                 goal_state: Dict[Union[str, PrefixedName], float],
                  threshold: float = 0.01,
                  name: Optional[str] = None):
         comparison_list = []
         for joint_name, goal in goal_state.items():
-            joint_name = god_map.world.search_for_joint_name(joint_name)
-            current = god_map.world.get_one_dof_joint_symbol(joint_name, Derivatives.position)
-            if god_map.world.is_joint_continuous(joint_name):
+            connection: Has1DOFState = god_map.world.get_connection_by_name(joint_name)
+            current = connection.dof.get_symbol(Derivatives.position)
+            if (isinstance(connection, RevoluteConnection)
+                    and connection.dof.has_position_limits()):
                 error = cas.shortest_angular_distance(current, goal)
             else:
                 error = goal - current
@@ -28,7 +31,7 @@ class JointGoalReached(Monitor):
 
 class JointPositionAbove(Monitor):
     def __init__(self,
-                 joint_name: PrefixName,
+                 joint_name: PrefixedName,
                  threshold: float,
                  name: Optional[str] = None):
         super().__init__(name=name)
