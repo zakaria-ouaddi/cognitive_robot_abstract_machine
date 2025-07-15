@@ -1,20 +1,21 @@
 from __future__ import division
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import semantic_world.spatial_types.spatial_types as cas
-from giskardpy.motion_statechart.monitors.monitors import PayloadMonitor
-from giskardpy.god_map import god_map
+from giskardpy.data_types.data_types import ObservationState
 from giskardpy.data_types.exceptions import GoalInitalizationException
+from giskardpy.god_map import god_map
 from giskardpy.model.joints import OmniDrive, DiffDrive, OmniDrivePR22
-from giskardpy.data_types.data_types import PrefixName, ObservationState
+from giskardpy.motion_statechart.monitors.monitors import PayloadMonitor
 from giskardpy.utils.math import axis_angle_from_quaternion
+from semantic_world.connections import Has1DOFState
+from semantic_world.prefixed_name import PrefixedName
 
 
 class SetSeedConfiguration(PayloadMonitor):
     def __init__(self,
-                 seed_configuration: Dict[str, float],
-                 group_name: Optional[str] = None,
+                 seed_configuration: Dict[Union[str, PrefixedName], float],
                  name: Optional[str] = None):
         """
         Overwrite the configuration of the world to allow starting the planning from a different state.
@@ -22,21 +23,15 @@ class SetSeedConfiguration(PayloadMonitor):
         :param seed_configuration: maps joint name to float
         :param group_name: if joint names are not unique, it will search in this group for matches.
         """
-        self.seed_configuration = seed_configuration
+        self.seed_configuration = {god_map.world.get_connection_by_name(joint_name).dof.name: v for joint_name, v in
+                                       seed_configuration.items()}
         if name is None:
             name = f'{str(self.__class__.__name__)}/{list(self.seed_configuration.keys())}'
         super().__init__(run_call_in_thread=False, name=name)
-        self.group_name = group_name
-        if group_name is not None:
-            self.seed_configuration = {PrefixName(joint_name, group_name): v for joint_name, v in
-                                       seed_configuration.items()}
 
     def __call__(self):
-        for joint_name, initial_joint_value in self.seed_configuration.items():
-            joint_name = god_map.world.search_for_joint_name(joint_name, self.group_name)
-            if joint_name not in god_map.world.state:
-                raise KeyError(f'World has no joint \'{joint_name}\'.')
-            god_map.world.state[joint_name].position = initial_joint_value
+        for dof_name, initial_joint_value in self.seed_configuration.items():
+            god_map.world.state[dof_name].position = initial_joint_value
         god_map.world.notify_state_change()
         self.state = ObservationState.true
 

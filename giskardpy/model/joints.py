@@ -252,8 +252,8 @@ class OneDofJoint(MovableJoint):
         else:
             self.offset = offset
         self.axis = axis
-        if free_variable_name in god_map.world.free_variables:
-            self.free_variable = god_map.world.free_variables[free_variable_name]
+        if free_variable_name in god_map.world.degrees_of_freedoms:
+            self.free_variable = god_map.world.degrees_of_freedoms[free_variable_name]
         else:
             self.free_variable = god_map.world.add_free_variable(free_variable_name, lower_limits, upper_limits)
         self.free_variables = [self.free_variable]

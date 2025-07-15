@@ -110,10 +110,10 @@ class LocalMinimumReached(Monitor):
         condition_list = []
         traj_length_in_sec = symbol_manager.time
         condition_list.append(cas.greater(traj_length_in_sec, 1))
-        if len(god_map.free_variables) == 0:
+        if len(god_map.degrees_of_freedoms) == 0:
             self.observation_expression = cas.BinaryTrue
             return
-        for free_variable in god_map.free_variables:
+        for free_variable in god_map.degrees_of_freedoms:
             free_variable_name = free_variable.name
             velocity_limit = symbol_manager.evaluate_expr(free_variable.get_upper_limit(Derivatives.velocity))
             velocity_limit *= self.joint_convergence_threshold

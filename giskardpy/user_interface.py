@@ -83,7 +83,6 @@ class MonitorWrapper:
     def add_set_seed_configuration(self,
                                    seed_configuration: Dict[str, float],
                                    name: Optional[str] = None,
-                                   group_name: Optional[str] = None,
                                    start_condition: str = '',
                                    reset_condition: str = '') -> str:
         """
@@ -92,7 +91,6 @@ class MonitorWrapper:
         """
         name = self._generate_default_name(SetSeedConfiguration, name)
         monitor = SetSeedConfiguration(seed_configuration=seed_configuration,
-                                       group_name=group_name,
                                        name=name)
         return self.add_monitor(monitor=monitor,
                                 start_condition=start_condition,
@@ -367,6 +365,10 @@ class GiskardWrapper:
         for (name, (start, reset, pause, end)) in chain(self.motion_goals._conditions.items(),
                                                         self.monitors._conditions.items()):
             node = god_map.motion_statechart_manager.get_node(name)
+            node.start_condition = start
+            node.reset_condition = reset
+            node.pause_condition = pause
+            node.end_condition = end
             start_condition = god_map.motion_statechart_manager.logic_str_to_expr(
                 logic_str=start,
                 default=cas.BinaryTrue,
@@ -412,7 +414,7 @@ class GiskardWrapper:
                                      key=lambda x: x.position_symbol))
         if len(free_variables) == 0:
             raise EmptyProblemException('Goal parsing resulted in no free variables.')
-        god_map.free_variables = free_variables
+        god_map.degrees_of_freedoms = free_variables
         return free_variables
 
     def reset(self):

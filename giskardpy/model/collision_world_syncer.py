@@ -832,7 +832,7 @@ class CollisionWorldSynchronizer:
     #     return msg_converter.to_ros_message(map_T_geometry).pose
 
     def set_joint_state_to_zero(self) -> None:
-        for free_variable in god_map.world.free_variables:
+        for free_variable in god_map.world.degrees_of_freedoms:
             god_map.world.state[free_variable].position = 0
         god_map.world.notify_state_change()
 

@@ -78,8 +78,8 @@ class Trajectory:
         for derivative, d_data in data.items():
             for free_variable, trajectory in d_data.items():
                 d_data[free_variable] = np.array(trajectory, dtype=float)
-                if (free_variable in god_map.world.free_variables
-                        and not god_map.world.free_variables[free_variable].has_position_limits()):
+                if (free_variable in god_map.world.degrees_of_freedoms
+                        and not god_map.world.degrees_of_freedoms[free_variable].has_position_limits()):
                     if normalize_position is None:
                         normalize_position = True
                 if normalize_position and derivative == Derivatives.position:

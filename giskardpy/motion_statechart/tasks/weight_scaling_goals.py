@@ -40,7 +40,7 @@ class BaseArmWeightScaling(Task):
             gains = defaultdict(dict)
             arm_v = None
             for name in arm_joints:
-                vs = god_map.world.joints[god_map.world.search_for_joint_name(name)].free_variables
+                vs = god_map.world.joints[god_map.world.search_for_joint_name(name)].degrees_of_freedoms
                 for v in vs:
                     v_gain = gain * cas.norm(scaling_exp / v.get_upper_limit(Derivatives.velocity))
                     arm_v = v
@@ -49,7 +49,7 @@ class BaseArmWeightScaling(Task):
                     gains[Derivatives.jerk][v] = v_gain
             base_v = None
             for name in base_joints:
-                vs = god_map.world.joints[god_map.world.search_for_joint_name(name)].free_variables
+                vs = god_map.world.joints[god_map.world.search_for_joint_name(name)].degrees_of_freedoms
                 for v in vs:
                     v_gain = gain / 100 * cas.save_division(1, cas.norm(scaling_exp / v.get_upper_limit(Derivatives.velocity)))
                     base_v = v
@@ -108,10 +108,10 @@ class MaxManipulability(Task):
         god_map.debug_expression_manager.add_debug_expression(f'mIndex{tip_link}', m)
 
     def get_free_variable(self, symbol):
-        for f in god_map.world.free_variables:
+        for f in god_map.world.degrees_of_freedoms:
             for d in Derivatives:
-                if str(god_map.world.free_variables[f].get_symbol(d)) == str(symbol):
-                    return god_map.world.free_variables[f]
+                if str(god_map.world.degrees_of_freedoms[f].get_symbol(d)) == str(symbol):
+                    return god_map.world.degrees_of_freedoms[f]
 
 
 class MaxManipulabilityAsEq(Task):
@@ -167,10 +167,10 @@ class MaxManipulabilityAsEq(Task):
 
 
     def get_free_variable(self, symbol):
-        for f in god_map.world.free_variables:
+        for f in god_map.world.degrees_of_freedoms:
             for d in Derivatives:
-                if str(god_map.world.free_variables[f].get_symbol(d)) == str(symbol):
-                    return god_map.world.free_variables[f]
+                if str(god_map.world.degrees_of_freedoms[f].get_symbol(d)) == str(symbol):
+                    return god_map.world.degrees_of_freedoms[f]
 
 class MaxManipulabilityAsEq2(Task):
     """
