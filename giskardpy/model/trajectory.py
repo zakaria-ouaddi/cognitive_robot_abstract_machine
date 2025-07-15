@@ -66,7 +66,7 @@ class Trajectory:
 
     @property
     def length_in_seconds(self) -> float:
-        return len(self) * god_map.qp_controller.mpc_dt
+        return len(self) * god_map.qp_controller.config.mpc_dt
 
     def to_dict(self, normalize_position: Optional[bool] = None, filter_0_vel: bool = True, sort: bool = True)\
             -> Dict[Derivatives, Dict[PrefixName, np.ndarray]]:
@@ -78,8 +78,8 @@ class Trajectory:
         for derivative, d_data in data.items():
             for free_variable, trajectory in d_data.items():
                 d_data[free_variable] = np.array(trajectory, dtype=float)
-                if (free_variable in god_map.world.degrees_of_freedoms
-                        and not god_map.world.degrees_of_freedoms[free_variable].has_position_limits()):
+                if (free_variable in god_map.world.degrees_of_freedom
+                        and not god_map.world.degrees_of_freedom[free_variable].has_position_limits()):
                     if normalize_position is None:
                         normalize_position = True
                 if normalize_position and derivative == Derivatives.position:
@@ -129,7 +129,7 @@ class Trajectory:
         cm_per_second = cm_to_inch(cm_per_second)
         height_per_derivative = cm_to_inch(height_per_derivative)
         hspace = cm_to_inch(hspace)
-        max_derivative = god_map.qp_controller.max_derivative
+        max_derivative = god_map.qp_controller.config.max_derivative
         with plot_lock:
             def ceil(val, base=0.0, stride=1.0):
                 base = base % stride

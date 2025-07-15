@@ -394,7 +394,7 @@ class GiskardWrapper:
         god_map.motion_statechart_manager.initialize_states()
 
         eq, neq, eqd, neqd, lin_weight, quad_weight = god_map.motion_statechart_manager.get_constraints_from_tasks()
-        god_map.qp_controller.init(free_variables=self.get_active_free_symbols(eq, neq, eqd, neqd),
+        god_map.qp_controller.init(degrees_of_freedom=self.get_active_free_symbols(eq, neq, eqd, neqd),
                                    equality_constraints=eq,
                                    inequality_constraints=neq,
                                    eq_derivative_constraints=eqd,
@@ -446,7 +446,7 @@ class GiskardWrapper:
 
         total_time = time.time() - total_time_start
         self.traj.set(god_map.control_cycle_counter, god_map.world.state)
-        god_map.time += god_map.qp_controller.control_dt
+        god_map.time += god_map.qp_controller.config.control_dt
         god_map.control_cycle_counter += 1
 
         return total_time, qp_time, update_world_time, collision_time, done
@@ -483,12 +483,12 @@ class GiskardWrapper:
         return result
 
     def plot_traj(self, plot_kwargs: dict, plot_legend: bool = True):
-        self.traj.plot_trajectory('', sample_period=god_map.qp_controller.control_dt, filter_0_vel=True,
+        self.traj.plot_trajectory('', sample_period=god_map.qp_controller.config.control_dt, filter_0_vel=True,
                                   hspace=0.7, height_per_derivative=4)
         color_map = defaultdict(lambda: self.graph_styles[len(color_map)])
-        god_map.debug_expression_manager.raw_traj_to_traj(control_dt=god_map.qp_controller.control_dt).plot_trajectory(
+        god_map.debug_expression_manager.raw_traj_to_traj(control_dt=god_map.qp_controller.config.control_dt).plot_trajectory(
             '',
-            sample_period=god_map.qp_controller.control_dt,
+            sample_period=god_map.qp_controller.config.control_dt,
             filter_0_vel=False,
             hspace=0.7,
             height_per_derivative=4,

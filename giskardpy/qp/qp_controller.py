@@ -77,21 +77,22 @@ class QPController:
         self.xdot_full = None
 
     def init(self,
-             free_variables: List[FreeVariable] = None,
+             degrees_of_freedom: List[FreeVariable] = None,
              equality_constraints: List[EqualityConstraint] = None,
              inequality_constraints: List[InequalityConstraint] = None,
              derivative_constraints: List[DerivativeInequalityConstraint] = None,
              eq_derivative_constraints: List[DerivativeEqualityConstraint] = None,
              quadratic_weight_gains: List[QuadraticWeightGain] = None,
              linear_weight_gains: List[LinearWeightGain] = None):
-        self.degrees_of_freedoms = free_variables
+        self.degrees_of_freedoms = list(sorted(degrees_of_freedom, key=lambda dof: god_map.world.state.keys().index(dof.name)))
+        self.dof_filter = np.array([god_map.world.state.keys().index(dof.name) for dof in self.degrees_of_freedoms])
         self.qp_adapter = self.qp_solver.required_adapter_type(
             world_state_symbols=god_map.world.get_world_state_symbols(),
             task_life_cycle_symbols=god_map.motion_statechart_manager.task_state.get_life_cycle_state_symbols(),
             goal_life_cycle_symbols=god_map.motion_statechart_manager.goal_state.get_life_cycle_state_symbols(),
             external_collision_symbols=god_map.collision_scene.get_external_collision_symbol(),
             self_collision_symbols=god_map.collision_scene.get_self_collision_symbol(),
-            free_variables=free_variables,
+            free_variables=self.degrees_of_freedoms,
             equality_constraints=equality_constraints,
             inequality_constraints=inequality_constraints,
             derivative_constraints=derivative_constraints,
@@ -158,7 +159,9 @@ class QPController:
         offset = len(self.degrees_of_freedoms) * (self.config.prediction_horizon - 2)
         offset_end = offset + len(self.degrees_of_freedoms)
         control_cmds = xdot[offset:offset_end]
-        pass
+        full_control_cmds = np.zeros(len(god_map.world.state))
+        full_control_cmds[self.dof_filter] = control_cmds
+        return full_control_cmds
 
     def _has_nan(self):
         nan_entries = self.p_A[0].isnull().stack()
