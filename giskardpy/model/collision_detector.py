@@ -254,7 +254,7 @@ class Collisions:
         def is_joint_movable(connection: ActiveConnection):
             return (isinstance(connection, ActiveConnection)
                     and connection.is_controlled
-                    and connection not in god_map.world.frozen_connections)
+                    and not connection.frozen_for_collision_avoidance)
 
         while movable_joint != god_map.world.root:
             if is_joint_movable(movable_joint):

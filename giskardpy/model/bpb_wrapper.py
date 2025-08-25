@@ -115,7 +115,7 @@ def load_convex_mesh_shape(pkg_filename: str, single_shape: bool, scale: Scale) 
 
 def convert_to_decomposed_obj_and_save_in_tmp(file_name: str,
                                               log_path='/tmp/giskardpy/vhacd.log') -> str:
-    first_group_name = list(god_map.world.search_for_views_of_type(AbstractRobot))[0].name
+    first_group_name = list(god_map.world.get_views_by_type(AbstractRobot))[0].name
     resolved_old_path = get_middleware().resolve_iri(file_name)
     short_file_name = file_name.split('/')[-1][:-3]
     obj_file_name = f'{first_group_name}/{short_file_name}obj'

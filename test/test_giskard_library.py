@@ -151,7 +151,7 @@ def pr2_world() -> World:
     with config.world.modify_world():
         config.setup_world()
     pr2: AbstractRobot = config.world.get_view_by_name('robot')
-    pr2.controlled_connections.connections = config.world.search_for_connections_of_type(ActiveConnection)
+    pr2.controlled_connections.connections = config.world.get_connections_by_type(ActiveConnection)
     return config.world
 
 

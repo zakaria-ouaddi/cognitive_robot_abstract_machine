@@ -49,7 +49,7 @@ class SetOdometry(PayloadMonitor):
         if self.name is None:
             self.name = f'{self.__class__.__name__}/{self.odom_connection}'
         if self.odom_connection is None:
-            drive_connections = god_map.world.search_for_connections_of_type(self.__odom_joints)
+            drive_connections = god_map.world.get_connections_by_type(self.__odom_joints)
             if len(drive_connections) == 0:
                 raise GoalInitalizationException('No drive joints in world')
             elif len(drive_connections) == 1:
