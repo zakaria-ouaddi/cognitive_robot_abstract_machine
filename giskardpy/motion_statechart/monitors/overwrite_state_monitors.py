@@ -1,9 +1,7 @@
 from __future__ import division
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, Optional, Union, Type, Tuple
-
-from docutils.nodes import field
 
 import semantic_world.spatial_types.spatial_types as cas
 from giskardpy.motion_statechart.data_types import ObservationState
@@ -46,18 +44,14 @@ class SetSeedConfiguration(PayloadMonitor):
 @dataclass
 class SetOdometry(PayloadMonitor):
     base_pose: cas.TransformationMatrix
-    __odom_joints: Tuple[Type[Connection], ...] = field(
-        default=(OmniDrive,), init=False
-    )
+    _odom_joints: Tuple[Type[Connection], ...] = field(default=(OmniDrive,), init=False)
     odom_connection: Optional[OmniDrive] = None
 
     def __post_init__(self):
         if self.name is None:
             self.name = f"{self.__class__.__name__}/{self.odom_connection}"
         if self.odom_connection is None:
-            drive_connections = god_map.world.get_connections_by_type(
-                self.__odom_joints
-            )
+            drive_connections = god_map.world.get_connections_by_type(self._odom_joints)
             if len(drive_connections) == 0:
                 raise GoalInitalizationException("No drive joints in world")
             elif len(drive_connections) == 1:
