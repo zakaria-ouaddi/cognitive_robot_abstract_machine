@@ -11,16 +11,22 @@ from giskardpy.utils.decorators import memoize
 def quaternion_multiply(quaternion1: np.ndarray, quaternion0: np.ndarray) -> np.ndarray:
     x0, y0, z0, w0 = quaternion0
     x1, y1, z1, w1 = quaternion1
-    return np.array((
-        x1 * w0 + y1 * z0 - z1 * y0 + w1 * x0,
-        -x1 * z0 + y1 * w0 + z1 * x0 + w1 * y0,
-        x1 * y0 - y1 * x0 + z1 * w0 + w1 * z0,
-        -x1 * x0 - y1 * y0 - z1 * z0 + w1 * w0), dtype=np.float64)
+    return np.array(
+        (
+            x1 * w0 + y1 * z0 - z1 * y0 + w1 * x0,
+            -x1 * z0 + y1 * w0 + z1 * x0 + w1 * y0,
+            x1 * y0 - y1 * x0 + z1 * w0 + w1 * z0,
+            -x1 * x0 - y1 * y0 - z1 * z0 + w1 * w0,
+        ),
+        dtype=np.float64,
+    )
 
 
 def quaternion_conjugate(quaternion: np.ndarray) -> np.ndarray:
-    return np.array((-quaternion[0], -quaternion[1],
-                     -quaternion[2], quaternion[3]), dtype=np.float64)
+    return np.array(
+        (-quaternion[0], -quaternion[1], -quaternion[2], quaternion[3]),
+        dtype=np.float64,
+    )
 
 
 def qv_mult(quaternion: np.ndarray, vector: np.ndarray) -> np.ndarray:
@@ -35,13 +41,19 @@ def qv_mult(quaternion: np.ndarray, vector: np.ndarray) -> np.ndarray:
     return quaternion_multiply(quaternion_multiply(q, v), quaternion_conjugate(q))[:-1]
 
 
-def quaternion_from_axis_angle(axis: Union[List[float], Tuple[float, float, float], np.ndarray],
-                               angle: float) -> np.ndarray:
+def quaternion_from_axis_angle(
+    axis: Union[List[float], Tuple[float, float, float], np.ndarray], angle: float
+) -> np.ndarray:
     half_angle = angle / 2
-    return np.array([axis[0] * np.sin(half_angle),
-                     axis[1] * np.sin(half_angle),
-                     axis[2] * np.sin(half_angle),
-                     np.cos(half_angle)], dtype=np.float64)
+    return np.array(
+        [
+            axis[0] * np.sin(half_angle),
+            axis[1] * np.sin(half_angle),
+            axis[2] * np.sin(half_angle),
+            np.cos(half_angle),
+        ],
+        dtype=np.float64,
+    )
 
 
 _EPS = np.finfo(float).eps * 4.0
@@ -58,7 +70,10 @@ def rpy_from_matrix(rotation_matrix: np.ndarray) -> Tuple[float, float, float]:
     j = 1
     k = 2
 
-    cy = np.sqrt(rotation_matrix[i, i] * rotation_matrix[i, i] + rotation_matrix[j, i] * rotation_matrix[j, i])
+    cy = np.sqrt(
+        rotation_matrix[i, i] * rotation_matrix[i, i]
+        + rotation_matrix[j, i] * rotation_matrix[j, i]
+    )
     if cy - _EPS > 0:
         roll = np.arctan2(rotation_matrix[k, j], rotation_matrix[k, k])
         pitch = np.arctan2(-rotation_matrix[k, i], cy)
@@ -70,7 +85,9 @@ def rpy_from_matrix(rotation_matrix: np.ndarray) -> Tuple[float, float, float]:
     return roll, pitch, yaw
 
 
-def rpy_from_quaternion(qx: float, qy: float, qz: float, qw: float) -> Tuple[float, float, float]:
+def rpy_from_quaternion(
+    qx: float, qy: float, qz: float, qw: float
+) -> Tuple[float, float, float]:
     return rpy_from_matrix(rotation_matrix_from_quaternion(qx, qy, qz, qw))
 
 
@@ -80,22 +97,36 @@ def rotation_matrix_from_rpy(roll: float, pitch: float, yaw: float) -> np.ndarra
     https://github.com/orocos/orocos_kinematics_dynamics/blob/master/orocos_kdl/src/frames.cpp#L167
     :return: 4x4 Matrix
     """
-    rx = np.array([[1, 0, 0, 0],
-                   [0, np.cos(roll), -np.sin(roll), 0],
-                   [0, np.sin(roll), np.cos(roll), 0],
-                   [0, 0, 0, 1]])
-    ry = np.array([[np.cos(pitch), 0, np.sin(pitch), 0],
-                   [0, 1, 0, 0],
-                   [-np.sin(pitch), 0, np.cos(pitch), 0],
-                   [0, 0, 0, 1]])
-    rz = np.array([[np.cos(yaw), -np.sin(yaw), 0, 0],
-                   [np.sin(yaw), np.cos(yaw), 0, 0],
-                   [0, 0, 1, 0],
-                   [0, 0, 0, 1]])
+    rx = np.array(
+        [
+            [1, 0, 0, 0],
+            [0, np.cos(roll), -np.sin(roll), 0],
+            [0, np.sin(roll), np.cos(roll), 0],
+            [0, 0, 0, 1],
+        ]
+    )
+    ry = np.array(
+        [
+            [np.cos(pitch), 0, np.sin(pitch), 0],
+            [0, 1, 0, 0],
+            [-np.sin(pitch), 0, np.cos(pitch), 0],
+            [0, 0, 0, 1],
+        ]
+    )
+    rz = np.array(
+        [
+            [np.cos(yaw), -np.sin(yaw), 0, 0],
+            [np.sin(yaw), np.cos(yaw), 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ]
+    )
     return np.dot(np.dot(rz, ry), rx)
 
 
-def rotation_matrix_from_quaternion(x: float, y: float, z: float, w: float) -> np.ndarray:
+def rotation_matrix_from_quaternion(
+    x: float, y: float, z: float, w: float
+) -> np.ndarray:
     """
     Unit quaternion to 4x4 rotation matrix according to:
     https://github.com/orocos/orocos_kinematics_dynamics/blob/master/orocos_kdl/src/frames.cpp#L167
@@ -105,14 +136,20 @@ def rotation_matrix_from_quaternion(x: float, y: float, z: float, w: float) -> n
     y2 = y * y
     z2 = z * z
     w2 = w * w
-    return np.array([[w2 + x2 - y2 - z2, 2 * x * y - 2 * w * z, 2 * x * z + 2 * w * y, 0],
-                     [2 * x * y + 2 * w * z, w2 - x2 + y2 - z2, 2 * y * z - 2 * w * x, 0],
-                     [2 * x * z - 2 * w * y, 2 * y * z + 2 * w * x, w2 - x2 - y2 + z2, 0],
-                     [0, 0, 0, 1]], dtype=np.float64)
+    return np.array(
+        [
+            [w2 + x2 - y2 - z2, 2 * x * y - 2 * w * z, 2 * x * z + 2 * w * y, 0],
+            [2 * x * y + 2 * w * z, w2 - x2 + y2 - z2, 2 * y * z - 2 * w * x, 0],
+            [2 * x * z - 2 * w * y, 2 * y * z + 2 * w * x, w2 - x2 - y2 + z2, 0],
+            [0, 0, 0, 1],
+        ],
+        dtype=np.float64,
+    )
 
 
-def rotation_matrix_from_axis_angle(axis: Union[List[float], Tuple[float, float, float], np.ndarray], angle: float) \
-        -> np.ndarray:
+def rotation_matrix_from_axis_angle(
+    axis: Union[List[float], Tuple[float, float, float], np.ndarray], angle: float
+) -> np.ndarray:
     return rotation_matrix_from_quaternion(*quaternion_from_axis_angle(axis, angle))
 
 
@@ -120,13 +157,15 @@ def quaternion_from_rpy(roll: float, pitch: float, yaw: float) -> np.ndarray:
     return quaternion_from_rotation_matrix(rotation_matrix_from_rpy(roll, pitch, yaw))
 
 
-def quaternion_from_rotation_matrix(matrix: Union[List[List[float]], np.ndarray]) -> np.ndarray:
+def quaternion_from_rotation_matrix(
+    matrix: Union[List[List[float]], np.ndarray],
+) -> np.ndarray:
     """
     :param matrix: 4x4 Matrix
     :return: array length 4
     """
     q = np.empty((4,), dtype=np.float64)
-    M = np.array(matrix, dtype=np.float64, copy=False)[:4, :4]
+    M = np.array(matrix, dtype=np.float64)[:4, :4]
     t = np.trace(M)
     if t > M[3, 3]:
         q[3] = t
@@ -148,10 +187,12 @@ def quaternion_from_rotation_matrix(matrix: Union[List[List[float]], np.ndarray]
     return q
 
 
-def axis_angle_from_quaternion(x: float, y: float, z: float, w: float) -> Tuple[np.ndarray, float]:
+def axis_angle_from_quaternion(
+    x: float, y: float, z: float, w: float
+) -> Tuple[np.ndarray, float]:
     l = np.linalg.norm(np.array([x, y, z, w]))
     x, y, z, w = x / l, y / l, z / l, w / l
-    w2 = np.sqrt(1 - w ** 2)
+    w2 = np.sqrt(1 - w**2)
     if w2 == 0:
         m = 1
     else:
@@ -159,7 +200,7 @@ def axis_angle_from_quaternion(x: float, y: float, z: float, w: float) -> Tuple[
     if w2 == 0:
         angle = 0
     else:
-        angle = (2 * np.arccos(min(max(-1, w), 1)))
+        angle = 2 * np.arccos(min(max(-1, w), 1))
     if w2 == 0:
         x = 0
         y = 0
@@ -175,22 +216,26 @@ def axis_angle_from_rotation_matrix(m: np.ndarray) -> Tuple[np.ndarray, float]:
     return axis_angle_from_quaternion(*quaternion_from_rotation_matrix(m))
 
 
-def axis_angle_from_rpy(roll: float, pitch: float, yaw: float) -> Tuple[np.ndarray, float]:
+def axis_angle_from_rpy(
+    roll: float, pitch: float, yaw: float
+) -> Tuple[np.ndarray, float]:
     return axis_angle_from_quaternion(*quaternion_from_rpy(roll, pitch, yaw))
 
 
 def gauss(n: float) -> float:
-    return (n ** 2 + n) / 2
+    return (n**2 + n) / 2
 
 
-def max_velocity_from_horizon_and_jerk(prediction_horizon: int,
-                                       vel_limit: float,
-                                       acc_limit: float,
-                                       jerk_limit: float,
-                                       sample_period: float,
-                                       max_derivative: Derivatives):
+def max_velocity_from_horizon_and_jerk(
+    prediction_horizon: int,
+    vel_limit: float,
+    acc_limit: float,
+    jerk_limit: float,
+    sample_period: float,
+    max_derivative: Derivatives,
+):
     n2 = int((prediction_horizon) / 2)
-    vel_jerk_limited = (gauss(n2) + gauss(n2 - 1)) * jerk_limit * sample_period ** 2
+    vel_jerk_limited = (gauss(n2) + gauss(n2 - 1)) * jerk_limit * sample_period**2
     vel_acc_limits = acc_limit * sample_period * prediction_horizon
     if max_derivative == Derivatives.jerk:
         return min(vel_limit, vel_acc_limits, vel_jerk_limited)
@@ -200,15 +245,17 @@ def max_velocity_from_horizon_and_jerk(prediction_horizon: int,
 
 
 @memoize
-def mpc(upper_limits: Tuple[Tuple[float, ...], ...],
-        lower_limits: Tuple[Tuple[float, ...], ...],
-        current_values: Tuple[float, ...],
-        dt: float,
-        ph: int,
-        q_weight: Tuple[float, ...],
-        lin_weight: Tuple[float, ...],
-        solver_class: Type[QPSolver],
-        link_to_current_vel: bool = True) -> np.ndarray:
+def mpc(
+    upper_limits: Tuple[Tuple[float, ...], ...],
+    lower_limits: Tuple[Tuple[float, ...], ...],
+    current_values: Tuple[float, ...],
+    dt: float,
+    ph: int,
+    q_weight: Tuple[float, ...],
+    lin_weight: Tuple[float, ...],
+    solver_class: Type[QPSolver],
+    link_to_current_vel: bool = True,
+) -> np.ndarray:
     solver = solver_class()
     max_d = len(upper_limits)
     lb = []
@@ -228,11 +275,11 @@ def mpc(upper_limits: Tuple[Tuple[float, ...], ...],
         bE[ph * (derivative - 1)] = current_value
     w = np.zeros(len(lb))
     w[:ph] = q_weight[0]
-    w[ph:ph * 2] = q_weight[1]
+    w[ph : ph * 2] = q_weight[1]
     w[-ph:] = q_weight[2]
     g = np.zeros(len(lb))
     g[:ph] = lin_weight[0]
-    g[ph:ph * 2] = lin_weight[1]
+    g[ph : ph * 2] = lin_weight[1]
     g[-ph:] = lin_weight[2]
     empty = np.eye(0)
     lb = np.array(lb)
@@ -242,39 +289,67 @@ def mpc(upper_limits: Tuple[Tuple[float, ...], ...],
         bE = np.delete(bE, [0])
         lb[ph] = 0
         ub[ph] = 0
-    qp_data = QPData(quadratic_weights=w,
-                     linear_weights=g,
-                     box_lower_constraints=lb,
-                     box_upper_constraints=ub,
-                     eq_matrix=model,
-                     eq_bounds=bE,
-                     neq_matrix=empty,
-                     neq_lower_bounds=np.array([]),
-                     neq_upper_bounds=np.array([]))
+    qp_data = QPData(
+        quadratic_weights=w,
+        linear_weights=g,
+        box_lower_constraints=lb,
+        box_upper_constraints=ub,
+        eq_matrix=model,
+        eq_bounds=bE,
+        neq_matrix=empty,
+        neq_lower_bounds=np.array([]),
+        neq_upper_bounds=np.array([]),
+    )
     result = solver.solver_call_explicit_interface(qp_data)
     return result
 
 
-def simple_mpc(vel_limit, acc_limit, jerk_limit, current_vel, current_acc, dt, ph, q_weight, lin_weight,
-               solver_class, link_to_current_vel: bool = True):
-    upper_limits = ((vel_limit,) * ph,
-                    (acc_limit,) * ph,
-                    (jerk_limit,) * ph)
-    lower_limits = ((-vel_limit,) * ph,
-                    (-acc_limit,) * ph,
-                    (-jerk_limit,) * ph)
-    return mpc(upper_limits=upper_limits, lower_limits=lower_limits,
-               current_values=(current_vel, current_acc), dt=dt, ph=ph, q_weight=q_weight, lin_weight=lin_weight,
-               solver_class=solver_class, link_to_current_vel=link_to_current_vel)
+def simple_mpc(
+    vel_limit,
+    acc_limit,
+    jerk_limit,
+    current_vel,
+    current_acc,
+    dt,
+    ph,
+    q_weight,
+    lin_weight,
+    solver_class,
+    link_to_current_vel: bool = True,
+):
+    upper_limits = ((vel_limit,) * ph, (acc_limit,) * ph, (jerk_limit,) * ph)
+    lower_limits = ((-vel_limit,) * ph, (-acc_limit,) * ph, (-jerk_limit,) * ph)
+    return mpc(
+        upper_limits=upper_limits,
+        lower_limits=lower_limits,
+        current_values=(current_vel, current_acc),
+        dt=dt,
+        ph=ph,
+        q_weight=q_weight,
+        lin_weight=lin_weight,
+        solver_class=solver_class,
+        link_to_current_vel=link_to_current_vel,
+    )
 
 
-def mpc_velocities(upper_limits: Tuple[Tuple[float, ...], ...],
-                   lower_limits: Tuple[Tuple[float, ...], ...],
-                   current_values: Tuple[float, ...],
-                   dt: float,
-                   ph: int,
-                   solver_class=None):
-    return mpc(upper_limits, lower_limits, current_values, dt, ph, (1, 1, 1), (0, 0, 0), solver_class)
+def mpc_velocities(
+    upper_limits: Tuple[Tuple[float, ...], ...],
+    lower_limits: Tuple[Tuple[float, ...], ...],
+    current_values: Tuple[float, ...],
+    dt: float,
+    ph: int,
+    solver_class=None,
+):
+    return mpc(
+        upper_limits,
+        lower_limits,
+        current_values,
+        dt,
+        ph,
+        (1, 1, 1),
+        (0, 0, 0),
+        solver_class,
+    )
 
 
 def derivative_link_model(dt, ph, max_derivative):
@@ -283,7 +358,7 @@ def derivative_link_model(dt, ph, max_derivative):
     derivative_link_model = np.zeros((num_rows, num_columns))
 
     x_n = np.eye(num_rows)
-    derivative_link_model[:, :x_n.shape[0]] += x_n
+    derivative_link_model[:, : x_n.shape[0]] += x_n
 
     xd_n = -np.eye(num_rows) * dt
     h_offset = ph
@@ -295,30 +370,48 @@ def derivative_link_model(dt, ph, max_derivative):
     offset_h = 0
     for derivative in Derivatives.range(Derivatives.velocity, max_derivative - 1):
         offset_v += 1
-        derivative_link_model[offset_v:offset_v + x_c_height, offset_h:offset_h + x_c_height] += x_c
+        derivative_link_model[
+            offset_v : offset_v + x_c_height, offset_h : offset_h + x_c_height
+        ] += x_c
         offset_v += x_c_height
         offset_h += ph
     return derivative_link_model
 
 
-def mpc_velocity_integral(limits: Dict[Derivatives, float], dt: float, ph: int) -> float:
+def mpc_velocity_integral(
+    limits: Dict[Derivatives, float], dt: float, ph: int
+) -> float:
     upper_limits = {
         Derivatives.velocity: np.ones(ph) * limits[Derivatives.velocity],
         Derivatives.acceleration: np.ones(ph) * limits[Derivatives.acceleration],
-        Derivatives.jerk: np.ones(ph) * limits[Derivatives.jerk]
+        Derivatives.jerk: np.ones(ph) * limits[Derivatives.jerk],
     }
     lower_limits = {
         Derivatives.velocity: np.ones(ph) * -limits[Derivatives.velocity],
         Derivatives.acceleration: np.ones(ph) * -limits[Derivatives.acceleration],
-        Derivatives.jerk: np.ones(ph) * -limits[Derivatives.jerk]
+        Derivatives.jerk: np.ones(ph) * -limits[Derivatives.jerk],
     }
-    return np.sum(mpc_velocities(upper_limits, lower_limits,
-                                 {Derivatives.velocity: limits[Derivatives.velocity] + limits[
-                                     Derivatives.jerk] * dt ** 2,
-                                  Derivatives.acceleration: 0}, dt, ph)) * dt
+    return (
+        np.sum(
+            mpc_velocities(
+                upper_limits,
+                lower_limits,
+                {
+                    Derivatives.velocity: limits[Derivatives.velocity]
+                    + limits[Derivatives.jerk] * dt**2,
+                    Derivatives.acceleration: 0,
+                },
+                dt,
+                ph,
+            )
+        )
+        * dt
+    )
 
 
-def mpc_velocity_integral2(limits: Dict[Derivatives, float], dt: float, ph: int) -> float:
+def mpc_velocity_integral2(
+    limits: Dict[Derivatives, float], dt: float, ph: int
+) -> float:
     ph -= 2
     i1 = gauss(ph) * (limits[Derivatives.velocity] / (ph)) * dt
     ph -= 1
@@ -326,7 +419,9 @@ def mpc_velocity_integral2(limits: Dict[Derivatives, float], dt: float, ph: int)
     return (i1 + i2) / 2
 
 
-def mpc_velocity_integral3(limits: Dict[Derivatives, float], dt: float, ph: int) -> float:
+def mpc_velocity_integral3(
+    limits: Dict[Derivatives, float], dt: float, ph: int
+) -> float:
     ph -= 1
     v = limits[Derivatives.velocity]
     i1 = (v * dt * ph) / 2
@@ -388,10 +483,12 @@ def point_to_single_caster_angle(px, py, caster_v, forward_velocity):
         circumference = 2 * np.pi * radius
         number_of_revolutions = forward_velocity / circumference
         angular_velocity = number_of_revolutions / (2 * np.pi)
-        angular_velocity = min(max(angular_velocity, -max_angular_velocity), max_angular_velocity)
+        angular_velocity = min(
+            max(angular_velocity, -max_angular_velocity), max_angular_velocity
+        )
     else:
         angular_velocity = max_angular_velocity
-    print(f'angular velocity {angular_velocity}')
+    print(f"angular velocity {angular_velocity}")
     return angle, c_V_goal
 
 
@@ -406,22 +503,22 @@ def point_to_caster_angles(px, py):
     # center_P_br = np.array([-1, -1, 0, 1])
     # print(f'br {point_to_single_caster_angle(px, py, center_P_br, forward_velocity)}')
     center = np.array([0, 0, 0, 1])
-    print(f'center {point_to_single_caster_angle(px, py, center, forward_velocity)}')
+    print(f"center {point_to_single_caster_angle(px, py, center, forward_velocity)}")
 
 
 def shortest_angular_distance(from_angle, to_angle):
-    """ Given 2 angles, this returns the shortest angular
-        difference.  The inputs and ouputs are of course radians.
+    """Given 2 angles, this returns the shortest angular
+    difference.  The inputs and ouputs are of course radians.
 
-        The result would always be -pi <= result <= pi. Adding the result
-        to "from" will always get you an equivelent angle to "to".
+    The result would always be -pi <= result <= pi. Adding the result
+    to "from" will always get you an equivelent angle to "to".
     """
     return normalize_angle(to_angle - from_angle)
 
 
 def normalize_angle(angle):
-    """ Normalizes the angle to be -pi to +pi
-        It takes and returns radians."""
+    """Normalizes the angle to be -pi to +pi
+    It takes and returns radians."""
     a = normalize_angle_positive(angle)
     if a > np.pi:
         a -= 2.0 * np.pi
@@ -429,8 +526,8 @@ def normalize_angle(angle):
 
 
 def normalize_angle_positive(angle):
-    """ Normalizes the angle to be 0 to 2*pi
-        It takes and returns radians. """
+    """Normalizes the angle to be 0 to 2*pi
+    It takes and returns radians."""
     return angle % (2.0 * np.pi)
 
 
