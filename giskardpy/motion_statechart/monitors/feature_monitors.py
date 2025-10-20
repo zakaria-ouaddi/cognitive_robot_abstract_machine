@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, Union
 
 import semantic_world.spatial_types.spatial_types as cas
@@ -12,8 +12,8 @@ from semantic_world.world_description.world_entity import Body
 class FeatureMonitor(Monitor):
     tip_link: Body
     root_link: Body
-    reference_feature: Union[cas.Point3, cas.Vector3]
-    controlled_feature: Union[cas.Point3, cas.Vector3]
+    reference_feature: Union[cas.Point3, cas.Vector3] = field(init=False)
+    controlled_feature: Union[cas.Point3, cas.Vector3] = field(init=False)
 
     def __post_init__(self):
         root_reference_feature = god_map.world.transform(
@@ -49,10 +49,7 @@ class HeightMonitor(FeatureMonitor):
         self.controlled_feature = self.tip_point
         super().__post_init__()
 
-        distance = self.root_P_controlled_feature.distance_projected_on_vector(
-            self.root_P_reference_feature,
-            cas.Vector3(0, 0, 1),
-        )
+        distance = cas.dot(self.root_P_controlled_feature - self.root_P_reference_feature, cas.Vector3(0, 0, 1))
         expr = cas.logic_and(
             distance >= self.lower_limit,
             distance <= self.upper_limit,
@@ -87,10 +84,9 @@ class DistanceMonitor(FeatureMonitor):
         self.controlled_feature = self.tip_point
         super().__post_init__()
 
-        distance = self.root_P_controlled_feature.distance_vector_projected_on_plane(
-            self.root_P_reference_feature,
-            cas.Vector3.Z(),
-        ).norm()
+        diff = self.root_P_controlled_feature - self.root_P_reference_feature
+        diff[2] = 0.0
+        distance = diff.norm()
         self.observation_expression = cas.logic_and(
             distance >= self.lower_limit,
             distance <= self.upper_limit,
