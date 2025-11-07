@@ -87,7 +87,7 @@ class QPController:
         self.degrees_of_freedoms = list(sorted(degrees_of_freedom, key=lambda dof: str(dof.name)))
         self.dof_filter = np.array([god_map.world.state.keys().index(dof.name) for dof in self.degrees_of_freedoms])
         self.qp_adapter = self.qp_solver.required_adapter_type(
-            world_state_symbols=god_map.world.get_world_state_symbols(),
+            world_state_symbols=god_map.world.state.get_symbols(),
             task_life_cycle_symbols=god_map.motion_statechart_manager.task_state.get_life_cycle_state_symbols(),
             goal_life_cycle_symbols=god_map.motion_statechart_manager.goal_state.get_life_cycle_state_symbols(),
             external_collision_symbols=god_map.collision_scene.get_external_collision_symbol(),

@@ -308,7 +308,7 @@ class MotionStatechartManager:
         )
 
         for s in itertools.chain(
-            god_map.world.get_world_state_symbols(),
+            god_map.world.state.get_symbols(),
             self.task_state.get_life_cycle_state_symbols(),
             self.monitor_state.get_life_cycle_state_symbols(),
             self.goal_state.get_life_cycle_state_symbols(),
@@ -323,7 +323,7 @@ class MotionStatechartManager:
         self.observation_state_updater = cas.CompiledFunctionWithViews(
             expressions=[task_obs_expr, monitor_obs_expr, goal_obs_expr],
             symbol_parameters=[
-                god_map.world.get_world_state_symbols(),
+                god_map.world.state.get_symbols(),
                 self.task_state.get_life_cycle_state_symbols(),
                 self.monitor_state.get_life_cycle_state_symbols(),
                 self.goal_state.get_life_cycle_state_symbols(),
