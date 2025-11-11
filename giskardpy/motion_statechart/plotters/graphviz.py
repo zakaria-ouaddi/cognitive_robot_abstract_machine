@@ -259,13 +259,17 @@ class MotionStatechartGraphviz:
         )
         return pydot_node
 
-    def to_dot_graph_pdf(self, file_name: str) -> pydot.Graph:
+    def to_dot_graph(self) -> pydot.Graph:
         self._cluster_map[None] = self.graph
         top_level_nodes = [
             node for node in self.motion_statechart.nodes if not node.parent_node
         ]
         self._add_nodes(self.graph, top_level_nodes)
         self._add_edges()
+        return self.graph
+
+    def to_dot_graph_pdf(self, file_name: str):
+        self.to_dot_graph()
         file_name = file_name
         # create_path(file_name)
         self.graph.write_pdf(file_name)

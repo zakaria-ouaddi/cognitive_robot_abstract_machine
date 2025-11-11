@@ -345,7 +345,7 @@ class MotionStatechart(SubclassJSONSerializer):
 
     qp_controller: Optional[QPController] = field(default=None, init=False)
 
-    _control_cycle_counter: int = field(default=0, init=False)
+    control_cycle_counter: int = field(default=0, init=False)
     history: StateHistory = field(default_factory=StateHistory, init=False)
 
     def __post_init__(self):
@@ -422,7 +422,7 @@ class MotionStatechart(SubclassJSONSerializer):
             self._compile_qp_controller(controller_config)
         self.history.append(
             next_item=StateHistoryItem(
-                control_cycle=self._control_cycle_counter,
+                control_cycle=self.control_cycle_counter,
                 life_cycle_state=self.life_cycle_state,
                 observation_state=self.observation_state,
             )
@@ -501,13 +501,13 @@ class MotionStatechart(SubclassJSONSerializer):
                     pass
 
     def tick(self):
-        self._control_cycle_counter += 1
+        self.control_cycle_counter += 1
         self._update_observation_state()
         self._update_life_cycle_state()
         self._raise_if_cancel_motion()
         self.history.append(
             next_item=StateHistoryItem(
-                control_cycle=self._control_cycle_counter,
+                control_cycle=self.control_cycle_counter,
                 life_cycle_state=self.life_cycle_state,
                 observation_state=self.observation_state,
             )
