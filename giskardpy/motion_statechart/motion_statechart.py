@@ -377,6 +377,9 @@ class MotionStatechart(SubclassJSONSerializer):
     def _create_structure_copy(
         self, nodes: List[MotionStatechartNode], destination: MotionStatechart | Goal
     ):
+        """
+        Creates a structure copy of a node and adds it to the destination.
+        """
         for node in nodes:
             match node:
                 case Goal():
@@ -400,17 +403,30 @@ class MotionStatechart(SubclassJSONSerializer):
 
     @property
     def top_level_nodes(self) -> List[MotionStatechartNode]:
+        """
+        :return: All nodes that don't belong to a Goal.
+        """
         return [node for node in self.nodes if node.parent_node is None]
 
     @property
     def edges(self) -> List[TrinaryCondition]:
+        """
+        The edges of the underlying graph.
+        .. warning:: This may return duplicate edges if a transition uses multiple nodes.
+        """
         return self.rx_graph.edges()
 
     @property
     def unique_edges(self) -> List[TrinaryCondition]:
+        """
+        :return: The edges of the motion statechart, without duplicates.
+        """
         return list(set(self.edges))
 
     def add_node(self, node: MotionStatechartNode):
+        """
+        Adds a node to the motion statechart and finalizes the initialization of the node.
+        """
         node.motion_statechart = self
         node.index = self.rx_graph.add_node(node)
         node._post_add_to_motion_statechart()
@@ -419,12 +435,6 @@ class MotionStatechart(SubclassJSONSerializer):
 
     def get_node_by_index(self, index: int) -> MotionStatechartNode:
         return self.rx_graph.get_node_data(index)
-
-    def get_node_by_name(self, name: PrefixedName) -> MotionStatechartNode:
-        try:
-            return next(node for node in self.nodes if node.name == name)
-        except StopIteration:
-            raise NodeNotFoundError(name=name)
 
     def _add_transitions(self):
         for node in self.nodes:
@@ -465,6 +475,12 @@ class MotionStatechart(SubclassJSONSerializer):
             goal._apply_goal_conditions_to_children()
 
     def compile(self, context: BuildContext):
+        """
+        Compiles all components of the motion statechart given the provided context.
+        This method must be called before tick().
+
+        :param context: The build context required to execute the compilation process.
+        """
         self._expand_goals(context=context)
         self._apply_goal_conditions_to_their_children()
         self._build_nodes(context=context)
@@ -480,6 +496,9 @@ class MotionStatechart(SubclassJSONSerializer):
         )
 
     def _expand_goals(self, context: BuildContext):
+        """
+        Triggers the expansion of all goals in the motion statechart and add its children to the motion statechart.
+        """
         for goal in self.get_nodes_by_type(Goal):
             self._expand_goal(goal, context=context)
 
@@ -551,6 +570,11 @@ class MotionStatechart(SubclassJSONSerializer):
                     pass
 
     def tick(self, context: BuildContext):
+        """
+        Executes a single tick of the motion statechart.
+        First the observation state is updated, then the life cycle state is updated.
+        :param context: The context required to execute the tick.
+        """
         self.control_cycle_counter += 1
         self._update_observation_state(context)
         self._update_life_cycle_state(context.to_execution_context())
@@ -569,6 +593,9 @@ class MotionStatechart(SubclassJSONSerializer):
         return [node for node in self.nodes if isinstance(node, node_type)]
 
     def is_end_motion(self) -> bool:
+        """
+        :return: True if the motion is done, meaning at least one EndMotion is in observation state True, False otherwise.
+        """
         return any(
             self.observation_state[node] == ObservationStateValues.TRUE
             for node in self.get_nodes_by_type(EndMotion)
@@ -580,6 +607,9 @@ class MotionStatechart(SubclassJSONSerializer):
                 raise node.exception
 
     def draw(self, file_name: str):
+        """
+        Uses graphviz to draw the motion statechart and safe it at `file_name`.
+        """
         MotionStatechartGraphviz(self).to_dot_graph_pdf(file_name=file_name)
 
     def to_json(self) -> Dict[str, Any]:
