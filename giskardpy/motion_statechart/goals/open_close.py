@@ -9,7 +9,6 @@ from giskardpy.motion_statechart.graph_node import Goal
 from giskardpy.motion_statechart.tasks.cartesian_tasks import CartesianPose
 from giskardpy.motion_statechart.tasks.joint_tasks import JointPositionList
 from semantic_digital_twin.world_description.connections import ActiveConnection1DOF
-from semantic_digital_twin.world_description.world_entity import Body
 
 
 @dataclass
