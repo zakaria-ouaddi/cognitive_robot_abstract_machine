@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import itertools
 from typing import Tuple, TYPE_CHECKING
 
 import numpy as np

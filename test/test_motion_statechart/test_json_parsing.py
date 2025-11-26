@@ -1,6 +1,7 @@
 import json
 
 import numpy as np
+import pytest
 
 from giskardpy.executor import Executor
 from giskardpy.model.collision_matrix_manager import (
@@ -12,8 +13,15 @@ from giskardpy.motion_statechart.data_types import (
     LifeCycleValues,
     ObservationStateValues,
 )
+from giskardpy.motion_statechart.exceptions import (
+    NodeNotFoundError,
+)
 from giskardpy.motion_statechart.goals.templates import Sequence
-from giskardpy.motion_statechart.graph_node import TrinaryCondition, EndMotion
+from giskardpy.motion_statechart.graph_node import (
+    TrinaryCondition,
+    EndMotion,
+    CancelMotion,
+)
 from giskardpy.motion_statechart.motion_statechart import (
     MotionStatechart,
     LifeCycleState,
@@ -319,3 +327,23 @@ def test_nested_goals():
             assert node.parent_node.unique_name == node_copy.parent_node.unique_name
         else:
             assert node_copy.parent_node_index is None
+
+
+def test_cancel_motion():
+    msc = MotionStatechart()
+    msc.add_node(node := ConstTrueNode())
+    msc.add_node(CancelMotion.when_true(node, exception=NodeNotFoundError(name="muh")))
+
+    json_data = msc.to_json()
+    json_str = json.dumps(json_data)
+    new_json_data = json.loads(json_str)
+    msc_copy = MotionStatechart.from_json(new_json_data)
+
+    kin_sim = Executor(
+        world=World(),
+    )
+
+    kin_sim.compile(motion_statechart=msc_copy)
+
+    with pytest.raises(Exception):
+        kin_sim.tick_until_end()

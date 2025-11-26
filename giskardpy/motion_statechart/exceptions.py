@@ -1,9 +1,15 @@
 from dataclasses import dataclass
 
-from typing_extensions import Any
+from krrood.adapters.json_serializer import JSON_TYPE_NAME, JSONSerializableTypeRegistry
+from krrood.utils import get_full_class_name
+from typing_extensions import Any, Dict
 
 
 class MotionStatechartError(Exception):
+    pass
+
+
+class GoalInitalizationException(MotionStatechartError):
     pass
 
 
@@ -38,3 +44,21 @@ class InvalidConditionError(MotionStatechartError):
         super().__init__(
             f"Invalid condition: {self.expression}. Did you forget '.observation_variable'?"
         )
+
+
+def serialize_exception(obj: Exception) -> Dict[str, Any]:
+
+    return {
+        JSON_TYPE_NAME: get_full_class_name(type(obj)),
+        "value": str(obj),
+    }
+
+
+def deserialize_exception(data: Dict[str, Any]) -> Exception:
+
+    return Exception(data["value"])
+
+
+JSONSerializableTypeRegistry().register(
+    Exception, serialize_exception, deserialize_exception
+)

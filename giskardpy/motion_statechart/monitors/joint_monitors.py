@@ -1,12 +1,10 @@
 from dataclasses import field, dataclass
 
 import semantic_digital_twin.spatial_types.spatial_types as cas
-from giskardpy.data_types.exceptions import GoalInitalizationException
 from giskardpy.motion_statechart.context import BuildContext
 from giskardpy.motion_statechart.graph_node import MotionStatechartNode, NodeArtifacts
 from semantic_digital_twin.world_description.connections import (
     RevoluteConnection,
-    ActiveConnection,
     ActiveConnection1DOF,
 )
 
