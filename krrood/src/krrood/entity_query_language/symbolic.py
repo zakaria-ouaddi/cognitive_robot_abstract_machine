@@ -822,7 +822,7 @@ class QueryObjectDescriptor(SymbolicExpression[T], ABC):
         self._results_mapping.append(mapping)
         return self
 
-    def sum(self, variable: Optional[CanBehaveLikeAVariable[T]] = None):
+    def sum(self, variable: Optional[CanBehaveLikeAVariable[T]] = None) -> Self:
         """
         Computes the sum of values produced by the given variable.
         If variable is None, tries to sum the rows directly (rare case).
