@@ -54,4 +54,4 @@ jobs:
         with:
           context: ./.github/docker
           push: true
-          tags: ${IMAGE_NAME}:jazzy
+          tags: '${{IMAGE_NAME}}:jazzy'
