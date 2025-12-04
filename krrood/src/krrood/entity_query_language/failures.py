@@ -229,16 +229,7 @@ class InvalidEntityType(InvalidChildType):
     """
     Raised when an invalid entity type is given to the quantification operation.
     """
-
-    correct_child_types: List[Type] = field(init=False)
-    """
-    The list of valid child types.
-    """
-
-    def __post_init__(self):
-        from .symbolic import QueryObjectDescriptor
-        self.correct_child_types = [QueryObjectDescriptor]
-        super().__post_init__()
+    ...
 
 
 @dataclass

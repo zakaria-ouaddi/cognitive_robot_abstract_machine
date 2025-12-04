@@ -644,7 +644,7 @@ class Sum(EntityAggregator[T]):
 
 
 @dataclass(eq=False, repr=False)
-class Avg(EntityAggregator[T]):
+class Average(EntityAggregator[T]):
     """
     Calculate the average of the child results. If given, make use of the key function to extract the value to be
      averaged.
@@ -726,7 +726,7 @@ class ResultQuantifier(ResultProcessor[T], ABC):
 
     def __post_init__(self):
         if not isinstance(self._child_, QueryObjectDescriptor):
-            raise InvalidEntityType(type(self._child_))
+            raise InvalidEntityType(type(self._child_), [QueryObjectDescriptor])
         super().__post_init__()
 
     def _evaluate__(

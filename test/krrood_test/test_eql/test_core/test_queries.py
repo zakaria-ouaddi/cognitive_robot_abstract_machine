@@ -777,10 +777,10 @@ def test_sum(handles_and_containers_world):
     assert query.evaluate() == sum(heights)
 
 
-def test_avg(handles_and_containers_world):
+def test_average(handles_and_containers_world):
     heights = [1, 2, 3, 4, 5]
     heights_var = let(int, domain=heights)
-    query = eql.avg(entity(heights_var))
+    query = eql.average(entity(heights_var))
     assert query.evaluate() == sum(heights) / len(heights)
 
 
