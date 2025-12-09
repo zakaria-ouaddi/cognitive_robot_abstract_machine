@@ -102,7 +102,7 @@ class CompiledFunction:
             variables_set
         )
         if missing_variables:
-            raise HasFreeVariablesError(missing_variables)
+            raise HasFreeVariablesError(list(missing_variables))
 
         # Check for duplicate variables
         if len(variables_set) != len(variables):
@@ -505,7 +505,7 @@ class SymbolicType(Symbol):
         """
         old_variables = Expression(data=[to_sx(s) for s in old_variables]).casadi_sx
         new_variables = Expression(data=[to_sx(s) for s in new_variables]).casadi_sx
-        result = _copy(self)
+        result = _copy.copy(self)
         result.casadi_sx = _ca.substitute(self.casadi_sx, old_variables, new_variables)
         return result
 
@@ -546,7 +546,6 @@ class BasicOperatorMixin:
 
         :param other: The operand to be used in the binary operation. Either `ScalarData`
             or `NumericalScalar` types are expected, depending on the context.
-        :param operation_name: The name of the binary operation (e.g., "add", "sub", "mul").
         :param reverse: A boolean indicating whether the operation is a reverse operation.
             Defaults to `False`.
         :return: An `Expression` instance resulting from the binary operation, or
@@ -676,6 +675,7 @@ class VectorOperationsMixin:
     """
     Reference to the casadi data structure of type casadi.SX
     """
+    def __sub__(self, other: _te.Self) -> Expression: ...
 
     def euclidean_distance(self, other: _te.Self) -> Expression:
         difference = self - other
@@ -941,7 +941,7 @@ class Expression(
         return parts
 
     def __copy__(self) -> Expression:
-        return Expression(_copy(self.casadi_sx))
+        return Expression(_copy.copy(self.casadi_sx))
 
     def dot(self, other: Expression) -> Expression:
         if isinstance(other, Expression):

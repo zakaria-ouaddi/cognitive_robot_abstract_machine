@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 import numpy as np
 import pytest
 import scipy
@@ -1028,7 +1026,13 @@ class TestArrayMathFunctions:
         assert np.allclose(r1, combined_matrix)
 
 
-class TestCASWrapper:
+class TestSymbolicType:
+    def test_substitute(self):
+        a, b, c, d = cas.create_float_variables(["a", "b", "c", "d"])
+        expr = a * b
+        expr_substituted = expr.substitute([a, b], [c, d])
+        assert expr_substituted == c * d
+
     def test_empty_compiled_function(self):
         expected = np.array([1, 2, 3])
         e = cas.Expression(data=expected)
