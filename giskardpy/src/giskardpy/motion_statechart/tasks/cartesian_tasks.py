@@ -2,6 +2,7 @@ from dataclasses import field, dataclass
 from typing import Optional, ClassVar
 
 import numpy as np
+from typing_extensions import List
 
 import semantic_digital_twin.spatial_types.spatial_types as cas
 from giskardpy.motion_statechart import auxilary_variable_manager
@@ -347,7 +348,7 @@ class CartesianPositionVelocityLimit(Task):
             weight=self.weight,
         )
 
-        position_variables: list[PositionVariable] = root_P_tip.free_variables()
+        position_variables: List[PositionVariable] = root_P_tip.free_variables()
         velocity_variables = [p.dof.variables.velocity for p in position_variables]
         root_P_tip_dot = cas.Expression(root_P_tip).total_derivative(
             position_variables, velocity_variables
@@ -404,7 +405,7 @@ class CartesianRotationVelocityLimit(Task):
         )
 
         _, angle = root_R_tip.to_axis_angle()
-        angle_variables: list[PositionVariable] = angle.free_variables()
+        angle_variables: List[PositionVariable] = angle.free_variables()
         angle_velocities = [v.dof.variables.velocity for v in angle_variables]
         angle_dot = cas.Expression(angle).total_derivative(
             angle_variables, angle_velocities
@@ -450,14 +451,14 @@ class CartesianVelocityLimit(Task):
             weight=self.weight,
         )
 
-        position_variables: list[PositionVariable] = root_P_tip.free_variables()
+        position_variables: List[PositionVariable] = root_P_tip.free_variables()
         velocity_variables = [p.dof.variables.velocity for p in position_variables]
         root_P_tip_dot = cas.Expression(root_P_tip).total_derivative(
             position_variables, velocity_variables
         )
 
         _, angle = root_R_tip.to_axis_angle()
-        angle_variables: list[PositionVariable] = angle.free_variables()
+        angle_variables: List[PositionVariable] = angle.free_variables()
         angle_velocities = [v.dof.variables.velocity for v in angle_variables]
         angle_dot = cas.Expression(angle).total_derivative(
             angle_variables, angle_velocities
