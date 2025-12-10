@@ -59,16 +59,25 @@ class QuantifierData:
 
 
 @dataclass
-class SelectableMatchExpression(Selectable[T], ABC):
+class SelectableMatchExpression(CanBehaveLikeAVariable[T], ABC):
     """
     Base class for all match expressions.
 
     Match expressions are structured in a graph that is a higher level representation for the entity query graph.
     """
     _match_expression_: AbstractMatchExpression[T]
+    """
+    The match expression that this class wraps and makes selectable.
+    """
     _attribute_match_expressions_: Dict[str, SelectableMatchExpression] = field(init=False, default_factory=dict)
+    """
+    A dictionary mapping attribute names to their corresponding selectable match expressions.
+    """
 
     def __post_init__(self):
+        """
+        This is to avoid running __post_init__ of C
+        """
         ...
 
     def evaluate(self):
@@ -78,17 +87,12 @@ class SelectableMatchExpression(Selectable[T], ABC):
         return self._match_expression_.evaluate()
 
     def __getattr__(self, item):
-        if item not in self._match_expression_.attribute_matches:
-            attr = Attribute(_child_=self._var_, _attr_name_=item, _owner_class_=self._match_expression_.type)
-            self._match_expression_.attribute_matches[item] = AttributeMatch(parent=self._match_expression_, attr_name=item,
-                                                                             variable=attr)
-
-        attribute_expression = self._match_expression_.attribute_matches[item]
-
         if item not in self._attribute_match_expressions_:
+            attr = Attribute(_child_=self._var_, _attr_name_=item, _owner_class_=self._match_expression_.type)
+            attribute_expression = AttributeMatch(parent=self._match_expression_, attr_name=item, variable=attr)
             selectable_attribute_expression = SelectableMatchExpression(_match_expression_=attribute_expression)
+            selectable_attribute_expression._update_var_(attribute_expression.variable)
             self._attribute_match_expressions_[item] = selectable_attribute_expression
-
         return self._attribute_match_expressions_[item]
 
     def __call__(self, *args, **kwargs) -> Union[Self, T, CanBehaveLikeAVariable[T]]:
@@ -116,11 +120,13 @@ class SelectableMatchExpression(Selectable[T], ABC):
         """
         self._match_expression_.quantifier_data = QuantifierData(quantifier, quantifier_kwargs)
         self._match_expression_.resolve()
+        self._update_var_(self._match_expression_.variable)
         return self
 
-    @property
-    def _var_(self) -> Selectable[T]:
-        return self._match_expression_.variable
+    def _update_var_(self, var: Selectable[T]):
+        self._var_ = var
+        self._node_ = var._node_
+        self._id_ = var._id_
 
     def _evaluate__(self, sources: Optional[Dict[int, Any]] = None, parent: Optional[SymbolicExpression] = None) -> \
             Iterable[OperationResult]:
@@ -210,6 +216,10 @@ class AbstractMatchExpression(Generic[T], ABC):
         """
         if hash(variable) not in map(hash, self.root.selected_variables):
             self.root.selected_variables.append(variable)
+
+    def where(self, *conditions: ConditionType):
+        self.conditions.extend(conditions)
+        return self
 
     @property
     def root(self) -> Match:
@@ -416,10 +426,7 @@ class AttributeMatch(AbstractMatchExpression[T]):
             condition = self.attribute == self.assigned_variable
 
         if isinstance(self.assigned_value, Match) and self.assigned_value.existential:
-            if self.flattened_attribute is None:
-                condition = exists(self.attribute, condition)
-            else:
-                condition = exists(self.flattened_attribute, condition)
+            condition = exists(self.attribute, condition)
 
         return condition
 
@@ -493,7 +500,7 @@ class AttributeMatch(AbstractMatchExpression[T]):
 
 def matching(
         type_: Union[Type[T], CanBehaveLikeAVariable[T], Any, None] = None,
-) -> Union[Type[T], CanBehaveLikeAVariable[T], Match[T], Set[T]]:
+) -> Union[Type[T], CanBehaveLikeAVariable[T], SelectableMatchExpression[T], Set[T]]:
     """
     Create and return a Match instance that looks for the pattern provided by the type and the
     keyword arguments.
@@ -511,7 +518,7 @@ def match_any(
     Equivalent to matching(type_) but for existential checks.
     """
     match_ = matching(type_)
-    match_.existential = True
+    match_._match_expression_.existential = True
     return match_
 
 
@@ -522,7 +529,7 @@ def match_all(
     Equivalent to matching(type_) but for universal checks.
     """
     match_ = matching(type_)
-    match_.universal = True
+    match_._match_expression_.universal = True
     return match_
 
 
