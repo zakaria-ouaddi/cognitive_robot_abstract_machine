@@ -887,61 +887,68 @@ class TestScalar:
         assert np.allclose(abs(f1), abs(float(f1)))
         assert isinstance(abs(f1), cas.Scalar)
 
-    # def test_max(self):
-    #     f1, f2 = cas.Scalar(23), cas.Scalar(69)
-    #     assert np.allclose(max(f1, f2), max(float(f1), float(f2)))
-    #
-    # def test_save_division(self):
-    #     f1, f2 = 23, 69
-    #     assert np.allclose(
-    #         cas.Expression(data=f1).safe_division(f2), f1 / f2 if f2 != 0 else 0
-    #     )
-    #
-    # # def test_min(self):
-    # #     f1, f2 = 23, 69
-    # #     assert np.allclose(cas.min(f1, f2), min(f1, f2))
-    # #
-    # # def test_sign(self):
-    # #     f1 = 23
-    # #     assert np.allclose(cas.sign(f1), np.sign(f1))
-    # #
-    # # @pytest.mark.parametrize("x", numbers)
-    # # @pytest.mark.parametrize("lower_limit", numbers)
-    # # @pytest.mark.parametrize("upper_limit", numbers)
-    # # def test_limit(self, x, lower_limit, upper_limit):
-    # #     r1 = cas.limit(x, lower_limit, upper_limit)
-    # #     r2 = max(lower_limit, min(upper_limit, x))
-    # #     assert np.allclose(r1, r2)
-    # #
-    # # @pytest.mark.parametrize("a", numbers)
-    # # @pytest.mark.parametrize("b", numbers)
-    # # def test_fmod(self, a, b):
-    # #     ref_r = np.fmod(a, b)
-    # #     assert np.allclose(cas.fmod(a, b), ref_r, equal_nan=True)
-    # #
-    # # @pytest.mark.parametrize("a", numbers)
-    # # def test_normalize_angle_positive(self, a):
-    # #     expected = normalize_angle_positive(a)
-    # #     actual = cas.normalize_angle_positive(a)
-    # #     assert np.allclose(
-    # #         shortest_angular_distance(actual.to_np(), expected),
-    # #         0.0,
-    # #     )
-    # #
-    # # @pytest.mark.parametrize("a", numbers)
-    # # def test_normalize_angle(self, a):
-    # #     ref_r = normalize_angle(a)
-    # #     assert np.allclose(cas.normalize_angle(a), ref_r)
-    # #
-    # # @pytest.mark.parametrize("angle1", numbers)
-    # # @pytest.mark.parametrize("angle2", numbers)
-    # # def test_shorted_angular_distance(self, angle1, angle2):
-    # #     try:
-    # #         expected = shortest_angular_distance(angle1, angle2)
-    # #     except ValueError:
-    # #         expected = np.nan
-    # #     actual = cas.shortest_angular_distance(angle1, angle2)
-    # #     assert np.allclose(actual, expected, equal_nan=True)
+    def test_max(self):
+        f1 = cas.Scalar(23)
+        f2 = cas.Scalar(69)
+        assert np.allclose(cas.max(f1, f2), max(f1, f2))
+
+    def test_min(self):
+        f1 = cas.Scalar(23)
+        f2 = cas.Scalar(69)
+        assert np.allclose(cas.min(f1, f2), min(f1, f2))
+
+    def test_save_division(self):
+        f1, f2 = 23, 69
+        assert np.allclose(cas.Scalar(f1).safe_division(f2), f1 / f2 if f2 != 0 else 0)
+
+    @pytest.mark.parametrize("x", [-23, 0, 23])
+    def test_sign(self, x):
+        assert np.allclose(cas.sign(x), np.sign(x))
+
+    @pytest.mark.parametrize("x", numbers)
+    @pytest.mark.parametrize("lower_limit", numbers)
+    @pytest.mark.parametrize("upper_limit", numbers)
+    def test_limit(self, x, lower_limit, upper_limit):
+        r1 = cas.limit(cas.Scalar(x), lower_limit, upper_limit)
+        r2 = max(lower_limit, min(upper_limit, x))
+        assert isinstance(r1, cas.Scalar)
+        assert np.allclose(r1, r2)
+
+    @pytest.mark.parametrize("a", numbers)
+    @pytest.mark.parametrize("b", numbers)
+    def test_fmod(self, a, b):
+        ref_r = np.fmod(a, b)
+        actual = cas.fmod(cas.Scalar(a), cas.Scalar(b))
+        assert isinstance(actual, cas.Scalar)
+        assert np.allclose(actual, ref_r, equal_nan=True)
+
+    @pytest.mark.parametrize("a", numbers)
+    def test_normalize_angle_positive(self, a):
+        expected = normalize_angle_positive(a)
+        actual = cas.normalize_angle_positive(a)
+        assert isinstance(actual, cas.Scalar)
+        assert np.allclose(
+            shortest_angular_distance(actual.to_np(), expected),
+            0.0,
+        )
+
+    @pytest.mark.parametrize("a", numbers)
+    def test_normalize_angle(self, a):
+        ref_r = normalize_angle(a)
+        actual = cas.normalize_angle(a)
+        assert isinstance(actual, cas.Scalar)
+        assert np.allclose(actual, ref_r)
+
+    @pytest.mark.parametrize("angle1", numbers)
+    @pytest.mark.parametrize("angle2", numbers)
+    def test_shorted_angular_distance(self, angle1, angle2):
+        try:
+            expected = shortest_angular_distance(angle1, angle2)
+        except ValueError:
+            expected = np.nan
+        actual = cas.shortest_angular_distance(angle1, angle2)
+        assert isinstance(actual, cas.Scalar)
+        assert np.allclose(actual, expected, equal_nan=True)
 
 
 class TestVector:
@@ -1004,9 +1011,13 @@ class TestVector:
         assert np.allclose(abs(f1), abs(f1.to_np()))
         assert isinstance(abs(f1), cas.Vector)
 
-    # def test_max(self):
-    #     v = cas.Vector([23, 69])
-    #     assert np.allclose(cas.max(v), max(v.to_np()))
+    def test_max(self):
+        v = cas.Vector([23, 69])
+        assert np.allclose(cas.max(v), max(v.to_np()))
+
+    def test_min(self):
+        v = cas.Vector([23, 69])
+        assert np.allclose(cas.min(v), min(v.to_np()))
 
     # def test_comparisons(self):
     #     operators = [

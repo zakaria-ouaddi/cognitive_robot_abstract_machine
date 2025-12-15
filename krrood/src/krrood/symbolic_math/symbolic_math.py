@@ -1583,20 +1583,22 @@ def abs(x: GenericSymbolicType) -> GenericSymbolicType:
     return _builtins.abs(x)
 
 
-def max(arg1: Expression, arg2: _te.Optional[Scalar] = None, *args: Scalar) -> Scalar:
-    if not isinstance(arg1, Scalar):
-        return Scalar.from_casadi_sx(_ca.fmax([to_sx(arg) for arg in arg1]))
-    return Scalar.from_casadi_sx(_ca.fmax())
+def max(arg1: Expression, arg2: _te.Optional[Scalar] = None) -> Scalar:
+    if isinstance(arg1, (Vector, Matrix)):
+        return Scalar.from_casadi_sx(_ca.mmax(to_sx(arg1)))
+    return Scalar.from_casadi_sx(_ca.fmax(to_sx(arg1), to_sx(arg2)))
 
 
-def min(x: Scalar, y: Scalar) -> Scalar:
-    return _create_return_type(x).from_casadi_sx(_ca.fmin(x.casadi_sx, y.casadi_sx))
+def min(arg1: Expression, arg2: _te.Optional[Scalar] = None) -> Scalar:
+    if isinstance(arg1, (Vector, Matrix)):
+        return Scalar.from_casadi_sx(_ca.mmin(to_sx(arg1)))
+    return Scalar.from_casadi_sx(_ca.fmin(to_sx(arg1), to_sx(arg2)))
 
 
 def limit(
-    x: ScalarData, lower_limit: ScalarData, upper_limit: ScalarData
-) -> Expression:
-    return Expression(data=max(lower_limit, min(upper_limit, x)))
+    x: GenericSymbolicType, lower_limit: ScalarData, upper_limit: ScalarData
+) -> GenericSymbolicType:
+    return max(lower_limit, min(upper_limit, x))
 
 
 def dot(e1: Expression, e2: Expression) -> Expression:
