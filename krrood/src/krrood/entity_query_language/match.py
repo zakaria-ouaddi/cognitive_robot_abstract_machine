@@ -58,6 +58,13 @@ from .utils import is_iterable, T
 
 @dataclass
 class AbstractMatchExpression(Generic[T], ABC):
+    """
+    Abstract base class for constructing and handling a match expression.
+
+    This class is intended to provide a framework for defining and managing match expressions,
+    which are used to structural pattern matching in the form of nested match expressions with keyword arguments.
+    """
+
     type_: Optional[Type[T]] = field(default=None, kw_only=True)
     """
     The type of the variable.
@@ -92,7 +99,7 @@ class AbstractMatchExpression(Generic[T], ABC):
     @abstractmethod
     def expression(self) -> Union[CanBehaveLikeAVariable[T], T]:
         """
-        Return the entity expression corresponding to the match query.
+        :return: the entity expression corresponding to the match query.
         """
         ...
 
@@ -106,7 +113,16 @@ class AbstractMatchExpression(Generic[T], ABC):
         self.resolved = True
 
     @abstractmethod
-    def _resolve(self, *args, **kwargs): ...
+    def _resolve(self, *args, **kwargs):
+        """
+        This method serves as an abstract definition to be implemented by subclasses,
+        aimed at handling specific resolution logic for the derived class. The method
+        is designed to be flexible in accepting any number and type of input
+        parameters through positional (*args) and keyword (**kwargs) arguments. Subclasses
+        must extend this method to provide concrete implementations tailored to their
+        unique behaviors and requirements.
+        """
+        ...
 
     @property
     @abstractmethod
@@ -129,6 +145,9 @@ class AbstractMatchExpression(Generic[T], ABC):
 
     @property
     def root(self) -> Match:
+        """
+        :return: The root match expression.
+        """
         return self.node.root.data
 
     def __eq__(self, other):
@@ -195,7 +214,9 @@ class Match(AbstractMatchExpression[T]):
         self.update_fields(variable, parent)
         for attr_name, attr_assigned_value in self.kwargs.items():
             attr_match = AttributeMatch(
-                parent=self, attr_name=attr_name, assigned_value=attr_assigned_value
+                parent=self,
+                attribute_name=attr_name,
+                assigned_value=attr_assigned_value,
             )
             attr_match.resolve()
             self.conditions.extend(attr_match.conditions)
@@ -241,7 +262,16 @@ class Match(AbstractMatchExpression[T]):
 
 
 @dataclass(eq=False)
-class MatchVar(Match[T]):
+class MatchVariable(Match[T]):
+    """
+    Represents a match variable that operates within a specified domain.
+
+    A class designed to create and manage a variable constrained by a defined
+    domain. It provides functionality to add additional constraints via
+    keyword arguments and return an expression representing the resolved
+    constraints.
+    """
+
     domain: DomainType = field(default=None, kw_only=True)
     """
     The domain to use for the variable created by the match.
@@ -270,7 +300,7 @@ class AttributeMatch(AbstractMatchExpression[T]):
     """
     The parent match expression.
     """
-    attr_name: str = field(kw_only=True)
+    attribute_name: str = field(kw_only=True)
     """
     The name of the attribute to assign the value to.
     """
@@ -302,17 +332,17 @@ class AttributeMatch(AbstractMatchExpression[T]):
 
         :param parent_match: The parent match of the attribute assignment.
         """
-        if self.is_an_unresolved_match:
-            self.assigned_value.resolve(self.attribute, parent_match)
-
-            if self.is_type_filter_needed:
-                self.conditions.append(
-                    HasType(self.attribute, self.assigned_value.type)
-                )
-
-            self.conditions.extend(self.assigned_value.conditions)
-        else:
+        if not isinstance(self.assigned_value, AbstractMatchExpression) or (
+            self.assigned_value.variable or self.assigned_value.resolved
+        ):
             self.conditions.append(self.attribute == self.assigned_variable)
+            return
+        self.assigned_value.resolve(self.attribute, parent_match)
+
+        if self.is_type_filter_needed:
+            self.conditions.append(HasType(self.attribute, self.assigned_value.type))
+
+        self.conditions.extend(self.assigned_value.conditions)
 
     @cached_property
     def assigned_variable(self) -> Selectable:
@@ -333,19 +363,9 @@ class AttributeMatch(AbstractMatchExpression[T]):
         """
         if self.variable is not None:
             return self.variable
-        attr: Attribute = getattr(self.parent.variable, self.attr_name)
+        attr: Attribute = getattr(self.parent.variable, self.attribute_name)
         self.variable = attr
         return attr
-
-    @property
-    def is_an_unresolved_match(self) -> bool:
-        """
-        :return: True if the value is an unresolved Match instance, else False.
-        """
-        return (
-            isinstance(self.assigned_value, AbstractMatchExpression)
-            and not self.assigned_value.variable
-        )
 
     @cached_property
     def is_type_filter_needed(self):
@@ -360,7 +380,7 @@ class AttributeMatch(AbstractMatchExpression[T]):
 
     @property
     def name(self) -> str:
-        return f"{self.parent.name}.{self.attr_name}"
+        return f"{self.parent.name}.{self.attribute_name}"
 
     def __repr__(self):
         return self.name
@@ -384,7 +404,7 @@ def match(
 
 def match_variable(
     type_: Union[Type[T], Selectable[T]], domain: DomainType
-) -> Union[An[T], CanBehaveLikeAVariable[T], MatchVar[T]]:
+) -> Union[An[T], CanBehaveLikeAVariable[T], MatchVariable[T]]:
     """
     Same as :py:func:`krrood.entity_query_language.match.match` but with a domain to use for the variable created
      by the match.
@@ -393,4 +413,4 @@ def match_variable(
     :param domain: The domain used for the variable created by the match.
     :return: The Match instance.
     """
-    return MatchVar(type_=type_, domain=domain)
+    return MatchVariable(type_=type_, domain=domain)

@@ -190,12 +190,12 @@ def test_equal(session, database):
     # Declare the placeholders
 
     prismatic_connection = variable(
-        type_=PrismaticConnection,
+        PrismaticConnection,
         domain=world.connections,
         name="prismatic_connection",
     )
     fixed_connection = variable(
-        type_=FixedConnection, domain=world.connections, name="fixed_connection"
+        FixedConnection, domain=world.connections, name="fixed_connection"
     )
 
     # Write the query body

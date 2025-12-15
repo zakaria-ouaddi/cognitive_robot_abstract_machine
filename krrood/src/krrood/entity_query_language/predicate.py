@@ -14,7 +14,7 @@ from typing_extensions import (
     ClassVar,
     Dict,
     List,
-    Iterable
+    Iterable,
 )
 
 from .enums import PredicateType
@@ -67,9 +67,6 @@ class Symbol:
         instance = super().__new__(cls)
         update_cache(instance)
         return instance
-
-    def from_(self, domain: Iterable[T]) -> T:
-        raise NotImplementedError("This method should not be called, this is just for IDE hints")
 
 
 @dataclass(eq=False)

@@ -1073,6 +1073,15 @@ class QueryObjectDescriptor(SymbolicExpression[T], ABC):
     def _apply_results_mapping(
         self, results: Iterable[Dict[int, Any]]
     ) -> Iterable[Dict[int, Any]]:
+        """
+        Process and transform an iterable of results based on predefined mappings and ordering.
+
+        This method applies a sequence of result transformations defined in the instance,
+        using a series of mappings to modify the results.
+
+        :param results: An iterable containing dictionaries that represent the initial result set to be transformed.
+        :return: An iterable containing dictionaries that represent the transformed data.
+        """
         for result_mapping in self._results_mapping:
             results = result_mapping(results)
         if self._order_by:
@@ -1190,20 +1199,17 @@ class Variable(CanBehaveLikeAVariable[T]):
     """
 
     def __post_init__(self):
-        self._validate_inputs_and_fill_missing_ones_()
-        self._var_ = self
-        super().__post_init__()
-        # has to be after super init because this needs the node of this variable to be initialized first.
-        self._update_child_vars_from_kwargs_()
-
-    def _validate_inputs_and_fill_missing_ones_(self):
-        if self._kwargs_ and not self._type_:
-            raise ValueError(
-                f"Variable {self._name_} has class keyword arguments but no type is specified."
-            )
         self._child_ = None
+
         if self._domain_source_:
             self._update_domain_(self._domain_source_)
+
+        self._var_ = self
+
+        super().__post_init__()
+
+        # has to be after super init because this needs the node of this variable to be initialized first.
+        self._update_child_vars_from_kwargs_()
 
     def _update_domain_(self, domain):
         """
@@ -1249,18 +1255,17 @@ class Variable(CanBehaveLikeAVariable[T]):
         elif self._domain_:
             for v in self._domain_:
                 yield OperationResult({**sources, self._id_: v}, False, self)
-        elif self._should_be_instantiated_:
+        elif self._is_inferred_ or self._predicate_type_:
             yield from self._instantiate_using_child_vars_and_yield_results_(sources)
         else:
             raise ValueError("Cannot evaluate variable.")
 
-    @cached_property
-    def _should_be_instantiated_(self):
-        return self._is_inferred_ or self._predicate_type_
-
     def _instantiate_using_child_vars_and_yield_results_(
         self, sources: Dict[int, Any]
     ) -> Iterable[OperationResult]:
+        """
+        Create new instances of the variable type and using as keyword arguments the child variables values.
+        """
         for kwargs in self._generate_combinations_for_child_vars_values_(sources):
             # Build once: unwrapped hashed kwargs for already provided child vars
             bound_kwargs = {k: v[self._child_vars_[k]._id_] for k, v in kwargs.items()}
@@ -1374,6 +1379,9 @@ class DomainMapping(CanBehaveLikeAVariable[T], ABC):
         sources: Optional[Dict[int, Any]] = None,
         parent: Optional[SymbolicExpression] = None,
     ) -> Iterable[OperationResult]:
+        """
+        Apply the domain mapping to the child's values.
+        """
 
         sources = sources or {}
 
@@ -1437,7 +1445,7 @@ class Attribute(DomainMapping):
     For instance, if Body.name is called, then the attribute name is "name" and `_owner_class_` is `Body`
     """
 
-    _attr_name_: str
+    _attribute_name_: str
     """
     The name of the attribute.
     """
@@ -1447,35 +1455,11 @@ class Attribute(DomainMapping):
     The class that owns this attribute.
     """
 
-    def __post_init__(self):
-        super().__post_init__()
-        if self._wrapped_owner_class_:
-            self._update_path_()
-
-    def _update_path_(self):
-        if self._relation_:
-            self._path_ = self._child_._path_ + [self._relation_]
-
-    @cached_property
-    def _relation_(self):
-        if self._wrapped_field_ and self._wrapped_type_:
-            return Association(
-                self._wrapped_owner_class_, self._wrapped_type_, self._wrapped_field_
-            )
-        return None
-
     @property
     def _is_iterable_(self):
         if not self._wrapped_field_:
             return False
         return self._wrapped_field_.is_iterable
-
-    @cached_property
-    def _wrapped_type_(self):
-        try:
-            return SymbolGraph().class_diagram.get_wrapped_class(self._type_)
-        except ClassIsUnMappedInClassDiagram:
-            return None
 
     @cached_property
     def _type_(self) -> Optional[Type]:
@@ -1486,7 +1470,7 @@ class Attribute(DomainMapping):
         if not is_dataclass(self._owner_class_):
             return None
 
-        if self._attr_name_ not in {f.name for f in fields(self._owner_class_)}:
+        if self._attribute_name_ not in {f.name for f in fields(self._owner_class_)}:
             return None
 
         if self._wrapped_owner_class_:
@@ -1500,9 +1484,11 @@ class Attribute(DomainMapping):
             wrapped_cls._class_diagram = SymbolGraph().class_diagram
             wrapped_field = WrappedField(
                 wrapped_cls,
-                [f for f in fields(self._owner_class_) if f.name == self._attr_name_][
-                    0
-                ],
+                [
+                    f
+                    for f in fields(self._owner_class_)
+                    if f.name == self._attribute_name_
+                ][0],
             )
             try:
                 return wrapped_field.type_endpoint
@@ -1514,7 +1500,7 @@ class Attribute(DomainMapping):
         if self._wrapped_owner_class_ is None:
             return None
         return self._wrapped_owner_class_._wrapped_field_name_map_.get(
-            self._attr_name_, None
+            self._attribute_name_, None
         )
 
     @cached_property
@@ -1528,11 +1514,11 @@ class Attribute(DomainMapping):
             return None
 
     def _apply_mapping_(self, value: Any) -> Iterable[Any]:
-        yield getattr(value, self._attr_name_)
+        yield getattr(value, self._attribute_name_)
 
     @property
     def _name_(self):
-        return f"{self._child_._var_._name_}.{self._attr_name_}"
+        return f"{self._child_._var_._name_}.{self._attribute_name_}"
 
 
 @dataclass(eq=False, repr=False)
@@ -1681,13 +1667,12 @@ class Comparator(BinaryOperator):
             OperationResult(
                 second_val.bindings, not self.apply_operation(second_val), self
             )
-            for first_val in filter(
-                lambda v: v.is_true, first_operand._evaluate__(sources, parent=self)
+            for first_val in first_operand._evaluate__(sources, parent=self)
+            if first_val.is_true
+            for second_val in second_operand._evaluate__(
+                first_val.bindings, parent=self
             )
-            for second_val in filter(
-                lambda v: v.is_true,
-                second_operand._evaluate__(first_val.bindings, parent=self),
-            )
+            if second_val.is_true
         )
 
     def apply_operation(self, operand_values: OperationResult) -> bool:
