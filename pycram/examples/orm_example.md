@@ -107,7 +107,7 @@ which points to the other class. Relationship attributes can be used to join the
 In practice, the join would look like this:
 
 ```python
-from pycram.datastructures.pose import Vector3, PyCramPose, PoseStamped
+from pycram.datastructures.pose import PyCramVector3, PyCramPose, PoseStamped
 from pycram.robot_plans import PickUpAction
 
 object_actions = (session.scalars(select(Vector3DAO)

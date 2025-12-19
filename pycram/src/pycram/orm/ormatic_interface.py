@@ -3208,7 +3208,7 @@ class Vector3MappingDAO(
     )
 
 
-class Vector3DAO(Base, DataAccessObject[pycram.datastructures.pose.Vector3]):
+class Vector3DAO(Base, DataAccessObject[pycram.datastructures.pose.PyCramVector3]):
 
     __tablename__ = "Vector3DAO"
 
