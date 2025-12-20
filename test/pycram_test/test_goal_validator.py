@@ -108,7 +108,7 @@ class TestGoalValidator(GoalTestCase):
         goal_validator.register_goal(cereal_goal_position)
         self.assertFalse(goal_validator.goal_achieved)
         self.assertEqual(goal_validator.actual_percentage_of_goal_achieved, 0)
-        self.assertAlmostEqual(float(goal_validator.current_error), 0.8)
+        self.assertAlmostEqual(float(goal_validator.current_error[0]), 0.8)
         self.world.get_body_by_name("breakfast_cereal.stl").parent_connection.origin = (
             HomogeneousTransformationMatrix.from_xyz_rpy(
                 3, 1.8, 1, reference_frame=self.world.root
