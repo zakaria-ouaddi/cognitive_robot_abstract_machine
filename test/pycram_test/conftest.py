@@ -1,6 +1,7 @@
 import os
 from copy import deepcopy
 
+import numpy as np
 import pytest
 import rclpy
 
@@ -14,6 +15,7 @@ from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
 from semantic_digital_twin.robots.pr2 import PR2
 from semantic_digital_twin.semantic_annotations.semantic_annotations import Milk
 from semantic_digital_twin.spatial_types import TransformationMatrix
+from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.connections import (
     OmniDrive,
     FixedConnection,
@@ -48,102 +50,17 @@ def immutable_model_world(pr2_apartment_world):
     world.state.data = state
 
 
-@pytest.fixture(scope="session")
-def simple_pr2_world_setup(pr2_world_setup):
-    world = deepcopy(pr2_world_setup)
-    milk_world = STLParser(
-        os.path.join(
-            os.path.dirname(__file__),
-            "..",
-            "..",
-            "pycram",
-            "resources",
-            "objects",
-            "milk.stl",
-        )
-    ).parse()
-    world.merge_world(milk_world)
-    with world.modify_world():
-        world.get_body_by_name("milk.stl").parent_connection.origin = (
-            TransformationMatrix.from_xyz_rpy(0.8, 0, 1.05)
-        )
-
-        box = Body(
-            name=PrefixedName("box"),
-            collision=ShapeCollection([Box(scale=Scale(1, 1, 1))]),
-        )
-        connection = FixedConnection(
-            parent=world.root,
-            child=box,
-            parent_T_connection_expression=TransformationMatrix.from_xyz_rpy(
-                1, 0, 0.5, reference_frame=world.root
-            ),
-        )
-        world.add_connection(connection)
-    robot_view = PR2.from_world(world)
-    return world, robot_view, Context(world, robot_view)
-
-
 @pytest.fixture
-def simple_pr2_world(simple_pr2_world_setup):
+def immutable_simple_pr2_world(simple_pr2_world_setup):
     world, robot_view, context = simple_pr2_world_setup
     state = deepcopy(world.state.data)
     yield world, robot_view, context
     world.state.data = state
 
 
-#
-#
-# @pytest.fixture(scope="session")
-# def whole_apartment_world(pr2_world_setup):
-#     pr2_sem_world = deepcopy(pr2_world_setup)
-#     apartment_world = URDFParser.from_file(
-#         os.path.join(
-#             os.path.dirname(__file__),
-#             "..",
-#             "pycram",
-#             "resources",
-#             "worlds",
-#             "apartment.urdf",
-#         )
-#     ).parse()
-#     milk_world = STLParser(
-#         os.path.join(
-#             os.path.dirname(__file__),
-#             "..",
-#             "pycram",
-#             "resources",
-#             "objects",
-#             "milk.stl",
-#         )
-#     ).parse()
-#     cereal_world = STLParser(
-#         os.path.join(
-#             os.path.dirname(__file__),
-#             "..",
-#             "pycram",
-#             "resources",
-#             "objects",
-#             "breakfast_cereal.stl",
-#         )
-#     ).parse()
-#     apartment_world.merge_world(pr2_sem_world)
-#     apartment_world.merge_world(milk_world)
-#     apartment_world.merge_world(cereal_world)
-#
-#     apartment_world.get_body_by_name("milk.stl").parent_connection.origin = (
-#         TransformationMatrix.from_xyz_rpy(
-#             2.37, 2, 1.05, reference_frame=apartment_world.root
-#         )
-#     )
-#     apartment_world.get_body_by_name(
-#         "breakfast_cereal.stl"
-#     ).parent_connection.origin = TransformationMatrix.from_xyz_rpy(
-#         2.37, 1.8, 1.05, reference_frame=apartment_world.root
-#     )
-#     milk_view = Milk(body=apartment_world.get_body_by_name("milk.stl"))
-#     with apartment_world.modify_world():
-#         apartment_world.add_semantic_annotation(milk_view)
-#
-#     robot_view = PR2.from_world(apartment_world)
-#     return apartment_world, robot_view, Context(apartment_world, robot_view)
+@pytest.fixture
+def mutable_simple_pr2_world(simple_pr2_world_setup):
+    world, robot_view, context = simple_pr2_world_setup
+    copy_world = deepcopy(world)
+    robot_view = PR2.from_world(copy_world)
+    return world, robot_view, Context(copy_world, robot_view)

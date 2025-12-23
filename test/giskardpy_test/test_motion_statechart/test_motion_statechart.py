@@ -526,9 +526,11 @@ class TestConditions:
             kin_sim.compile(motion_statechart=msc)
 
 
-def test_two_goals(pr2_world: World):
-    torso_joint = pr2_world.get_connection_by_name("torso_lift_joint")
-    r_wrist_roll_joint = pr2_world.get_connection_by_name("r_wrist_roll_joint")
+def test_two_goals(pr2_world_state_reset: World):
+    torso_joint = pr2_world_state_reset.get_connection_by_name("torso_lift_joint")
+    r_wrist_roll_joint = pr2_world_state_reset.get_connection_by_name(
+        "r_wrist_roll_joint"
+    )
     msc = MotionStatechart()
     msc.add_nodes(
         [
@@ -539,7 +541,7 @@ def test_two_goals(pr2_world: World):
     msc.add_node(EndMotion.when_true(local_min))
 
     kin_sim = Executor(
-        world=pr2_world,
+        world=pr2_world_state_reset,
     )
     kin_sim.compile(motion_statechart=msc)
 
@@ -553,15 +555,15 @@ def test_two_goals(pr2_world: World):
     msc.add_node(EndMotion.when_true(joint_goal))
 
     kin_sim = Executor(
-        world=pr2_world,
+        world=pr2_world_state_reset,
     )
     kin_sim.compile(motion_statechart=msc)
 
     kin_sim.tick_until_end()
     assert np.isclose(torso_joint.position, 0.1, atol=1e-4)
-    assert np.allclose(pr2_world.state.velocities, 0)
-    assert np.allclose(pr2_world.state.accelerations, 0)
-    assert np.allclose(pr2_world.state.jerks, 0)
+    assert np.allclose(pr2_world_state_reset.state.velocities, 0)
+    assert np.allclose(pr2_world_state_reset.state.accelerations, 0)
+    assert np.allclose(pr2_world_state_reset.state.jerks, 0)
 
 
 def test_reset():
@@ -999,11 +1001,11 @@ def test_goal():
     msc.draw("muh.pdf")
 
 
-def test_set_seed_configuration(pr2_world):
+def test_set_seed_configuration(pr2_world_state_reset):
     msc = MotionStatechart()
     goal = 0.1
 
-    connection: ActiveConnection1DOF = pr2_world.get_connection_by_name(
+    connection: ActiveConnection1DOF = pr2_world_state_reset.get_connection_by_name(
         "torso_lift_joint"
     )
 
@@ -1014,7 +1016,7 @@ def test_set_seed_configuration(pr2_world):
     node1.end_condition = node1.observation_variable
     end.start_condition = node1.observation_variable
 
-    kin_sim = Executor(world=pr2_world)
+    kin_sim = Executor(world=pr2_world_state_reset)
     kin_sim.compile(motion_statechart=msc)
 
     kin_sim.tick_until_end()
@@ -1026,14 +1028,20 @@ def test_set_seed_configuration(pr2_world):
     assert np.isclose(connection.position, goal)
 
 
-def test_set_seed_odometry(pr2_world):
+def test_set_seed_odometry(pr2_world_state_reset):
     msc = MotionStatechart()
 
     goal = TransformationMatrix.from_xyz_rpy(
-        x=1, y=-1, z=1, roll=1, pitch=1, yaw=1, reference_frame=pr2_world.root
+        x=1,
+        y=-1,
+        z=1,
+        roll=1,
+        pitch=1,
+        yaw=1,
+        reference_frame=pr2_world_state_reset.root,
     )
     expected = TransformationMatrix.from_xyz_rpy(
-        x=1, y=-1, yaw=1, reference_frame=pr2_world.root
+        x=1, y=-1, yaw=1, reference_frame=pr2_world_state_reset.root
     )
 
     node1 = SetOdometry(
@@ -1045,7 +1053,7 @@ def test_set_seed_odometry(pr2_world):
     node1.end_condition = node1.observation_variable
     end.start_condition = node1.observation_variable
 
-    kin_sim = Executor(world=pr2_world)
+    kin_sim = Executor(world=pr2_world_state_reset)
     kin_sim.compile(motion_statechart=msc)
 
     kin_sim.tick_until_end()
@@ -1056,13 +1064,13 @@ def test_set_seed_odometry(pr2_world):
 
     assert np.allclose(
         expected.to_np(),
-        pr2_world.compute_forward_kinematics_np(
-            pr2_world.root, node1.odom_connection.child
+        pr2_world_state_reset.compute_forward_kinematics_np(
+            pr2_world_state_reset.root, node1.odom_connection.child
         ),
     )
 
 
-def test_continuous_joint(pr2_world):
+def test_continuous_joint(pr2_world_state_reset):
     msc = MotionStatechart()
     joint_goal = JointPositionList(
         goal_state=JointState.from_str_dict(
@@ -1070,7 +1078,7 @@ def test_continuous_joint(pr2_world):
                 "r_wrist_roll_joint": -np.pi,
                 "l_wrist_roll_joint": -2.1 * np.pi,
             },
-            world=pr2_world,
+            world=pr2_world_state_reset,
         ),
     )
     msc.add_node(joint_goal)
@@ -1079,13 +1087,13 @@ def test_continuous_joint(pr2_world):
     end.start_condition = joint_goal.observation_variable
 
     kin_sim = Executor(
-        world=pr2_world,
+        world=pr2_world_state_reset,
     )
     kin_sim.compile(motion_statechart=msc)
     kin_sim.tick_until_end()
 
 
-def test_revolute_joint(pr2_world):
+def test_revolute_joint(pr2_world_state_reset):
     msc = MotionStatechart()
     joint_goal = JointPositionList(
         goal_state=JointState.from_str_dict(
@@ -1093,7 +1101,7 @@ def test_revolute_joint(pr2_world):
                 "head_pan_joint": 0.041880780651479044,
                 "head_tilt_joint": -0.37,
             },
-            world=pr2_world,
+            world=pr2_world_state_reset,
         ),
     )
     msc.add_node(joint_goal)
@@ -1102,15 +1110,19 @@ def test_revolute_joint(pr2_world):
     end.start_condition = joint_goal.observation_variable
 
     kin_sim = Executor(
-        world=pr2_world,
+        world=pr2_world_state_reset,
     )
     kin_sim.compile(motion_statechart=msc)
     kin_sim.tick_until_end()
 
 
-def test_cart_goal_1eef(pr2_world: World):
-    tip = pr2_world.get_kinematic_structure_entity_by_name("r_gripper_tool_frame")
-    root = pr2_world.get_kinematic_structure_entity_by_name("base_footprint")
+def test_cart_goal_1eef(pr2_world_state_reset: World):
+    tip = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
+        "r_gripper_tool_frame"
+    )
+    root = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
+        "base_footprint"
+    )
     tip_goal = TransformationMatrix.from_xyz_quaternion(pos_x=-0.2, reference_frame=tip)
 
     msc = MotionStatechart()
@@ -1125,23 +1137,23 @@ def test_cart_goal_1eef(pr2_world: World):
     end.start_condition = cart_goal.observation_variable
 
     kin_sim = Executor(
-        world=pr2_world,
+        world=pr2_world_state_reset,
     )
     kin_sim.compile(motion_statechart=msc)
     kin_sim.tick_until_end()
 
 
-def test_long_goal(pr2_world: World):
+def test_long_goal(pr2_world_state_reset: World):
     msc = MotionStatechart()
     msc.add_nodes(
         [
             cart_goal := CartesianPose(
-                root_link=pr2_world.root,
-                tip_link=pr2_world.get_kinematic_structure_entity_by_name(
+                root_link=pr2_world_state_reset.root,
+                tip_link=pr2_world_state_reset.get_kinematic_structure_entity_by_name(
                     "base_footprint"
                 ),
                 goal_pose=TransformationMatrix.from_xyz_rpy(
-                    x=50, reference_frame=pr2_world.root
+                    x=50, reference_frame=pr2_world_state_reset.root
                 ),
             ),
             JointPositionList(
@@ -1165,7 +1177,7 @@ def test_long_goal(pr2_world: World):
                         "l_wrist_flex_joint": -0.1,
                         "l_wrist_roll_joint": -6.062015047706399,
                     },
-                    world=pr2_world,
+                    world=pr2_world_state_reset,
                 )
             ),
         ]
@@ -1173,7 +1185,7 @@ def test_long_goal(pr2_world: World):
     msc.add_node(EndMotion.when_true(cart_goal))
 
     kin_sim = Executor(
-        world=pr2_world,
+        world=pr2_world_state_reset,
     )
     kin_sim.compile(motion_statechart=msc)
     t = time.perf_counter()
@@ -1183,9 +1195,9 @@ def test_long_goal(pr2_world: World):
     print(diff / kin_sim.control_cycles)
 
 
-def test_cart_goal_sequence_at_build(pr2_world: World):
-    tip = pr2_world.get_kinematic_structure_entity_by_name("base_footprint")
-    root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
+def test_cart_goal_sequence_at_build(pr2_world_state_reset: World):
+    tip = pr2_world_state_reset.get_kinematic_structure_entity_by_name("base_footprint")
+    root = pr2_world_state_reset.get_kinematic_structure_entity_by_name("odom_combined")
 
     tip_goal1 = TransformationMatrix.from_xyz_quaternion(
         pos_x=-0.2, reference_frame=tip
@@ -1218,19 +1230,19 @@ def test_cart_goal_sequence_at_build(pr2_world: World):
     )
 
     kin_sim = Executor(
-        world=pr2_world,
+        world=pr2_world_state_reset,
     )
 
     kin_sim.compile(motion_statechart=msc)
     kin_sim.tick_until_end()
 
-    fk = pr2_world.compute_forward_kinematics_np(root, tip)
+    fk = pr2_world_state_reset.compute_forward_kinematics_np(root, tip)
     assert np.allclose(fk, tip_goal2.to_np(), atol=cart_goal2.threshold)
 
 
-def test_cart_goal_sequence_on_start(pr2_world: World):
-    tip = pr2_world.get_kinematic_structure_entity_by_name("base_footprint")
-    root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
+def test_cart_goal_sequence_on_start(pr2_world_state_reset: World):
+    tip = pr2_world_state_reset.get_kinematic_structure_entity_by_name("base_footprint")
+    root = pr2_world_state_reset.get_kinematic_structure_entity_by_name("odom_combined")
 
     tip_goal1 = TransformationMatrix.from_xyz_quaternion(
         pos_x=-0.2, reference_frame=tip
@@ -1262,19 +1274,19 @@ def test_cart_goal_sequence_on_start(pr2_world: World):
     )
 
     kin_sim = Executor(
-        world=pr2_world,
+        world=pr2_world_state_reset,
     )
     kin_sim.compile(motion_statechart=msc)
     kin_sim.tick_until_end()
 
-    fk = pr2_world.compute_forward_kinematics_np(root, tip)
+    fk = pr2_world_state_reset.compute_forward_kinematics_np(root, tip)
     expected = np.eye(4)
     assert np.allclose(fk, expected, atol=cart_goal2.threshold)
 
 
-def test_CartesianOrientation(pr2_world: World):
-    tip = pr2_world.get_kinematic_structure_entity_by_name("base_footprint")
-    root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
+def test_CartesianOrientation(pr2_world_state_reset: World):
+    tip = pr2_world_state_reset.get_kinematic_structure_entity_by_name("base_footprint")
+    root = pr2_world_state_reset.get_kinematic_structure_entity_by_name("odom_combined")
 
     tip_goal = cas.RotationMatrix.from_axis_angle(
         cas.Vector3.Z(), 4.0, reference_frame=tip
@@ -1292,18 +1304,20 @@ def test_CartesianOrientation(pr2_world: World):
     end.start_condition = cart_goal.observation_variable
 
     kin_sim = Executor(
-        world=pr2_world,
+        world=pr2_world_state_reset,
     )
     kin_sim.compile(motion_statechart=msc)
     kin_sim.tick_until_end()
 
-    fk = pr2_world.compute_forward_kinematics_np(root, tip)
+    fk = pr2_world_state_reset.compute_forward_kinematics_np(root, tip)
     assert np.allclose(fk, tip_goal.to_np(), atol=cart_goal.threshold)
 
 
-def test_pointing(pr2_world: World):
-    tip = pr2_world.get_kinematic_structure_entity_by_name("r_gripper_tool_frame")
-    root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
+def test_pointing(pr2_world_state_reset: World):
+    tip = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
+        "r_gripper_tool_frame"
+    )
+    root = pr2_world_state_reset.get_kinematic_structure_entity_by_name("odom_combined")
 
     msc = MotionStatechart()
 
@@ -1322,15 +1336,17 @@ def test_pointing(pr2_world: World):
     end.start_condition = pointing.observation_variable
 
     kin_sim = Executor(
-        world=pr2_world,
+        world=pr2_world_state_reset,
     )
     kin_sim.compile(motion_statechart=msc)
     kin_sim.tick_until_end()
 
 
-def test_pointing_cone(pr2_world: World):
-    tip = pr2_world.get_kinematic_structure_entity_by_name("r_gripper_tool_frame")
-    root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
+def test_pointing_cone(pr2_world_state_reset: World):
+    tip = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
+        "r_gripper_tool_frame"
+    )
+    root = pr2_world_state_reset.get_kinematic_structure_entity_by_name("odom_combined")
 
     msc = MotionStatechart()
 
@@ -1350,20 +1366,22 @@ def test_pointing_cone(pr2_world: World):
     end.start_condition = pointing_cone.observation_variable
 
     kin_sim = Executor(
-        world=pr2_world,
+        world=pr2_world_state_reset,
     )
     kin_sim.compile(motion_statechart=msc)
     kin_sim.tick_until_end()
 
     # Check if angle between pointing axis and tip->goal vector is within the cone
-    root_V_pointing_axis = pr2_world.transform(
+    root_V_pointing_axis = pr2_world_state_reset.transform(
         target_frame=root, spatial_object=pointing_axis
     )
     root_V_pointing_axis.scale(1)
     v_pointing = root_V_pointing_axis.to_np()[:3]
 
-    root_P_goal = pr2_world.transform(target_frame=root, spatial_object=goal_point)
-    tip_origin_in_root = pr2_world.transform(
+    root_P_goal = pr2_world_state_reset.transform(
+        target_frame=root, spatial_object=goal_point
+    )
+    tip_origin_in_root = pr2_world_state_reset.transform(
         target_frame=root, spatial_object=cas.Point3(0, 0, 0, reference_frame=tip)
     )
     root_V_goal_axis = root_P_goal - tip_origin_in_root
@@ -1381,9 +1399,11 @@ def test_pointing_cone(pr2_world: World):
     ), f"PointingCone failed: final angle {angle:.6f} rad > cone_theta {cone_theta:.6f} rad"
 
 
-def test_align_planes(pr2_world: World):
-    tip = pr2_world.get_kinematic_structure_entity_by_name("r_gripper_tool_frame")
-    root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
+def test_align_planes(pr2_world_state_reset: World):
+    tip = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
+        "r_gripper_tool_frame"
+    )
+    root = pr2_world_state_reset.get_kinematic_structure_entity_by_name("odom_combined")
 
     msc = MotionStatechart()
 
@@ -1400,17 +1420,17 @@ def test_align_planes(pr2_world: World):
     end.start_condition = align_planes.observation_variable
 
     kin_sim = Executor(
-        world=pr2_world,
+        world=pr2_world_state_reset,
     )
     kin_sim.compile(motion_statechart=msc)
     kin_sim.tick_until_end()
 
     # Check if the angle between normal vectors is below the threshold
-    root_V_goal_normal = pr2_world.transform(
+    root_V_goal_normal = pr2_world_state_reset.transform(
         target_frame=root, spatial_object=goal_normal
     )
     root_V_goal_normal.scale(1)
-    root_V_tip_normal = pr2_world.transform(
+    root_V_tip_normal = pr2_world_state_reset.transform(
         target_frame=root, spatial_object=tip_normal
     )
     root_V_tip_normal.scale(1)
@@ -1428,13 +1448,15 @@ def test_align_planes(pr2_world: World):
     ), f"AlignPlanes failed: final angle {angle:.6f} rad > threshold {align_planes.threshold:.6f} rad"
 
 
-def test_angle_goal(pr2_world: World):
+def test_angle_goal(pr2_world_state_reset: World):
     """
     Ensure AngleGoal drives the angle between tip_vector and reference_vector
     into the interval [lower_angle, upper_angle].
     """
-    tip = pr2_world.get_kinematic_structure_entity_by_name("r_gripper_tool_frame")
-    root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
+    tip = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
+        "r_gripper_tool_frame"
+    )
+    root = pr2_world_state_reset.get_kinematic_structure_entity_by_name("odom_combined")
 
     msc = MotionStatechart()
 
@@ -1456,13 +1478,17 @@ def test_angle_goal(pr2_world: World):
 
     msc.add_node(EndMotion.when_true(angle_goal))
 
-    kin_sim = Executor(world=pr2_world)
+    kin_sim = Executor(world=pr2_world_state_reset)
     kin_sim.compile(motion_statechart=msc)
     kin_sim.tick_until_end()
 
-    root_V_tip = pr2_world.transform(target_frame=root, spatial_object=tip_vector)
+    root_V_tip = pr2_world_state_reset.transform(
+        target_frame=root, spatial_object=tip_vector
+    )
     root_V_tip.scale(1)
-    root_V_ref = pr2_world.transform(target_frame=root, spatial_object=reference_vector)
+    root_V_ref = pr2_world_state_reset.transform(
+        target_frame=root, spatial_object=reference_vector
+    )
     root_V_ref.scale(1)
 
     v_tip = root_V_tip.to_np()[:3]
@@ -1513,14 +1539,18 @@ class TestVelocityTasks:
         ids=["pos/generic", "pos/position-only", "rot/generic", "rot/rotation-only"],
     )
     def test_observation_variable(
-        self, pr2_world: World, goal_type: str, limit_cls: Type
+        self, pr2_world_state_reset: World, goal_type: str, limit_cls: Type
     ):
         """
         Tests that velocity limit's observation variable can trigger a CancelMotion
         when the optimizer chooses to violate the limit.
         """
-        tip = pr2_world.get_kinematic_structure_entity_by_name("base_footprint")
-        root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
+        tip = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
+            "base_footprint"
+        )
+        root = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
+            "odom_combined"
+        )
 
         if goal_type == "position":
             goal = CartesianPosition(
@@ -1547,7 +1577,7 @@ class TestVelocityTasks:
         )
         msc.add_node(cancel_motion)
 
-        kin_sim = Executor(world=pr2_world)
+        kin_sim = Executor(world=pr2_world_state_reset)
         kin_sim.compile(motion_statechart=msc)
 
         with pytest.raises(Exception):
@@ -1558,12 +1588,18 @@ class TestVelocityTasks:
         [CartesianVelocityLimit, CartesianPositionVelocityLimit],
         ids=["generic_linear", "position_only_linear"],
     )
-    def test_cartesian_position_velocity_limit(self, pr2_world: World, limit_cls: Type):
+    def test_cartesian_position_velocity_limit(
+        self, pr2_world_state_reset: World, limit_cls: Type
+    ):
         """
         Position velocity limit: check slower limit increases cycles.
         """
-        tip = pr2_world.get_kinematic_structure_entity_by_name("base_footprint")
-        root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
+        tip = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
+            "base_footprint"
+        )
+        root = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
+            "odom_combined"
+        )
 
         point = cas.Point3(1, 0, 0, reference_frame=tip)
         position_goal = CartesianPosition(
@@ -1578,10 +1614,12 @@ class TestVelocityTasks:
         )
 
         loose_cycles, _ = self._compile_msc_and_run_until_end(
-            world=pr2_world, goal_node=position_goal, limit_node=usual_limit
+            world=pr2_world_state_reset, goal_node=position_goal, limit_node=usual_limit
         )
         tight_cycles, _ = self._compile_msc_and_run_until_end(
-            world=pr2_world, goal_node=position_goal, limit_node=half_velocity_limit
+            world=pr2_world_state_reset,
+            goal_node=position_goal,
+            limit_node=half_velocity_limit,
         )
 
         assert (
@@ -1593,12 +1631,18 @@ class TestVelocityTasks:
         [CartesianVelocityLimit, CartesianRotationVelocityLimit],
         ids=["generic_angular", "rotation_only_angular"],
     )
-    def test_cartesian_rotation_velocity_limit(self, pr2_world: World, limit_cls: Type):
+    def test_cartesian_rotation_velocity_limit(
+        self, pr2_world_state_reset: World, limit_cls: Type
+    ):
         """
         Rotation velocity limit: check slower limit increases cycles.
         """
-        tip = pr2_world.get_kinematic_structure_entity_by_name("base_footprint")
-        root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
+        tip = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
+            "base_footprint"
+        )
+        root = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
+            "odom_combined"
+        )
 
         rotation = cas.RotationMatrix.from_rpy(yaw=np.pi / 2, reference_frame=tip)
         orientation = CartesianOrientation(
@@ -1613,10 +1657,12 @@ class TestVelocityTasks:
         )
 
         loose_cycles, _ = self._compile_msc_and_run_until_end(
-            world=pr2_world, goal_node=orientation, limit_node=usual_limit
+            world=pr2_world_state_reset, goal_node=orientation, limit_node=usual_limit
         )
         tight_cycles, _ = self._compile_msc_and_run_until_end(
-            world=pr2_world, goal_node=orientation, limit_node=half_velocity_limit
+            world=pr2_world_state_reset,
+            goal_node=orientation,
+            limit_node=half_velocity_limit,
         )
 
         assert (
@@ -1870,9 +1916,11 @@ class TestParallel:
         # 5 (longest ticker) + 1 (for parallel to turn True) + 2 (for end to trigger)
         assert kin_sim.control_cycles == 8
 
-    def test_parallel_with_tasks(self, pr2_world: World):
-        map = pr2_world.root
-        r_tip = pr2_world.get_kinematic_structure_entity_by_name("r_gripper_tool_frame")
+    def test_parallel_with_tasks(self, pr2_world_state_reset: World):
+        map = pr2_world_state_reset.root
+        r_tip = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
+            "r_gripper_tool_frame"
+        )
         msc = MotionStatechart()
         msc.add_node(
             parallel := Parallel(
@@ -1895,14 +1943,14 @@ class TestParallel:
         msc.add_node(EndMotion.when_true(parallel))
 
         kin_sim = Executor(
-            world=pr2_world,
+            world=pr2_world_state_reset,
         )
         kin_sim.compile(motion_statechart=msc)
         kin_sim.tick_until_end()
 
 
 class TestOpenClose:
-    def test_open(self, pr2_world):
+    def test_open(self, pr2_world_state_reset):
         factory = DoorFactory(
             name=PrefixedName("door"),
             handle_factory=HandleFactory(name=PrefixedName("handle")),
@@ -1915,7 +1963,7 @@ class TestOpenClose:
             ),
         )
         door_world = factory.create()
-        with pr2_world.modify_world():
+        with pr2_world_state_reset.modify_world():
             lower_limits = DerivativeMap()
             lower_limits.position = -np.pi / 2
             lower_limits.velocity = -1
@@ -1927,20 +1975,20 @@ class TestOpenClose:
                 upper_limits=upper_limits,
                 name=PrefixedName("hinge"),
             )
-            pr2_world.add_degree_of_freedom(dof)
+            pr2_world_state_reset.add_degree_of_freedom(dof)
             root_T_door = RevoluteConnection(
                 dof_id=dof.id,
-                parent=pr2_world.root,
+                parent=pr2_world_state_reset.root,
                 child=door_world.root,
                 axis=-cas.Vector3.Z(),
                 parent_T_connection_expression=TransformationMatrix.from_xyz_rpy(
-                    x=1.5, z=1, yaw=np.pi, reference_frame=pr2_world.root
+                    x=1.5, z=1, yaw=np.pi, reference_frame=pr2_world_state_reset.root
                 ),
             )
-            pr2_world.merge_world(door_world, root_connection=root_T_door)
+            pr2_world_state_reset.merge_world(door_world, root_connection=root_T_door)
 
-        r_tip = pr2_world.get_body_by_name("r_gripper_tool_frame")
-        handle = pr2_world.get_semantic_annotations_by_type(Handle)[0].body
+        r_tip = pr2_world_state_reset.get_body_by_name("r_gripper_tool_frame")
+        handle = pr2_world_state_reset.get_semantic_annotations_by_type(Handle)[0].body
         open_goal = 1
         close_goal = -1
 
@@ -1950,7 +1998,7 @@ class TestOpenClose:
                 Sequence(
                     [
                         CartesianPose(
-                            root_link=pr2_world.root,
+                            root_link=pr2_world_state_reset.root,
                             tip_link=r_tip,
                             goal_pose=TransformationMatrix.from_xyz_rpy(
                                 yaw=np.pi, reference_frame=handle
@@ -1991,7 +2039,7 @@ class TestOpenClose:
         msc.add_node(EndMotion.when_true(msc.nodes[0]))
 
         kin_sim = Executor(
-            world=pr2_world,
+            world=pr2_world_state_reset,
         )
         kin_sim.compile(motion_statechart=msc)
         kin_sim.tick_until_end()
@@ -2148,7 +2196,7 @@ class TestCollisionAvoidance:
             kin_sim.tick_until_end()
 
 
-def test_constraint_collection(pr2_world: World):
+def test_constraint_collection(pr2_world_state_reset: World):
     """
     Test the constraint collection naming behavior. Expected behavior is:
     - Not naming constraints should result in automatically generated unique names
@@ -2157,8 +2205,10 @@ def test_constraint_collection(pr2_world: World):
     - Merge raises an Exception if a collection contains duplicates in itself
     """
     col = ConstraintCollection()
-    tip = pr2_world.get_kinematic_structure_entity_by_name("r_gripper_tool_frame")
-    root = pr2_world.get_kinematic_structure_entity_by_name("odom_combined")
+    tip = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
+        "r_gripper_tool_frame"
+    )
+    root = pr2_world_state_reset.get_kinematic_structure_entity_by_name("odom_combined")
 
     expr = cas.Vector3.X(tip).angle_between(cas.Vector3.Y(root))
 
