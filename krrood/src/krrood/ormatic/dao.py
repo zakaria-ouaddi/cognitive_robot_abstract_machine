@@ -343,7 +343,53 @@ class HasGeneric(Generic[T]):
 
 class DataAccessObject(HasGeneric[T]):
     """
-    Base class for Data Access Objects.
+    Base class for Data Access Objects (DAOs) providing bidirectional conversion between
+    domain objects and SQLAlchemy models.
+
+    This class automates the mapping between complex domain object graphs and relational
+    database schemas using SQLAlchemy. It supports inheritance, circular references,
+    and custom mappings via :class:`AlternativeMapping`.
+
+    Conversion Directions
+    ---------------------
+
+    1. **Domain to DAO (to_dao)**:
+       Converts a domain object into its DAO representation. It uses an iterative
+       BFS approach with a queue to traverse the object graph, allocating DAOs and
+       populating their columns and relationships.
+
+    2. **DAO to Domain (from_dao)**:
+       Converts a DAO back into a domain object. To handle the strict initialization
+       requirements of ``dataclasses`` and the potential for circular references,
+       it uses a Two-Pass Iterative Approach:
+
+       - Phase 1: Discovery (DFS):
+         Traverses the DAO graph to identify all reachable DAOs. For each DAO, it
+         allocates an uninitialized domain object (using ``__new__``) and records
+         the discovery order.
+       - Phase 2: Filling (Bottom-Up):
+         Processes the discovered objects in reverse order. By moving from leaves
+         to roots, it ensures that child dependencies are fully initialized before
+         they are passed to a parent's constructor (``__init__``).
+
+    Handling Circular References
+    ----------------------------
+
+    Circular references are handled by separating object allocation from initialization.
+    If a circular dependency is detected during Phase 2 of ``from_dao`` (i.e., a
+    required dependency is not yet initialized), the converter identifies the
+    cycle and applies a fix-up step after the parent's ``__init__`` has been called,
+    using :meth:`_apply_circular_fixes`.
+
+    Alternative Mappings
+    --------------------
+
+    For domain objects that do not map 1:1 to a single DAO (e.g., those requiring
+    special constructor logic or representing a view of multiple tables),
+    :class:`AlternativeMapping` can be used. The converter recognizes these and
+    delegates the creation of the domain object to the mapping's ``create_from_dao``
+    method during the Filling Phase.
+
     """
 
     def __init__(self, *args, **kwargs):
