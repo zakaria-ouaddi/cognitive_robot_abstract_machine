@@ -24,6 +24,7 @@ from typing_extensions import (
     List,
     Iterable,
     Tuple,
+    Set,
 )
 
 from collections import deque
@@ -220,6 +221,38 @@ class FromDataAccessObjectState(DataAccessObjectState[FromDataAccessObjectWorkIt
     Dictionary that marks objects as currently being processed by the from_dao method.
     """
 
+    discovery_mode: bool = False
+    """
+    Whether the state is currently in discovery mode.
+    """
+
+    initialized_ids: Set[int] = field(default_factory=set)
+    """
+    Set of DAO ids that have been fully initialized.
+    """
+
+    is_processing: bool = False
+    """
+    Whether the state is currently in the processing loop.
+    """
+
+    def is_initialized(self, dao_instance: DataAccessObject) -> bool:
+        """
+        Check if the given DAO instance has been fully initialized.
+
+        :param dao_instance: The DAO instance to check.
+        :return: True if fully initialized.
+        """
+        return id(dao_instance) in self.initialized_ids
+
+    def mark_initialized(self, dao_instance: DataAccessObject):
+        """
+        Mark the given DAO instance as fully initialized.
+
+        :param dao_instance: The DAO instance to mark.
+        """
+        self.initialized_ids.add(id(dao_instance))
+
     def add_to_queue(self, dao_instance: DataAccessObject, domain_object: Any):
         """
         Add a new work item to the processing queue.
@@ -245,7 +278,6 @@ class FromDataAccessObjectState(DataAccessObjectState[FromDataAccessObjectWorkIt
         """
         result = original_clazz.__new__(original_clazz)
         self.register(dao_instance, result)
-        self.in_progress[id(dao_instance)] = True
         return result
 
     def apply_circular_fixes(
@@ -667,23 +699,48 @@ class DataAccessObject(HasGeneric[T]):
         """
         state = state or FromDataAccessObjectState()
 
-        if state.has(self):
+        if state.has(self) and state.is_initialized(self):
             return state.get(self)
 
-        result = self._allocate_uninitialized_and_memoize(state)
-
-        # Add to queue for processing
-        is_entry_call = len(state.queue) == 0
-        state.add_to_queue(self, result)
+        is_entry_call = not state.is_processing
 
         if is_entry_call:
-            while state.queue:
-                work_item = state.queue.popleft()
-                work_item.dao_instance._fill_from_dao(work_item.domain_object, state)
+            state.is_processing = True
+            discovery_order = []
+            if not state.has(self):
+                self._allocate_uninitialized_and_memoize(state)
+            state.add_to_queue(self, state.get(self))
 
-            # After processing all, remove from in_progress
-            state.in_progress.clear()
+            # Phase 1: Discovery (DFS)
+            state.discovery_mode = True
+            try:
+                while state.queue:
+                    work_item = state.queue.pop()
+                    discovery_order.append(work_item)
+                    work_item.dao_instance._fill_from_dao(
+                        work_item.domain_object, state
+                    )
+            finally:
+                state.discovery_mode = False
 
+            # Phase 2: Filling (Bottom-Up)
+            try:
+                for work_item in reversed(discovery_order):
+                    if not state.is_initialized(work_item.dao_instance):
+                        work_item.dao_instance._fill_from_dao(
+                            work_item.domain_object, state
+                        )
+                        state.mark_initialized(work_item.dao_instance)
+            finally:
+                state.is_processing = False
+                state.in_progress.clear()
+
+            return state.get(self)
+
+        # Not the entry call (called during discovery or filling)
+        if not state.has(self):
+            domain_object = self._allocate_uninitialized_and_memoize(state)
+            state.add_to_queue(self, domain_object)
         return state.get(self)
 
     def _fill_from_dao(self, domain_object: T, state: FromDataAccessObjectState) -> T:
@@ -695,8 +752,19 @@ class DataAccessObject(HasGeneric[T]):
         :return: The populated domain object.
         """
         mapper: sqlalchemy.orm.Mapper = sqlalchemy.inspection.inspect(type(self))
-
         argument_names = self._argument_names()
+
+        if state.discovery_mode:
+            # Only trigger discovery of dependencies
+            self._collect_relationship_keyword_arguments(mapper, argument_names, state)
+            self._build_base_keyword_arguments_for_alternative_parent(
+                argument_names, state
+            )
+            self._populate_remaining_relationships(
+                domain_object, mapper, argument_names, state
+            )
+            return domain_object
+
         scalar_keyword_arguments = self._collect_scalar_keyword_arguments(
             mapper, argument_names
         )
@@ -951,14 +1019,14 @@ class DataAccessObject(HasGeneric[T]):
             return value, []
 
         instances = []
-        circular_values = []
+        any_circular = False
         for v in value:
             instance, circular = self._resolve_dao_to_domain(v, state)
             instances.append(instance)
             if circular is not None:
-                circular_values.append(circular)
+                any_circular = True
 
-        return type(value)(instances), circular_values
+        return type(value)(instances), (list(value) if any_circular else [])
 
     def _resolve_dao_to_domain(
         self, dao_instance: DataAccessObject, state: FromDataAccessObjectState
@@ -972,16 +1040,12 @@ class DataAccessObject(HasGeneric[T]):
         """
         if state.has(dao_instance):
             domain_object = state.get(dao_instance)
-            circular = dao_instance if id(dao_instance) in state.in_progress else None
+            # It's circular if it's currently being processed and not yet initialized
+            circular = dao_instance if not state.is_initialized(dao_instance) else None
             return domain_object, circular
 
-        original_clazz = dao_instance.original_class()
-        if issubclass(original_clazz, AlternativeMapping):
-            domain_object = dao_instance.from_dao(state=state)
-            return domain_object, None
-
-        domain_object = dao_instance._allocate_uninitialized_and_memoize(state)
-        state.add_to_queue(dao_instance, domain_object)
+        # Delegation to from_dao handles discovery/allocation without recursion depth risk
+        domain_object = dao_instance.from_dao(state=state)
         return domain_object, dao_instance
 
     def _build_base_keyword_arguments_for_alternative_parent(
@@ -1000,7 +1064,12 @@ class DataAccessObject(HasGeneric[T]):
         if not self.uses_alternative_mapping(base_clazz):
             return {}
 
-        parent_dao = self._create_filled_parent_dao(base_clazz)
+        if not hasattr(self, "_parent_daos"):
+            self._parent_daos = {}
+        if base_clazz not in self._parent_daos:
+            self._parent_daos[base_clazz] = self._create_filled_parent_dao(base_clazz)
+        parent_dao = self._parent_daos[base_clazz]
+
         base_result = parent_dao.from_dao(state=state)
 
         return self._extract_arguments_from_parent_result(base_result, argument_names)
@@ -1049,7 +1118,7 @@ class DataAccessObject(HasGeneric[T]):
         """
         try:
             result.__init__(**init_args)
-        except TypeError as e:
+        except (TypeError, AttributeError) as e:
             logging.getLogger(__name__).debug(
                 f"from_dao __init__ call failed with {e}; falling back to manual assignment. "
                 f"This might skip side effects of the original initialization."
