@@ -47,7 +47,7 @@ InstanceDict = Dict[int, Any]  # Dictionary that maps object ids to objects
 InProgressDict = Dict[int, bool]
 
 
-def is_data_column(column: Column):
+def is_data_column(column: Column) -> bool:
     """
     Check if a column contains data.
 
@@ -618,7 +618,9 @@ class DataAccessObject(HasGeneric[T]):
         parent_rel_keys = {rel.key for rel in parent.relationships}
         relationships_of_parent = parent.relationships
         relationships_of_child = [
-            rel for rel in child.relationships if rel.key not in parent_rel_keys
+            relationship
+            for relationship in child.relationships
+            if relationship.key not in parent_rel_keys
         ]
         return relationships_of_parent, relationships_of_child
 
@@ -1356,6 +1358,8 @@ class AlternativeMapping(HasGeneric[T], abc.ABC):
     def create_instance(cls, obj: T) -> Self:
         """
         Create a DAO from the source object.
+        Do not create any DAOs here but the target DAO of `T`.
+        The rest of the `to_dao` algorithm will process the fields of the created instance.
 
         :param obj: The source object.
         :return: A new instance of this mapping class.
