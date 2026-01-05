@@ -6,6 +6,8 @@ from typing import Dict, Any
 
 import numpy as np
 import rustworkx as rx
+
+from giskardpy.motion_statechart.plotters.gantt_chart_plotter import PlotGanttChart
 from krrood.adapters.json_serializer import SubclassJSONSerializer
 from line_profiler.explicit_profiler import profile
 from typing_extensions import List, MutableMapping, ClassVar, Self, Type
@@ -587,6 +589,9 @@ class MotionStatechart(SubclassJSONSerializer):
         Uses graphviz to draw the motion statechart and safe it at `file_name`.
         """
         MotionStatechartGraphviz(self).to_dot_graph_pdf(file_name=file_name)
+
+    def plot_gantt_chart(self):
+        PlotGanttChart(self).plot_gantt_chart("ganttchart.pdf")
 
     def to_json(self) -> Dict[str, Any]:
         self._add_transitions()

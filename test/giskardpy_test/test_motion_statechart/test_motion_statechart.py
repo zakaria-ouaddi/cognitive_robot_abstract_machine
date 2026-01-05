@@ -1227,6 +1227,7 @@ class TestCartesianTasks:
         fk = pr2_world.compute_forward_kinematics_np(root, tip)
         expected = np.eye(4)
         assert np.allclose(fk, expected, atol=cart_goal2.threshold)
+        msc.plot_gantt_chart()
 
     def test_CartesianOrientation(self, pr2_world: World):
         """Single CartesianOrientation goal test."""
