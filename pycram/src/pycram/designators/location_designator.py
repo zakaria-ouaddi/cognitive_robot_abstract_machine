@@ -420,13 +420,6 @@ class CostmapLocation(LocationDesignatorDescription):
                         params_box.rotation_agnostic,
                     )
                     ee = ViewManager.get_arm_view(params_box.reachable_arm, test_robot)
-                    # is_reachable = pose_sequence_reachability_validator(
-                    #     test_world.root,
-                    #     ee.manipulator.tool_frame,
-                    #     target_sequence,
-                    #     allowed_collision=params_box.ignore_collision_with,
-                    #     world=test_world,
-                    # )
                     is_reachable = pose_sequence_reachability_validator(
                         target_sequence,
                         ee.manipulator.tool_frame,
@@ -660,12 +653,6 @@ class AccessingLocation(LocationDesignatorDescription):
                     for pose in current_target_sequence:
                         pose.rotate_by_quaternion(grasp)
 
-                    # is_reachable = pose_sequence_reachability_validator(
-                    #     test_world.root,
-                    #     arm_chain.manipulator.tool_frame,
-                    #     current_target_sequence,
-                    #     world=test_world,
-                    # )
                     is_reachable = pose_sequence_reachability_validator(
                         current_target_sequence,
                         arm_chain.manipulator.tool_frame,
@@ -1618,14 +1605,6 @@ class ProbabilisticCostmapLocation(LocationDesignatorDescription):
                         test_robot,
                         self.test_world,
                     )
-
-                    # is_reachable = pose_sequence_reachability_validator(
-                    #     test_robot.root,
-                    #     ee.manipulator.tool_frame,
-                    #     target_sequence,
-                    #     self.test_world,
-                    #     allowed_collision=params_box.ignore_collision_with,
-                    # )
                     logger.debug(
                         f"Pose Candidate: {pose_candidate }is_reachable: {is_reachable}"
                     )
