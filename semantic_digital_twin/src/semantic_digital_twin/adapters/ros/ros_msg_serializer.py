@@ -18,6 +18,8 @@ class Ros2MessageJSONSerializer(ExternalClassJSONSerializer[None]):
     Json serializer for ROS2 messages.
     Since there is no common superclass for ROS2 messages, we need to rely on checking class fields instead.
     That's also why T is set to None.
+
+    It can parse ros2 messages and ros2 message classes.
     """
 
     @classmethod
@@ -27,6 +29,7 @@ class Ros2MessageJSONSerializer(ExternalClassJSONSerializer[None]):
                 JSON_TYPE_NAME: get_full_class_name(obj.__class__),
                 "data": convert_ros_message_to_dictionary(obj),
             }
+        # if the object is not a message then it is a class and doesn't have data
         return {
             JSON_TYPE_NAME: get_full_class_name(obj),
         }
@@ -35,6 +38,7 @@ class Ros2MessageJSONSerializer(ExternalClassJSONSerializer[None]):
     def from_json(cls, data: Dict[str, Any], clazz: Type, **kwargs) -> Any:
         if "data" in data:
             return convert_dictionary_to_ros_message(clazz, data["data"], **kwargs)
+        # if there is no data, we the class was serialized
         return clazz
 
     @staticmethod
