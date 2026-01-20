@@ -11,6 +11,7 @@ from typing_extensions import List
 from typing_extensions import Optional
 
 from ..datastructures.prefixed_name import PrefixedName
+from ..mixin import SimulatorAdditionalPropertiesMixin
 from ..spatial_types import (
     RotationMatrix,
     Vector3,
@@ -237,7 +238,7 @@ class PoseMapping(AlternativeMapping[Pose]):
 
 
 @dataclass
-class DegreeOfFreedomMapping(AlternativeMapping[DegreeOfFreedom]):
+class DegreeOfFreedomMapping(AlternativeMapping[DegreeOfFreedom], SimulatorAdditionalPropertiesMixin):
     name: PrefixedName
     lower_limits: List[float]
     upper_limits: List[float]
