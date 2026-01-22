@@ -117,7 +117,9 @@ def test_navigate(immutable_model_world):
 def test_reach_to_pick_up(immutable_model_world):
     world, robot_view, context = immutable_model_world
     grasp_description = GraspDescription(
-        ApproachDirection.FRONT, VerticalAlignment.NoAlignment, False
+        ApproachDirection.FRONT,
+        VerticalAlignment.NoAlignment,
+        robot_view.left_arm.manipulator,
     )
     performable = ReachActionDescription(
         target_pose=PoseStamped.from_spatial_type(
@@ -198,7 +200,9 @@ def test_place(mutable_model_world):
             object_description,
             Arms.LEFT,
             GraspDescription(
-                ApproachDirection.FRONT, VerticalAlignment.NoAlignment, False
+                ApproachDirection.FRONT,
+                VerticalAlignment.NoAlignment,
+                robot_view.left_arm.manipulator,
             ),
         ),
         description,
@@ -296,8 +300,8 @@ def test_close(immutable_model_world):
 
 def test_transport(mutable_model_world):
     world, robot_view, context = mutable_model_world
-    node = rclpy.create_node("test_node")
-    VizMarkerPublisher(world, node, throttle_state_updates=20)
+    # node = rclpy.create_node("test_node")
+    # VizMarkerPublisher(world, node, throttle_state_updates=20)
     description = TransportActionDescription(
         world.get_body_by_name("milk.stl"),
         [PoseStamped.from_list([3.1, 2.2, 0.95], [0.0, 0.0, 1.0, 0.0], world.root)],

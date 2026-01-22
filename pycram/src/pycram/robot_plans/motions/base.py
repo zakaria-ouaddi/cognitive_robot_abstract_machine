@@ -7,7 +7,7 @@ from typing import Optional
 # from giskardpy.motion_statechart.tasks.task import Task
 from semantic_digital_twin.robots.abstract_robot import AbstractRobot
 from semantic_digital_twin.world import World
-from typing_extensions import TYPE_CHECKING
+from typing_extensions import TYPE_CHECKING, TypeVar
 
 from ...designator import DesignatorDescription
 
@@ -92,3 +92,6 @@ class BaseMotion(DesignatorDescription):
         # if missing != [] or wrong_type != {}:
         #     raise ResolutionError(missing, wrong_type, current_type, self.__class__)
         #
+
+
+MotionType = TypeVar("MotionType", bound=BaseMotion)
