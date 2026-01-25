@@ -193,7 +193,7 @@ class WorldEntityWithID(WorldEntity, SubclassJSONSerializer):
 
         fields_ = {f.name: f for f in fields(cls)}
 
-        init_args = {}
+        init_args = {"id": half_initialized_instance.id}
         for k, v in fields_.items():
             if k == "id":
                 continue
