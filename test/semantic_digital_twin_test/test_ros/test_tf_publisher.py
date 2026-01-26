@@ -1,3 +1,4 @@
+from unittest.mock import MagicMock, patch
 import pytest
 from rclpy.duration import Duration
 from rclpy.time import Time
@@ -200,18 +201,56 @@ def test_static_world(rclpy_node):
     with world.modify_world():
         body1 = Body(name=PrefixedName("body1"))
         body2 = Body(name=PrefixedName("body2"))
+        body3 = Body(name=PrefixedName("body3"))
+
         body1_C_body2 = FixedConnection(parent=body1, child=body2)
         world.add_connection(body1_C_body2)
+
+        body2_C_body3 = FixedConnection(parent=body2, child=body3)
+        world.add_connection(body2_C_body3)
 
     tf_wrapper = TFWrapper(node=rclpy_node)
     tf_publisher = TFPublisher(
         node=rclpy_node,
         world=world,
+        ignored_kinematic_structure_entities={body2, body3},
     )
 
+    # even though body1 is ignored, it should still be published because it is connected to body2
     assert tf_wrapper.wait_for_transform(
         str(body1.name),
         str(body2.name),
         timeout=Duration(seconds=1.0),
         time=Time(),
     )
+
+    assert not tf_wrapper.wait_for_transform(
+        str(body2.name),
+        str(body3.name),
+        timeout=Duration(seconds=1.0),
+        time=Time(),
+    )
+
+
+def test_double_tf_publisher(rclpy_node, pr2_world_state_reset):
+    tf_publisher = TFPublisher(
+        node=rclpy_node,
+        world=pr2_world_state_reset,
+    )
+    all_frames = [
+        str(kse.name) for kse in pr2_world_state_reset.kinematic_structure_entities
+    ]
+    # we have to patch this, because the tf wrapper inside the call won't receive any tf messages,
+    # because other publisher is not ticked.
+    with patch.object(TFWrapper, "get_tf_frames", return_value=all_frames):
+        tf_publisher2 = TFPublisher.create_with_ignore_existing_tf(
+            node=rclpy_node,
+            world=pr2_world_state_reset,
+        )
+    tf_publisher2.tf_pub.publish = MagicMock()
+    with pr2_world_state_reset.modify_world():
+        pr2_world_state_reset.state.positions[0] += 0.1
+
+    assert tf_publisher2.tf_pub.publish.called
+    published_msg = tf_publisher2.tf_pub.publish.call_args[0][0]
+    assert len(published_msg.transforms) == 0

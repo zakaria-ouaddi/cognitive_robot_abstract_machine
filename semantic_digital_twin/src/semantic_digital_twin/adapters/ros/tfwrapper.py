@@ -101,6 +101,13 @@ class TFWrapper:
             )
         return ret
 
+    def get_tf_frames(self) -> List[str]:
+        """
+        Get all frames in the tf buffer.
+        :return: A list of frames.
+        """
+        return self.tf_buffer._getFrameStrings()
+
     def wait_for_transform(
         self, target_frame: str, source_frame: str, time: Time, timeout: Duration
     ) -> bool:

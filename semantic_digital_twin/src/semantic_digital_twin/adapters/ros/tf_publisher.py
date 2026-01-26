@@ -14,6 +14,7 @@ from krrood.symbolic_math.symbolic_math import (
     VariableParameters,
     CompiledFunction,
 )
+from .tfwrapper import TFWrapper
 from ...callbacks.callback import StateChangeCallback, ModelChangeCallback
 from ...world import World
 from ...world_description.world_entity import KinematicStructureEntity
@@ -57,7 +58,7 @@ class TfPublisherModelCallback(ModelChangeCallback):
         for connection in self.world.connections:
             if (
                 connection.parent in self.ignored_kinematic_structure_entities
-                or connection.child in self.ignored_kinematic_structure_entities
+                and connection.child in self.ignored_kinematic_structure_entities
             ):
                 continue
             self.connections_to_expression[
@@ -154,6 +155,32 @@ class TFPublisher(StateChangeCallback):
         return cls(
             node=node,
             world=robot._world,
+            ignored_kinematic_structure_entities=ignored_bodies,
+        )
+
+    @classmethod
+    def create_with_ignore_existing_tf(cls, world: World, node: Node) -> Self:
+        """
+        Checks if any kinematic structure entity is already published in tf and ignores them.
+        :param world: The world for which to create the TF publisher.
+        :param node: The ROS2 node used to create the publisher.
+        """
+        tf_wrapper = TFWrapper(node=node)
+        for i in range(20):
+            all_frames = set(tf_wrapper.get_tf_frames())
+            if len(all_frames) > 0:
+                break
+            sleep(0.1)
+        else:
+            raise RuntimeError("Could not find any tf frames.")
+        ignored_bodies = set(
+            kse
+            for kse in world.kinematic_structure_entities
+            if str(kse.name) in all_frames
+        )
+        return cls(
+            node=node,
+            world=world,
             ignored_kinematic_structure_entities=ignored_bodies,
         )
 
