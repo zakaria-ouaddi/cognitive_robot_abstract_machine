@@ -605,17 +605,15 @@ class Region(KinematicStructureEntity):
 
     def to_json(self) -> Dict[str, Any]:
         result = super().to_json()
-        result["name"] = self.name.to_json()
-        result["area"] = self.area.to_json()
+        result["name"] = to_json(self.name)
+        result["area"] = to_json(self.area)
         return result
 
     @classmethod
     def _from_json(cls, data: Dict[str, Any], **kwargs) -> Self:
-        result = cls(
-            name=PrefixedName.from_json(data["name"]), id=from_json(data["id"])
-        )
+        result = cls(name=from_json(data["name"]), id=from_json(data["id"]))
         result._track_object_in_from_json(kwargs)
-        area = ShapeCollection.from_json(data["area"], **kwargs)
+        area = from_json(data["area"], **kwargs)
         for shape in area:
             shape.origin.reference_frame = result
         result.area = area
@@ -940,8 +938,8 @@ class Connection(WorldEntity, SubclassJSONSerializer):
         result["name"] = to_json(self.name)
         result["parent_id"] = to_json(self.parent.id)
         result["child_id"] = to_json(self.child.id)
-        result["parent_T_connection_expression"] = (
-            self.parent_T_connection_expression.to_json()
+        result["parent_T_connection_expression"] = to_json(
+            self.parent_T_connection_expression
         )
         return result
 
@@ -954,7 +952,7 @@ class Connection(WorldEntity, SubclassJSONSerializer):
             name=from_json(data["name"]),
             parent=parent,
             child=child,
-            parent_T_connection_expression=HomogeneousTransformationMatrix.from_json(
+            parent_T_connection_expression=from_json(
                 data["parent_T_connection_expression"], **kwargs
             ),
         )
