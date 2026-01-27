@@ -11,8 +11,7 @@ from .multi_sim import (
     MujocoActuator,
     GeomVisibilityAndCollisionType,
     MujocoCamera,
-    MujocoEquality,
-    MujocoMocapBody,
+    MujocoEquality, MujocoGeom, MujocoBody, MujocoJoint,
 )
 from ..datastructures.prefixed_name import PrefixedName
 from ..exceptions import WorldEntityNotFoundError
@@ -48,6 +47,7 @@ from ..world_description.inertial_properties import (
     PrincipalAxes,
 )
 from ..world_description.shape_collection import ShapeCollection
+from ..world_description.world_entity import Actuator
 
 logger = logging.getLogger(__name__)
 

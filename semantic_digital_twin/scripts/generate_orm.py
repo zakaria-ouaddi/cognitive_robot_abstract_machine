@@ -77,7 +77,7 @@ all_classes |= set(
 )
 all_classes |= set(classes_of_module(semantic_digital_twin.robots.abstract_robot))
 # classes |= set(recursive_subclasses(ViewFactory))
-all_classes |= set([HasBody, SimulatorAdditionalProperty] + recursive_subclasses(HasBody))
+all_classes |= {SimulatorAdditionalProperty}
 all_classes |= set(classes_of_module(semantic_digital_twin.reasoning.predicates))
 all_classes |= set(classes_of_module(semantic_digital_twin.semantic_annotations.mixins))
 all_classes |= set(

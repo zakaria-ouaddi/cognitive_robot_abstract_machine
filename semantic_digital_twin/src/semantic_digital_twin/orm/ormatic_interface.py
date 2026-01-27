@@ -393,21 +393,17 @@ class ColorDAO(
     A: Mapped[builtins.float] = mapped_column(use_existing_column=True)
 
 
-class DegreeOfFreedomLimitsMappingDAO(
-    Base, DataAccessObject[semantic_digital_twin.orm.model.DegreeOfFreedomLimitsMapping]
+class DegreeOfFreedomLimitsDAO(
+    Base,
+    DataAccessObject[
+        semantic_digital_twin.world_description.degree_of_freedom.DegreeOfFreedomLimits
+    ],
 ):
 
-    __tablename__ = "DegreeOfFreedomLimitsMappingDAO"
+    __tablename__ = "DegreeOfFreedomLimitsDAO"
 
     database_id: Mapped[builtins.int] = mapped_column(
         Integer, primary_key=True, use_existing_column=True
-    )
-
-    lower: Mapped[typing.List[builtins.float]] = mapped_column(
-        JSON, nullable=False, use_existing_column=True
-    )
-    upper: Mapped[typing.List[builtins.float]] = mapped_column(
-        JSON, nullable=False, use_existing_column=True
     )
 
 
@@ -707,7 +703,7 @@ class ShapeDAO(
     )
 
     simulator_additional_properties: Mapped[
-        typing.List[SimulatorAdditionalPropertyDAO]
+        builtins.list[SimulatorAdditionalPropertyDAO]
     ] = relationship(
         "SimulatorAdditionalPropertyDAO",
         secondary="shapedao_simulator_additional_properties_association",
@@ -1301,7 +1297,7 @@ class WorldEntityDAO(
     )
 
     simulator_additional_properties: Mapped[
-        typing.List[SimulatorAdditionalPropertyDAO]
+        builtins.list[SimulatorAdditionalPropertyDAO]
     ] = relationship(
         "SimulatorAdditionalPropertyDAO",
         secondary="worldentitydao_simulator_additional_properties_association",
@@ -1660,13 +1656,13 @@ class DegreeOfFreedomMappingDAO(
     )
 
     limits_id: Mapped[int] = mapped_column(
-        ForeignKey("DegreeOfFreedomLimitsMappingDAO.database_id", use_alter=True),
+        ForeignKey("DegreeOfFreedomLimitsDAO.database_id", use_alter=True),
         nullable=True,
         use_existing_column=True,
     )
 
-    limits: Mapped[DegreeOfFreedomLimitsMappingDAO] = relationship(
-        "DegreeOfFreedomLimitsMappingDAO",
+    limits: Mapped[DegreeOfFreedomLimitsDAO] = relationship(
+        "DegreeOfFreedomLimitsDAO",
         uselist=False,
         foreign_keys=[limits_id],
         post_update=True,
