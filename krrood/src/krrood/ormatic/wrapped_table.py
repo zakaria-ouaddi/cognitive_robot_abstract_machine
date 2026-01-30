@@ -457,6 +457,14 @@ class WrappedTable:
             logger.info(f"Parsing as one to one relationship.")
             self.create_one_to_one_relationship(wrapped_field)
 
+        # handle one to many relationships
+        elif (
+            wrapped_field.is_one_to_many_relationship
+            and wrapped_field.type_endpoint in self.ormatic.mapped_classes
+        ):
+            logger.info(f"Parsing as one to many relationship.")
+            self.create_one_to_many_relationship(wrapped_field)
+
         # handle custom types
         elif (
             wrapped_field.is_one_to_one_relationship
@@ -475,14 +483,6 @@ class WrappedTable:
         ):
             logger.info(f"Parsing as JSON.")
             self.create_json_column(wrapped_field)
-
-        # handle one to many relationships
-        elif (
-            wrapped_field.is_one_to_many_relationship
-            and wrapped_field.type_endpoint in self.ormatic.mapped_classes
-        ):
-            logger.info(f"Parsing as one to many relationship.")
-            self.create_one_to_many_relationship(wrapped_field)
         else:
             logger.info("Skipping due to not handled type.")
 
