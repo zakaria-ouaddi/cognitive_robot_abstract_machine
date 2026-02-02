@@ -33,20 +33,11 @@ from krrood.entity_query_language.entity import entity, variable, in_
 from krrood.entity_query_language.entity_result_processors import the
 
 from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
-from semantic_digital_twin.spatial_types.spatial_types import TransformationMatrix
-from semantic_digital_twin.semantic_annotations.factories import (
-    DresserFactory,
-    ContainerFactory,
-    HandleFactory,
-    DrawerFactory,
-    Direction,
-    SemanticPositionDescription,
-    HorizontalSemanticDirection,
-    VerticalSemanticDirection,
-)
-from semantic_digital_twin.semantic_annotations.semantic_annotations import Drawer
-from semantic_digital_twin.world_description.degree_of_freedom import DegreeOfFreedom
-from semantic_digital_twin.world_description.geometry import Scale, Box, Color
+from semantic_digital_twin.semantic_annotations.semantic_annotations import Drawer, Handle, Slider, Dresser
+from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix, Vector3
+from semantic_digital_twin.world import World
+from semantic_digital_twin.world_description.geometry import Scale
+from semantic_digital_twin.world_description.world_entity import Body
 from semantic_digital_twin.spatial_computations.raytracer import RayTracer
 
 world = World()
@@ -68,6 +59,13 @@ with world.modify_world():
     )
     drawer.add_handle(handle)
 
+    slider = Slider.create_with_new_body_in_world(
+        name=PrefixedName("drawer_slider"),
+        world_root_T_self=HomogeneousTransformationMatrix(),
+        world=world,
+        active_axis=Vector3.X()
+    )
+    drawer.add_slider(slider)
 
     dresser = Dresser.create_with_new_body_in_world(
         name=PrefixedName("dresser"),
@@ -79,7 +77,7 @@ with world.modify_world():
 
 rt = RayTracer(world)
 rt.update_scene()
-rt.scene.show("jupyter")
+rt.scene.show("notebook")
 ```
 
 Let's get a reference to the drawer we built above.
@@ -98,7 +96,7 @@ We can update the drawer's state by altering the free variables position of its 
 drawer.container.body.parent_connection.position = 0.1
 rt = RayTracer(world)
 rt.update_scene()
-rt.scene.show("jupyter")
+rt.scene.show("notebook")
 ```
 
 Note that this only works in this simple way for connections that only have one degree of freedom. For multiple degrees of freedom you either have to set the entire transformation or use the world state directly.
@@ -122,7 +120,7 @@ with world.modify_world():
     world.add_connection(root_T_dresser)
 rt = RayTracer(world)
 rt.update_scene()
-rt.scene.show("jupyter")
+rt.scene.show("notebook")
 ```
 
 Now we can start moving the dresser everywhere and even rotate it.
@@ -136,7 +134,7 @@ with world.modify_world():
     free_connection.origin = TransformationMatrix.from_xyz_rpy(1., 1., 0., 0., 0., 0.5 * np.pi)
 rt = RayTracer(world)
 rt.update_scene()
-rt.scene.show("jupyter")
+rt.scene.show("notebook")
 ```
 
 The final way of manipulating the world state is the registry for all degrees of freedom, the {py:class}`semantic_digital_twin.world_description.world_state.WorldState`.
@@ -152,5 +150,5 @@ with world.modify_world():
     world.state[connection.dof.id] = [0., 0., 0., 0.]
 rt = RayTracer(world)
 rt.update_scene()
-rt.scene.show("jupyter")
+rt.scene.show("notebook")
 ```

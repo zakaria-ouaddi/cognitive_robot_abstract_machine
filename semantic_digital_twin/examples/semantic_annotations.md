@@ -35,7 +35,7 @@ from krrood.entity_query_language.entity import entity, variable
 from krrood.entity_query_language.entity_result_processors import an
 
 from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
-from semantic_digital_twin.spatial_types.spatial_types import TransformationMatrix
+from semantic_digital_twin.spatial_types.spatial_types import HomogeneousTransformationMatrix
 from semantic_digital_twin.semantic_annotations.semantic_annotations import Container
 from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.connections import Connection6DoF
@@ -62,7 +62,7 @@ with world.modify_world():
 
     # Our first apple
     apple_body = Body(name=PrefixedName("apple_body"))
-    sphere = Sphere(radius=0.15, origin=TransformationMatrix(reference_frame=apple_body))
+    sphere = Sphere(radius=0.15, origin=HomogeneousTransformationMatrix(reference_frame=apple_body))
     apple_body.collision = [sphere]
     apple_body.visual = [sphere]
 
@@ -71,7 +71,7 @@ with world.modify_world():
 
     # Our second apple
     apple_body_2 = Body(name=PrefixedName("apple_body_2"))
-    sphere2 = Sphere(radius=0.15, origin=TransformationMatrix(reference_frame=apple_body_2))
+    sphere2 = Sphere(radius=0.15, origin=HomogeneousTransformationMatrix(reference_frame=apple_body_2))
     apple_body_2.collision = [sphere2]
     apple_body_2.visual = [sphere2]
     c2 = Connection6DoF.create_with_dofs(parent=root, child=apple_body_2, world=world)
@@ -84,7 +84,7 @@ with world.modify_world():
 print(world.get_semantic_annotations_by_type(Apple))
 rt = RayTracer(world)
 rt.update_scene()
-rt.scene.show("jupyter")
+rt.scene.show("notebook")
 ```
 
 Thanks to the semantic annotations, an agent can query for apples directly using EQL:
@@ -128,7 +128,7 @@ with world.modify_world():
 print(f"Fruit box with {len(fruit_box_with_apples.fruits)} fruits")
 rt = RayTracer(world)
 rt.update_scene()
-rt.scene.show("jupyter")
+rt.scene.show("notebook")
 ```
 
 Because these are plain Python classes, any other agent that imports your semantic_annotation definitions will understand exactly what
@@ -157,7 +157,7 @@ with world.modify_world():
 
 rt = RayTracer(world)
 rt.update_scene()
-rt.scene.show("jupyter")
+rt.scene.show("notebook")
 ```
 
 We can now use EQL to get us only the FruitBoxes that actually contain apples!

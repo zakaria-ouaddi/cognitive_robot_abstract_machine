@@ -23,11 +23,12 @@ Let's load a world first to get started.
 import logging
 import os
 
+from krrood.utils import get_package_root
+import semantic_digital_twin
 from semantic_digital_twin.adapters.urdf import URDFParser 
-from semantic_digital_twin.utils import get_semantic_digital_twin_directory_root
 
 logging.disable(logging.CRITICAL)
-apartment = os.path.join(get_semantic_digital_twin_directory_root(os.getcwd()), "resources", "urdf", "apartment.urdf")
+apartment = os.path.join(get_package_root(semantic_digital_twin), "resources", "urdf", "apartment.urdf")
 world = URDFParser.from_file(apartment).parse()
 
 ```
@@ -36,7 +37,7 @@ For the RVIZ2 way, ROS2 is needed. A caveat of this approach is that you have to
 We recommend to put the spinning into sperate threads and just shutdown the thread when exiting the system.
 
 ```{code-cell} ipython3
-from semantic_digital_twin.adapters.viz_marker import VizMarkerPublisher
+from semantic_digital_twin.adapters.ros.visualization.viz_marker import VizMarkerPublisher
 import threading
 import rclpy
 rclpy.init()
