@@ -4,8 +4,7 @@ import pytest
 
 from pycram.datastructures.pose import PyCramPose, PyCramQuaternion, PyCramVector3, Header
 from random_events.product_algebra import SimpleEvent, Event
-from random_events.variable import Integer
-from krrood.class_diagrams.parameterizer import Parameterizer
+from krrood.probabilistic_knowledge.parameterizer import Parameterizer
 from semantic_digital_twin.adapters.urdf import URDFParser
 
 from pycram.datastructures.dataclasses import Context

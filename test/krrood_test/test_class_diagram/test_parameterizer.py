@@ -4,7 +4,7 @@ from random_events.set import Set
 from random_events.variable import Continuous, Integer, Symbolic
 from random_events.product_algebra import Event, SimpleEvent
 from krrood.class_diagrams.class_diagram import ClassDiagram
-from krrood.class_diagrams.parameterizer import Parameterizer
+from krrood.probabilistic_knowledge.parameterizer import Parameterizer
 from pycram.datastructures.enums import TorsoState, Arms
 from pycram.robot_plans import MoveTorsoAction
 from pycram.robot_plans.actions.core.navigation import NavigateAction
