@@ -25,6 +25,10 @@ if TYPE_CHECKING:
 
 @dataclass
 class JointState(SubclassJSONSerializer):
+    """
+    Represents a specific joint state by mapping a set of connections to target values.
+    """
+
     mapping: Dict[ActiveConnection1DOF, float]
     """
     Mapping of connection to the connection position

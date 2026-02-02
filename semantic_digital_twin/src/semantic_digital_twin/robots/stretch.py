@@ -156,7 +156,7 @@ class Stretch(AbstractRobot, HasArms, HasNeck):
                 mapping=dict(
                     zip(
                         [c for c in arm.connections if type(c) != FixedConnection],
-                        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                        [0.0] * len(list(arm.connections)),
                     )
                 ),
                 state_type=StaticJointState.PARK,

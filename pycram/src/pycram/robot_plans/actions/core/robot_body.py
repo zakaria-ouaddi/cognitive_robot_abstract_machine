@@ -38,8 +38,6 @@ class MoveTorsoAction(ActionDescription):
     """
 
     def execute(self) -> None:
-        # jm = JointStateManager()
-        # joint_state = jm.get_joint_state(self.torso_state, self.robot_view)[0]
         joint_state = self.robot_view.torso.get_joint_state_by_type(self.torso_state)
 
         SequentialPlan(

@@ -191,22 +191,7 @@ class Armar(AbstractRobot, SpecifiesLeftRightArm, HasNeck):
                 mapping=dict(
                     zip(
                         left_gripper_joints,
-                        [
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                        ],
+                        [0] * len(left_gripper_joints),
                     )
                 ),
                 state_type=GripperState.OPEN,
@@ -217,22 +202,7 @@ class Armar(AbstractRobot, SpecifiesLeftRightArm, HasNeck):
                 mapping=dict(
                     zip(
                         left_gripper_joints,
-                        [
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                        ],
+                        [1.57] * len(left_gripper_joints),
                     )
                 ),
                 state_type=GripperState.CLOSE,
@@ -250,22 +220,7 @@ class Armar(AbstractRobot, SpecifiesLeftRightArm, HasNeck):
                 mapping=dict(
                     zip(
                         right_gripper_joints,
-                        [
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                        ],
+                        [0] * len(right_gripper_joints),
                     )
                 ),
                 state_type=GripperState.OPEN,
@@ -276,22 +231,7 @@ class Armar(AbstractRobot, SpecifiesLeftRightArm, HasNeck):
                 mapping=dict(
                     zip(
                         right_gripper_joints,
-                        [
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                            1.57,
-                        ],
+                        [1.57] * len(right_gripper_joints),
                     )
                 ),
                 state_type=GripperState.CLOSE,

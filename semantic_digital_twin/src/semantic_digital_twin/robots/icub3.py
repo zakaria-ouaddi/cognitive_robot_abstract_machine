@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Self
 
+import numpy as np
+
 from .robot_mixins import HasNeck, SpecifiesLeftRightArm
 from ..datastructures.definitions import StaticJointState, GripperState, TorsoState
 from ..datastructures.joint_state import JointState
@@ -202,7 +204,7 @@ class ICub3(AbstractRobot, SpecifiesLeftRightArm, HasNeck):
                 mapping=dict(
                     zip(
                         [c for c in left_arm.connections if type(c) != FixedConnection],
-                        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                        [0.0] * len(list(left_arm.connections)),
                     )
                 ),
                 state_type=StaticJointState.PARK,
@@ -219,7 +221,7 @@ class ICub3(AbstractRobot, SpecifiesLeftRightArm, HasNeck):
                             for c in right_arm.connections
                             if type(c) != FixedConnection
                         ],
-                        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                        [0.0] * len(list(right_arm.connections)),
                     )
                 ),
                 state_type=StaticJointState.PARK,
@@ -236,28 +238,7 @@ class ICub3(AbstractRobot, SpecifiesLeftRightArm, HasNeck):
                 mapping=dict(
                     zip(
                         left_gripper_joints,
-                        [
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                        ],
+                        [0.0] * len(list(left_gripper_joints)),
                     )
                 ),
                 state_type=GripperState.OPEN,
@@ -269,26 +250,26 @@ class ICub3(AbstractRobot, SpecifiesLeftRightArm, HasNeck):
                     zip(
                         left_gripper_joints,
                         [
-                            1.5707963267948966,
-                            1.5707963267948966,
-                            1.5707963267948966,
-                            1.5707963267948966,
+                            np.pi / 2,
+                            np.pi / 2,
+                            np.pi / 2,
+                            np.pi / 2,
                             -0.3490658503988659,
-                            1.5707963267948966,
-                            1.5707963267948966,
-                            1.5707963267948966,
+                            np.pi / 2,
+                            np.pi / 2,
+                            np.pi / 2,
                             0.3490658503988659,
-                            1.5707963267948966,
-                            1.5707963267948966,
-                            1.5707963267948966,
+                            np.pi / 2,
+                            np.pi / 2,
+                            np.pi / 2,
                             0.3490658503988659,
-                            1.5707963267948966,
-                            1.5707963267948966,
-                            1.5707963267948966,
+                            np.pi / 2,
+                            np.pi / 2,
+                            np.pi / 2,
                             0.3490658503988659,
-                            1.5707963267948966,
-                            1.5707963267948966,
-                            1.5707963267948966,
+                            np.pi / 2,
+                            np.pi / 2,
+                            np.pi / 2,
                         ],
                     )
                 ),
@@ -307,28 +288,7 @@ class ICub3(AbstractRobot, SpecifiesLeftRightArm, HasNeck):
                 mapping=dict(
                     zip(
                         right_gripper_joints,
-                        [
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                        ],
+                        [0.0] * len(list(right_gripper_joints)),
                     )
                 ),
                 state_type=GripperState.OPEN,
@@ -340,26 +300,26 @@ class ICub3(AbstractRobot, SpecifiesLeftRightArm, HasNeck):
                     zip(
                         right_gripper_joints,
                         [
-                            1.5707963267948966,
-                            1.5707963267948966,
-                            1.5707963267948966,
-                            1.5707963267948966,
+                            np.pi / 2,
+                            np.pi / 2,
+                            np.pi / 2,
+                            np.pi / 2,
                             -0.3490658503988659,
-                            1.5707963267948966,
-                            1.5707963267948966,
-                            1.5707963267948966,
+                            np.pi / 2,
+                            np.pi / 2,
+                            np.pi / 2,
                             0.3490658503988659,
-                            1.5707963267948966,
-                            1.5707963267948966,
-                            1.5707963267948966,
+                            np.pi / 2,
+                            np.pi / 2,
+                            np.pi / 2,
                             0.3490658503988659,
-                            1.5707963267948966,
-                            1.5707963267948966,
-                            1.5707963267948966,
+                            np.pi / 2,
+                            np.pi / 2,
+                            np.pi / 2,
                             0.3490658503988659,
-                            1.5707963267948966,
-                            1.5707963267948966,
-                            1.5707963267948966,
+                            np.pi / 2,
+                            np.pi / 2,
+                            np.pi / 2,
                         ],
                     )
                 ),
