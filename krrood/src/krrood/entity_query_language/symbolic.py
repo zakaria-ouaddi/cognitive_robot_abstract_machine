@@ -472,7 +472,10 @@ class ResultProcessor(CanBehaveLikeAVariable[T], ABC):
         This is the exposed evaluation method for users.
         """
         SymbolGraph().remove_dead_instances()
-        yield from map(self._child_._process_result_, self._evaluate__())
+        yield from map(self._process_result_, self._evaluate__())
+
+    def _process_result_(self, result: OperationResult) -> T:
+        return self._child_._process_result_(result)
 
     @cached_property
     def _all_variable_instances_(self) -> List[Variable]:
@@ -521,6 +524,21 @@ class Aggregator(ResultProcessor[T], ABC):
     def __post_init__(self):
         super().__post_init__()
         self._var_ = self
+
+    def _process_result_(self, result: OperationResult) -> UnificationDict:
+        """
+        Map the result to the correct output data structure for user usage. This returns the selected variables only.
+        Return a dictionary with the selected variables as keys and the values as values.
+
+        :param result: The result to be mapped.
+        :return: The mapped result.
+        """
+        if self._per_ is None:
+            return super()._process_result_(result)
+        else:
+            return UnificationDict(
+                {self._id_expression_map_[id_]: v for id_, v in result.bindings.items()}
+            )
 
     def per(self, *variables: TypingUnion[Selectable, Any]) -> Self:
         """
@@ -1525,6 +1543,7 @@ class Concatenate(CanBehaveLikeAVariable[T]):
     ) -> Iterable[OperationResult]:
         if self._id_ in sources:
             yield OperationResult(sources, self._is_false_, self)
+            return
         self._eval_parent_ = parent
         for var in self._variables_:
             for var_val in var._evaluate__(sources, self):

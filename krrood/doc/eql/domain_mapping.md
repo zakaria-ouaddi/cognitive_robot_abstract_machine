@@ -156,8 +156,9 @@ handles = variable(Handle, world.bodies)
 containers = variable(Container, world.bodies)
 
 # Concatenate them into a single variable
-all_bodies = concatenate(handles, containers)
-query = an(entity(all_bodies))
+handles_and_containers = concatenate(handles, containers)
+results = an(entity(handles_and_containers)).evaluate()
 
-assert len(list(query.evaluate())) == len(world.bodies)
+assert len(results) == len(world.bodies)
+print(len(results))
 ```

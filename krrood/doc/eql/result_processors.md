@@ -132,11 +132,9 @@ body = variable(Body, domain=world.bodies)
 
 # Count bodies per type
 count_per_body_type = eql.count(body).per(body.type)
-query = a(set_of(count_per_body_type, body.type))
+results = count_per_body_type.evaluate()
 
-# evaluate the query and print the results
-results = query.evaluate()
-
+# When .per() is used, each result is a dictionary mapping the variables to their values
 for res in results:
     group_type = res[body.type]
     count_value = res[count_per_body_type]
