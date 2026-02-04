@@ -144,7 +144,26 @@ class NoConditionsProvidedToWhereStatementOfDescriptor(UsageError):
 
 
 @dataclass
-class AggregationUsageError(UsageError): ...
+class AggregationUsageError(UsageError):
+    """
+    Raised when there is an incorrect usage of aggregation in the entity query language API.
+    """
+
+    descriptor: QueryObjectDescriptor
+    """
+    The query object descriptor that contains the aggregation.
+    """
+
+
+@dataclass
+class HavingUsedBeforeWhereError(AggregationUsageError):
+    """
+    raised when having is used before where.
+    """
+
+    def __post_init__(self):
+        self.message = f"HAVING is used before WHERE in the query object descriptor {self.descriptor}"
+        super().__post_init__()
 
 
 @dataclass
@@ -161,41 +180,45 @@ class NonAggregatedSelectedVariablesError(AggregationUsageError):
     """
     The aggregated variables.
     """
-    group_by_variables: List[Selectable] = field(default_factory=list)
-    """
-    The grouped by variables, if any.
-    """
 
     def __post_init__(self):
         self.message = (
             f"The variabls {self.non_aggregated_variables} are neither aggregated nor grouped by, they cannot be selected"
             f"along with the aggregated variables {self.aggregated_variables}. You can only select variables that are"
-            f" either aggregated or are in the grouped by variables {self.group_by_variables}."
+            f" either aggregated or are in the grouped by variables {self.descriptor._variables_to_group_by_}."
         )
         super().__post_init__()
 
 
 @dataclass
-class AggregatorWithNonAggregatorInWhereConditionError(AggregationUsageError):
+class NonAggregatorInHavingConditionsError(AggregationUsageError):
     """
-    Raised when an aggregator is used in a where condition with non-aggregators.
+    Raised when a non-aggregator is used in a having condition.
     """
 
-    descriptor: QueryObjectDescriptor
+    non_aggregators: List[Selectable]
+
+    def __post_init__(self):
+        self.message = f"The having condition of the descriptor {self.descriptor} contains non-aggregators {self.non_aggregators}."
+        super().__post_init__()
+
+
+@dataclass
+class AggregatorInWhereConditionsError(AggregationUsageError):
     """
-    The query object descriptor that contains the aggregators and non-aggregators.
+    Raised when an aggregator is used in a where condition.
     """
+
     aggregators: List[Aggregator]
     """
     The aggregators in the where condition.
     """
-    non_aggregators: List[Selectable]
-    """
-    The non-aggregators in the where condition.
-    """
 
     def __post_init__(self):
-        self.message = f"The where condition of the descriptor {self.descriptor} contains aggregators {self.aggregators} and non-aggregators {self.non_aggregators}."
+        self.message = (
+            f"The where condition of the descriptor {self.descriptor} contains aggregators {self.aggregators}."
+            f"If you want filter using aggregators, use `QueryObjectDescriptor.having()` instead."
+        )
         super().__post_init__()
 
 

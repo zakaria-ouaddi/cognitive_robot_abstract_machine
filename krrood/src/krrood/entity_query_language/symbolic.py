@@ -51,9 +51,10 @@ from .failures import (
     CannotProcessResultOfGivenChildType,
     LiteralConditionError,
     NonAggregatedSelectedVariablesError,
-    UsageError,
     NoConditionsProvidedToWhereStatementOfDescriptor,
-    AggregatorWithNonAggregatorInWhereConditionError,
+    AggregatorInWhereConditionsError,
+    HavingUsedBeforeWhereError,
+    NonAggregatorInHavingConditionsError,
 )
 from .failures import VariableCannotBeEvaluated
 from .result_quantification_constraint import (
@@ -214,8 +215,16 @@ class SymbolicExpression(Generic[T], ABC):
         if hasattr(self, "_child_") and self._child_ is not None:
             self._update_child_()
 
-    def _update_child_(self, child: Optional[SymbolicExpression] = None):
+    def _update_child_(
+        self,
+        child: Optional[SymbolicExpression] = None,
+        parent_of_existing_child: bool = False,
+    ):
         child = child or self._child_
+        if self._child_ is not None and parent_of_existing_child:
+            self._child_._node_.parents.remove(self._node_)
+            self._child_._parent_ = None
+            child._update_children_(self._child_)
         self._child_ = self._update_children_(child)[0]
 
     def _update_children_(
@@ -701,7 +710,8 @@ class Count(Aggregator[T]):
     def _apply_aggregation_function_(
         self, child_results: Iterable[OperationResult]
     ) -> Iterator[Bindings]:
-        yield {self._binding_id_: len(list(child_results))}
+        for res in child_results:
+            yield {self._binding_id_: len(list(res.value))}
 
 
 @dataclass(eq=False, repr=False)
@@ -1027,7 +1037,15 @@ class QueryObjectDescriptor(SymbolicExpression[T], ABC):
     """
     A set of seen results, used when distinct is called in the query object descriptor.
     """
-    _condition_list_: List[ConditionType] = field(default_factory=list, init=False)
+    _where_condition_list_: List[ConditionType] = field(
+        default_factory=list, init=False
+    )
+    """
+    The condition list of the query object descriptor.
+    """
+    _having_condition_list_: List[ConditionType] = field(
+        default_factory=list, init=False
+    )
     """
     The condition list of the query object descriptor.
     """
@@ -1059,9 +1077,9 @@ class QueryObjectDescriptor(SymbolicExpression[T], ABC):
             for var in non_aggregated_variables
         ):
             raise NonAggregatedSelectedVariablesError(
+                self,
                 non_aggregated_variables,
                 aggregated_variables,
-                self._variables_to_group_by_,
             )
 
     @cached_property
@@ -1101,53 +1119,87 @@ class QueryObjectDescriptor(SymbolicExpression[T], ABC):
         :param conditions: The conditions that describe the query object.
         :return: This query object descriptor.
         """
-        condition_list = list(conditions)
 
-        self._assert_correct_conditions__(condition_list)
+        self._where_condition_list_ = list(conditions)
+
+        self._assert_correct_where_conditions__()
 
         # Build the expression from the conditions
         expression = (
-            chained_logic(AND, *condition_list)
-            if len(condition_list) > 1
-            else condition_list[0]
+            chained_logic(AND, *self._where_condition_list_)
+            if len(self._where_condition_list_) > 1
+            else self._where_condition_list_[0]
         )
 
         # set the child of the query object descriptor to the expression and return self.
         self._update_child_(expression)
         return self
 
-    def _assert_correct_conditions__(self, condition_list: List[ConditionType]):
+    def having(self, *conditions: ConditionType) -> Self:
         """
-        :param condition_list: The conditions that constrain the query selectables.
+        Set the conditions that describe the query object. The conditions are chained using AND.
+
+        :param conditions: The conditions that describe the query object.
+        :return: This query object descriptor.
+        """
+        self._having_condition_list_ = list(conditions)
+
+        self._assert_correct_having_conditions__()
+
+        # Build the expression from the conditions
+        expression = (
+            chained_logic(AND, *self._having_condition_list_)
+            if len(self._having_condition_list_) > 1
+            else self._having_condition_list_[0]
+        )
+
+        # set the child of the query object descriptor to the expression and return self.
+        self._update_child_(expression, parent_of_existing_child=True)
+        return self
+
+    def _assert_correct_conditions__(self, conditions: List[ConditionType]):
+        """
+        :param conditions: The conditions that describe the query object.
         :raises UsageError: If the conditions are not valid.
         """
         # If there are no conditions raise error.
-        if len(condition_list) == 0:
+        if len(conditions) == 0:
             raise NoConditionsProvidedToWhereStatementOfDescriptor(self)
-
-        self._condition_list_ = condition_list
 
         # If there's a constant condition raise error.
         literal_expressions = [
-            exp for exp in condition_list if not isinstance(exp, SymbolicExpression)
+            exp for exp in conditions if not isinstance(exp, SymbolicExpression)
         ]
         if literal_expressions:
             raise LiteralConditionError(self, literal_expressions)
 
-    def _assert_correct_conditions_with_aggregations__(self):
+    def _assert_correct_where_conditions__(self):
         """
-        :raises AggregatorWithNonAggregatorInWhereConditionError: If the conditions have aggregators and non-aggregators.
+        Assert that the where conditions are correct.
+
+        :raises UsageError: If the where conditions are not valid.
         """
+        if self._having_condition_list_:
+            raise HavingUsedBeforeWhereError(self)
+        self._assert_correct_conditions__(self._where_condition_list_)
         aggregators, non_aggregators = (
             self._aggregators_and_non_aggregators_in_where_condition_
         )
-        if aggregators and any(
-            var._binding_id_ not in self._ids_of_variables_to_group_by_
-            for var in non_aggregators
-        ):
-            raise AggregatorWithNonAggregatorInWhereConditionError(
-                self, aggregators, non_aggregators
-            )
+        if aggregators:
+            raise AggregatorInWhereConditionsError(self, aggregators)
+
+    def _assert_correct_having_conditions__(self):
+        """
+        Assert that the having conditions are correct.
+
+        :raises UsageError: If the having conditions are not valid.
+        """
+        self._assert_correct_conditions__(self._having_condition_list_)
+        aggregators, non_aggregators = (
+            self._aggregators_and_non_aggregators_in_where_condition_
+        )
+        if non_aggregators:
+            raise NonAggregatorInHavingConditionsError(self, non_aggregators)
 
     @cached_property
     def _aggregators_and_non_aggregators_in_where_condition_(
@@ -1157,15 +1209,15 @@ class QueryObjectDescriptor(SymbolicExpression[T], ABC):
         Get the aggregators and non-aggregators in the where condition.
         """
         aggregators, non_aggregators = [], []
-        for cond in self._condition_list_:
+        for cond in self._where_condition_list_:
             if isinstance(cond, Aggregator):
                 aggregators.append(cond)
             else:
                 non_aggregators.append(cond)
-            for var in cond._children_:
+            for var in cond._descendants_:
                 if isinstance(var, Aggregator):
                     aggregators.append(var)
-                elif not isinstance(var, Literal):
+                elif isinstance(var, Selectable) and not isinstance(var, Literal):
                     non_aggregators.append(var)
         return aggregators, non_aggregators
 
@@ -1275,7 +1327,6 @@ class QueryObjectDescriptor(SymbolicExpression[T], ABC):
         and selecting variables.
         """
         self._assert_correct_selected_variables__()
-        self._assert_correct_conditions_with_aggregations__()
         self._eval_parent_ = parent
         sources = sources or {}
 

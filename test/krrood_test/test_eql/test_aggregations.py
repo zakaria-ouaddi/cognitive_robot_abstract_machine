@@ -8,7 +8,10 @@ from krrood.entity_query_language.entity import (
     entity,
     set_of,
 )
-from krrood.entity_query_language.failures import NonAggregatedSelectedVariablesError
+from krrood.entity_query_language.failures import (
+    NonAggregatedSelectedVariablesError,
+    AggregatorInWhereConditionsError,
+)
 from ..dataset.department_and_employee import Department, Employee
 from ..dataset.semantic_world_like_classes import Cabinet
 
@@ -21,6 +24,25 @@ def test_non_aggregated_selectables_with_aggregated_ones(handles_and_containers_
         query = a(
             set_of(drawer, eql.max(drawer))
             .where(drawer.handle.name.startswith("H"))
+            .grouped_by(cabinet)
+        )
+        _ = list(query.evaluate())
+
+
+def test_non_aggregated_conditions_with_aggregated_ones(handles_and_containers_world):
+    world = handles_and_containers_world
+    cabinet = variable(Cabinet, domain=world.views)
+    drawer = variable_from(cabinet.drawers)
+    query = a(
+        set_of(cabinet, eql.max(drawer.handle.name))
+        .where(cabinet.container.name.startswith("C"))
+        .grouped_by(cabinet)
+    )
+    _ = list(query.evaluate())
+    with pytest.raises(AggregatorInWhereConditionsError):
+        query = a(
+            set_of(cabinet, max_handle_name := eql.max(drawer.handle.name))
+            .where(max_handle_name.startswith("H"))
             .grouped_by(cabinet)
         )
         _ = list(query.evaluate())
@@ -50,6 +72,24 @@ def test_max_grouped_by(handles_and_containers_world):
         d = res[max_drawer]
         assert d in c.drawers
         assert d.handle.name == max(cd.handle.name for cd in c.drawers)
+
+
+def test_having_with_max(handles_and_containers_world):
+    world = handles_and_containers_world
+    cabinet = variable(Cabinet, domain=world.views)
+    drawer = variable_from(cabinet.drawers)
+
+    query = a(
+        set_of(
+            cabinet,
+            drawer_count := eql.count(drawer),
+            eql.max(drawer, key=lambda d: d.handle.name),
+        )
+        .having(drawer_count > 1)
+        .grouped_by(cabinet)
+    )
+    results = list(query.evaluate())
+    assert len(results) == 1
 
 
 def test_multiple_per_variables(handles_and_containers_world):
