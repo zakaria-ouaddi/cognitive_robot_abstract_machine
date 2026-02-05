@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import inspect
+from functools import lru_cache
+
 """
 Utilities for hashing, rendering, and general helpers used by the
 symbolic query engine.
@@ -22,9 +25,11 @@ from typing_extensions import (
     TypeVar,
     List,
     Dict,
-    Iterable,
     Callable,
     Iterator,
+    Union,
+    Type,
+    Tuple,
 )
 
 
@@ -207,3 +212,61 @@ def chain_stages(stages: List[Stage], initial: Binding) -> Iterator[Binding]:
             yield from evaluate_next_stage_or_yield(i + 1, b2)
 
     yield from evaluate_next_stage_or_yield(0, initial)
+
+
+@lru_cache
+def get_function_argument_names(function: Callable) -> List[str]:
+    """
+    :param function: A function to inspect
+    :return: The argument names of the function
+    """
+    return list(inspect.signature(function).parameters.keys())
+
+
+def merge_args_and_kwargs(
+    function_or_class: Union[Callable, Type], args, kwargs, ignore_first: bool = False
+) -> Dict[str, Any]:
+    """
+    Merge the arguments and keyword-arguments of a function/class into a dict of keyword-arguments.
+    If a class is passed, the arguments are assumed to be the `__init__` arguments.
+
+    :param function_or_class: The function/class to get the argument names from
+    :param args: The arguments passed to the function
+    :param kwargs: The keyword arguments passed to the function
+    :param ignore_first: Rather to ignore the first argument or not.
+    Use this when `function_or_class` contains something like `self`
+    :return: The dict of assigned keyword-arguments.
+    """
+    starting_index = 1 if ignore_first else 0
+    function_or_class = (
+        function_or_class.__init__
+        if inspect.isclass(function_or_class)
+        else function_or_class
+    )
+    all_kwargs = {
+        name: arg
+        for name, arg in zip(
+            get_function_argument_names(function_or_class)[starting_index:],
+            args,
+        )
+    }
+    all_kwargs.update(kwargs)
+    return all_kwargs
+
+
+def convert_args_and_kwargs_into_a_hashable_key(
+    dictionary: Dict[str, Any],
+) -> Tuple[Any, ...]:
+    """
+    Generates a hashable key from the dictionary. The key is a tuple of sorted (key, value) pairs.
+    If a value is a dictionary, it is converted to a frozenset of its items.
+
+    :param dictionary: The keyword arguments to generate the key from.
+    :return: The generated key as a tuple.
+    """
+    key = []
+    for k, v in dictionary.items():
+        if isinstance(v, dict):
+            v = frozenset(v.items())
+        key.append((k, v))
+    return tuple(sorted(key))
