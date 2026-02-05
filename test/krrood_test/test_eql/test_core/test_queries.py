@@ -1040,3 +1040,9 @@ def test_same_domain_mapping(handles_and_containers_world):
 
     assert body.name[1] is not body.name[0]
     assert body.name.startswith("Handle1") is not body.name.startswith("Handle")
+
+
+def test_order_by_not_evaluated_variable(handles_and_containers_world):
+    body = variable(Body, domain=handles_and_containers_world.bodies)
+    query = an(entity(body).order_by(variable=body.name, descending=False))
+    assert list(query.evaluate()) == sorted(handles_and_containers_world.bodies, key=lambda b: b.name, reverse=False)
