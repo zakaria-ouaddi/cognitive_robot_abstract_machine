@@ -85,6 +85,7 @@ def test_create_nodes_for_specialized_generic():
     )
 
     assert len(generic_float.fields) == 1
+    print(generic_float.fields)
 
     float_field = generic_float.fields[0]
     assert float_field.type_endpoint is float
