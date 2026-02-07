@@ -685,7 +685,7 @@ def test_algebra_sequentialplan(immutable_model_world):
         context,
         MoveTorsoActionDescription(None),
         # MoveTorsoActionDescription(TorsoState.HIGH),
-        # MoveTorsoActionDescription([TorsoState.HIGH]),
+        # MoveTorsoActionDescription([TorsoState.LOW, TorsoState.HIGH]),
         NavigateActionDescription(None),
         MoveTorsoActionDescription(None),
     )

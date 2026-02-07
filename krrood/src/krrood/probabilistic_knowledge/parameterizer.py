@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
-from typing import assert_never
+from typing import assert_never, Any
 
 from sqlalchemy import inspect, Column
 from sqlalchemy.orm import Relationship
@@ -176,37 +176,53 @@ class DAOParameterizer:
                 if wrapped_field.is_optional:
                     continue
 
+                # one to one relationships are handled through relationships, they should never appear here
                 if (
                     wrapped_field.is_one_to_one_relationship
                     and not wrapped_field.is_enum
                 ):
                     assert_never(wrapped_field)
 
+                # Not sure how we want to handle one to many relationships. We dont know how long the container should be
+                # so does it really make sense to parameterize it?
                 if wrapped_field.is_one_to_many_relationship:
                     assert_never(wrapped_field)
 
-                var = self.create_variable_from_wrapped_field(
-                    wrapped_field, prefix, attribute_name
-                )
+                attribute = getattr(dao, attribute_name)
+                if not attribute:
+                    var = self._create_variable_from_wrapped_field(
+                        wrapped_field, f"{prefix}.{attribute_name}"
+                    )
+                elif not isinstance(attribute, list_like_classes):
+                    # skip attributes that are not None, and not lists. those are already set correctly, and by not
+                    # adding the variable we dont clutter the model
+                    continue
+                else:
+                    var = self._create_variable_from_list_attribute(
+                        attribute, f"{prefix}.{attribute_name}"
+                    )
                 variables_by_name.setdefault(var.name, var)
 
         for relationship in mapper.relationships:
             attribute_name = relationship.key
 
             for wrapped_field in class_diagram.get_wrapped_class(original_class).fields:
-                if (
-                    wrapped_field.public_name != attribute_name
-                    or wrapped_field.is_optional
-                    or getattr(dao, attribute_name) is not None
-                ):
+                if wrapped_field.public_name != attribute_name:
                     continue
-                dao_class = get_dao_class(wrapped_field.type_endpoint)
-                variables = self.parameterize_dao(
-                    dao=dao_class(),
-                    prefix=f"{prefix}.{attribute_name}",
-                )
-                for var in variables:
-                    variables_by_name.setdefault(var.name, var)
+                if wrapped_field.is_optional:
+                    continue
+
+                if wrapped_field.is_one_to_one_relationship:
+                    dao_class = get_dao_class(wrapped_field.type_endpoint)
+                    variables = self.parameterize_dao(
+                        dao=dao_class(),
+                        prefix=f"{prefix}.{attribute_name}",
+                    )
+                    for var in variables:
+                        variables_by_name.setdefault(var.name, var)
+                elif wrapped_field.is_one_to_many_relationship:
+                    # Here again, we dont know how long the container should be. Not sure how to handle this yet.
+                    assert_never(relationship)
 
         return list(variables_by_name.values())
 
@@ -220,31 +236,37 @@ class DAOParameterizer:
 
         return column.name
 
-    def create_variable_from_wrapped_field(
-        self, wrapped_field: WrappedField, prefix: str, field_name: str
-    ) -> Optional[Variable]:
+    def _create_variable_from_wrapped_field(
+        self, wrapped_field: WrappedField, name: str
+    ) -> Variable:
         """
         Create a random event variable from a WrappedField based on its type.
 
         :return: A random event variable or raise error if the type is not supported.
         """
-        endpoint_type = wrapped_field.type_endpoint
-
-        name = f"{prefix}.{field_name}"
+        type_endpoint = wrapped_field.type_endpoint
 
         if wrapped_field.is_enum:
-            return Symbolic(name, Set.from_iterable(list(endpoint_type)))
+            return Symbolic(name, Set.from_iterable(list(type_endpoint)))
 
-        elif endpoint_type is int:
+        elif type_endpoint is int:
             return Integer(name)
 
-        elif endpoint_type is float:
+        elif type_endpoint is float:
             return Continuous(name)
 
-        elif endpoint_type is bool:
+        elif type_endpoint is bool:
             return Symbolic(name, Set.from_iterable([True, False]))
 
         else:
             raise NotImplementedError(
-                f"No conversion between {endpoint_type} and random_events.Variable is known."
+                f"No conversion between {type_endpoint} and random_events.Variable is known."
             )
+
+    def _create_variable_from_list_attribute(
+        self, list_attribute: List[Any], name: str
+    ) -> Symbolic:
+        """
+        Creates a random event variable from a list attribute. That variable is the union of all elements in the list.
+        """
+        return Symbolic(name, Set.from_iterable(list_attribute))
