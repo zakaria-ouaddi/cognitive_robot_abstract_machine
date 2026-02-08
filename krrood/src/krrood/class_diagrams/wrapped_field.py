@@ -8,6 +8,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, Field, MISSING
 from datetime import datetime
 from functools import cached_property, lru_cache
+from inspect import isclass
 from types import NoneType, GenericAlias
 from copy import copy
 from typing import Generic
@@ -264,13 +265,10 @@ class WrappedField:
         :return: True if the type hint is an underspecified generic class.
         """
         # If it's a class and it inherits from Generic but has no arguments
-        try:
-            if inspect.isclass(self.type_endpoint) and issubclass(
-                self.type_endpoint, Generic
-            ):
-                return True
-        except TypeError:
-            pass
+        if inspect.isclass(self.type_endpoint) and issubclass(
+            self.type_endpoint, Generic
+        ):
+            return True
 
         # Also check if it's a GenericAlias with empty args (though usually origin is used then)
         origin = get_origin(self.type_endpoint)

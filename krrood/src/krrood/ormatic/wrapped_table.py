@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from functools import cached_property, lru_cache
+from inspect import isclass
 
 from typing_extensions import List, Dict, TYPE_CHECKING, Optional, Set, Type
 
@@ -517,11 +518,20 @@ class WrappedTable:
             such as its data type, whether it represents a built-in or user-defined type, or if it has
             specific ORM container properties.
         """
-        if wrapped_field.is_underspecified_generic:
+        if (
+            wrapped_field.is_underspecified_generic
+            and isclass(wrapped_field.type_endpoint)
+            and not any(
+                [
+                    am
+                    for am in self.ormatic.alternative_mappings
+                    if issubclass(wrapped_field.type_endpoint, am.original_class())
+                ]
+            )
+        ):
             logger.info(f"Skipping underspecified generic field.")
-            return
 
-        if wrapped_field.is_type_type:
+        elif wrapped_field.is_type_type:
             logger.info(f"Parsing as type.")
             self.create_type_type_column(wrapped_field)
 

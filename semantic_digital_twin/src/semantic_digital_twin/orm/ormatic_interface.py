@@ -60,7 +60,7 @@ class Base(DeclarativeBase):
 
 
 # Association tables for many-to-many relationships
-class JointstatedaoConnectionsAssociationDAO(Base, AssociationDataAccessObject):
+class JointStateDAO_connections_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "JointStateDAO_connections_association"
 
@@ -77,7 +77,7 @@ class JointstatedaoConnectionsAssociationDAO(Base, AssociationDataAccessObject):
     )
 
 
-class ShapedaoSimulatorAdditionalPropertiesAssociationDAO(
+class ShapeDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
@@ -95,7 +95,7 @@ class ShapedaoSimulatorAdditionalPropertiesAssociationDAO(
     )
 
 
-class ShapecollectiondaoShapesAssociationDAO(Base, AssociationDataAccessObject):
+class ShapeCollectionDAO_shapes_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "ShapeCollectionDAO_shapes_association"
 
@@ -110,7 +110,7 @@ class ShapecollectiondaoShapesAssociationDAO(Base, AssociationDataAccessObject):
     )
 
 
-class WorldmappingdaoKinematicStructureEntitiesAssociationDAO(
+class WorldMappingDAO_kinematic_structure_entities_association(
     Base, AssociationDataAccessObject
 ):
 
@@ -130,7 +130,7 @@ class WorldmappingdaoKinematicStructureEntitiesAssociationDAO(
     )
 
 
-class WorldmappingdaoConnectionsAssociationDAO(Base, AssociationDataAccessObject):
+class WorldMappingDAO_connections_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "WorldMappingDAO_connections_association"
 
@@ -147,7 +147,7 @@ class WorldmappingdaoConnectionsAssociationDAO(Base, AssociationDataAccessObject
     )
 
 
-class WorldmappingdaoSemanticAnnotationsAssociationDAO(
+class WorldMappingDAO_semantic_annotations_association(
     Base, AssociationDataAccessObject
 ):
 
@@ -166,7 +166,7 @@ class WorldmappingdaoSemanticAnnotationsAssociationDAO(
     )
 
 
-class WorldmappingdaoDegreesOfFreedomAssociationDAO(Base, AssociationDataAccessObject):
+class WorldMappingDAO_degrees_of_freedom_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "WorldMappingDAO_degrees_of_freedom_association"
 
@@ -183,7 +183,7 @@ class WorldmappingdaoDegreesOfFreedomAssociationDAO(Base, AssociationDataAccessO
     )
 
 
-class WorldentitydaoSimulatorAdditionalPropertiesAssociationDAO(
+class WorldEntityDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
@@ -203,7 +203,7 @@ class WorldentitydaoSimulatorAdditionalPropertiesAssociationDAO(
     )
 
 
-class HasdoorsdaoDoorsAssociationDAO(Base, AssociationDataAccessObject):
+class HasDoorsDAO_doors_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "HasDoorsDAO_doors_association"
 
@@ -216,7 +216,7 @@ class HasdoorsdaoDoorsAssociationDAO(Base, AssociationDataAccessObject):
     target: Mapped[DoorDAO] = relationship("DoorDAO", foreign_keys=[target_doordao_id])
 
 
-class HasdrawersdaoDrawersAssociationDAO(Base, AssociationDataAccessObject):
+class HasDrawersDAO_drawers_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "HasDrawersDAO_drawers_association"
 
@@ -233,7 +233,7 @@ class HasdrawersdaoDrawersAssociationDAO(Base, AssociationDataAccessObject):
     )
 
 
-class SpoondaoSimulatorAdditionalPropertiesAssociationDAO(
+class SpoonDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
@@ -251,7 +251,7 @@ class SpoondaoSimulatorAdditionalPropertiesAssociationDAO(
     )
 
 
-class CupdaoSimulatorAdditionalPropertiesAssociationDAO(
+class CupDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
@@ -269,7 +269,7 @@ class CupdaoSimulatorAdditionalPropertiesAssociationDAO(
     )
 
 
-class CandydaoSimulatorAdditionalPropertiesAssociationDAO(
+class CandyDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
@@ -287,7 +287,7 @@ class CandydaoSimulatorAdditionalPropertiesAssociationDAO(
     )
 
 
-class CerealdaoSimulatorAdditionalPropertiesAssociationDAO(
+class CerealDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
@@ -307,7 +307,7 @@ class CerealdaoSimulatorAdditionalPropertiesAssociationDAO(
     )
 
 
-class MilkdaoSimulatorAdditionalPropertiesAssociationDAO(
+class MilkDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
@@ -325,7 +325,7 @@ class MilkdaoSimulatorAdditionalPropertiesAssociationDAO(
     )
 
 
-class NoodlesdaoSimulatorAdditionalPropertiesAssociationDAO(
+class NoodlesDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
@@ -345,7 +345,7 @@ class NoodlesdaoSimulatorAdditionalPropertiesAssociationDAO(
     )
 
 
-class HasaperturesdaoAperturesAssociationDAO(Base, AssociationDataAccessObject):
+class HasAperturesDAO_apertures_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "HasAperturesDAO_apertures_association"
 
@@ -362,7 +362,7 @@ class HasaperturesdaoAperturesAssociationDAO(Base, AssociationDataAccessObject):
     )
 
 
-class HasstoragespacedaoObjectsAssociationDAO(Base, AssociationDataAccessObject):
+class HasStorageSpaceDAO_objects_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "HasStorageSpaceDAO_objects_association"
 
@@ -379,7 +379,7 @@ class HasstoragespacedaoObjectsAssociationDAO(Base, AssociationDataAccessObject)
     )
 
 
-class BowldaoSimulatorAdditionalPropertiesAssociationDAO(
+class BowlDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
@@ -397,7 +397,7 @@ class BowldaoSimulatorAdditionalPropertiesAssociationDAO(
     )
 
 
-class BowldaoObjectsAssociationDAO(Base, AssociationDataAccessObject):
+class BowlDAO_objects_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "BowlDAO_objects_association"
 
@@ -412,7 +412,7 @@ class BowldaoObjectsAssociationDAO(Base, AssociationDataAccessObject):
     )
 
 
-class CupboarddaoObjectsAssociationDAO(Base, AssociationDataAccessObject):
+class CupboardDAO_objects_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "CupboardDAO_objects_association"
 
@@ -429,7 +429,7 @@ class CupboarddaoObjectsAssociationDAO(Base, AssociationDataAccessObject):
     )
 
 
-class DresserdaoDrawersAssociationDAO(Base, AssociationDataAccessObject):
+class DresserDAO_drawers_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "DresserDAO_drawers_association"
 
@@ -446,7 +446,7 @@ class DresserdaoDrawersAssociationDAO(Base, AssociationDataAccessObject):
     )
 
 
-class DresserdaoObjectsAssociationDAO(Base, AssociationDataAccessObject):
+class DresserDAO_objects_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "DresserDAO_objects_association"
 
@@ -463,7 +463,7 @@ class DresserdaoObjectsAssociationDAO(Base, AssociationDataAccessObject):
     )
 
 
-class FridgedaoDoorsAssociationDAO(Base, AssociationDataAccessObject):
+class FridgeDAO_doors_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "FridgeDAO_doors_association"
 
@@ -476,7 +476,7 @@ class FridgedaoDoorsAssociationDAO(Base, AssociationDataAccessObject):
     target: Mapped[DoorDAO] = relationship("DoorDAO", foreign_keys=[target_doordao_id])
 
 
-class FridgedaoObjectsAssociationDAO(Base, AssociationDataAccessObject):
+class FridgeDAO_objects_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "FridgeDAO_objects_association"
 
@@ -493,7 +493,7 @@ class FridgedaoObjectsAssociationDAO(Base, AssociationDataAccessObject):
     )
 
 
-class WardrobedaoDrawersAssociationDAO(Base, AssociationDataAccessObject):
+class WardrobeDAO_drawers_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "WardrobeDAO_drawers_association"
 
@@ -510,7 +510,7 @@ class WardrobedaoDrawersAssociationDAO(Base, AssociationDataAccessObject):
     )
 
 
-class WardrobedaoObjectsAssociationDAO(Base, AssociationDataAccessObject):
+class WardrobeDAO_objects_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "WardrobeDAO_objects_association"
 
@@ -527,7 +527,7 @@ class WardrobedaoObjectsAssociationDAO(Base, AssociationDataAccessObject):
     )
 
 
-class SaltcontainerdaoSimulatorAdditionalPropertiesAssociationDAO(
+class SaltContainerDAO_simulator_additional_properties_association(
     Base, AssociationDataAccessObject
 ):
 
@@ -547,33 +547,77 @@ class SaltcontainerdaoSimulatorAdditionalPropertiesAssociationDAO(
     )
 
 
-AbstractRobotDAO_manipulators_association = Table(
-    "AbstractRobotDAO_manipulators_association",
-    Base.metadata,
-    Column("source_abstractrobotdao_id", ForeignKey("AbstractRobotDAO.database_id")),
-    Column("target_manipulatordao_id", ForeignKey("ManipulatorDAO.database_id")),
-)
-AbstractRobotDAO_sensors_association = Table(
-    "AbstractRobotDAO_sensors_association",
-    Base.metadata,
-    Column("source_abstractrobotdao_id", ForeignKey("AbstractRobotDAO.database_id")),
-    Column("target_sensordao_id", ForeignKey("SensorDAO.database_id")),
-)
-AbstractRobotDAO_manipulator_chains_association = Table(
-    "AbstractRobotDAO_manipulator_chains_association",
-    Base.metadata,
-    Column("source_abstractrobotdao_id", ForeignKey("AbstractRobotDAO.database_id")),
-    Column("target_kinematicchaindao_id", ForeignKey("KinematicChainDAO.database_id")),
-)
-AbstractRobotDAO_sensor_chains_association = Table(
-    "AbstractRobotDAO_sensor_chains_association",
-    Base.metadata,
-    Column("source_abstractrobotdao_id", ForeignKey("AbstractRobotDAO.database_id")),
-    Column("target_kinematicchaindao_id", ForeignKey("KinematicChainDAO.database_id")),
-)
+class AbstractRobotDAO_manipulators_association(Base, AssociationDataAccessObject):
+
+    __tablename__ = "AbstractRobotDAO_manipulators_association"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_abstractrobotdao_id: Mapped[int] = mapped_column(
+        ForeignKey("AbstractRobotDAO.database_id")
+    )
+    target_manipulatordao_id: Mapped[int] = mapped_column(
+        ForeignKey("ManipulatorDAO.database_id")
+    )
+
+    target: Mapped[ManipulatorDAO] = relationship(
+        "ManipulatorDAO", foreign_keys=[target_manipulatordao_id]
+    )
 
 
-class HsrbdaoArmsAssociationDAO(Base, AssociationDataAccessObject):
+class AbstractRobotDAO_sensors_association(Base, AssociationDataAccessObject):
+
+    __tablename__ = "AbstractRobotDAO_sensors_association"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_abstractrobotdao_id: Mapped[int] = mapped_column(
+        ForeignKey("AbstractRobotDAO.database_id")
+    )
+    target_sensordao_id: Mapped[int] = mapped_column(
+        ForeignKey("SensorDAO.database_id")
+    )
+
+    target: Mapped[SensorDAO] = relationship(
+        "SensorDAO", foreign_keys=[target_sensordao_id]
+    )
+
+
+class AbstractRobotDAO_manipulator_chains_association(
+    Base, AssociationDataAccessObject
+):
+
+    __tablename__ = "AbstractRobotDAO_manipulator_chains_association"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_abstractrobotdao_id: Mapped[int] = mapped_column(
+        ForeignKey("AbstractRobotDAO.database_id")
+    )
+    target_kinematicchaindao_id: Mapped[int] = mapped_column(
+        ForeignKey("KinematicChainDAO.database_id")
+    )
+
+    target: Mapped[KinematicChainDAO] = relationship(
+        "KinematicChainDAO", foreign_keys=[target_kinematicchaindao_id]
+    )
+
+
+class AbstractRobotDAO_sensor_chains_association(Base, AssociationDataAccessObject):
+
+    __tablename__ = "AbstractRobotDAO_sensor_chains_association"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_abstractrobotdao_id: Mapped[int] = mapped_column(
+        ForeignKey("AbstractRobotDAO.database_id")
+    )
+    target_kinematicchaindao_id: Mapped[int] = mapped_column(
+        ForeignKey("KinematicChainDAO.database_id")
+    )
+
+    target: Mapped[KinematicChainDAO] = relationship(
+        "KinematicChainDAO", foreign_keys=[target_kinematicchaindao_id]
+    )
+
+
+class HSRBDAO_arms_association(Base, AssociationDataAccessObject):
 
     __tablename__ = "HSRBDAO_arms_association"
 
@@ -584,7 +628,7 @@ class HsrbdaoArmsAssociationDAO(Base, AssociationDataAccessObject):
     target: Mapped[ArmDAO] = relationship("ArmDAO", foreign_keys=[target_armdao_id])
 
 
-class SemanticrobotannotationdaoJointStatesAssociationDAO(
+class SemanticRobotAnnotationDAO_joint_states_association(
     Base, AssociationDataAccessObject
 ):
 
@@ -603,15 +647,24 @@ class SemanticrobotannotationdaoJointStatesAssociationDAO(
     )
 
 
-KinematicChainDAO_sensors_association = Table(
-    "KinematicChainDAO_sensors_association",
-    Base.metadata,
-    Column("source_kinematicchaindao_id", ForeignKey("KinematicChainDAO.database_id")),
-    Column("target_sensordao_id", ForeignKey("SensorDAO.database_id")),
-)
+class KinematicChainDAO_sensors_association(Base, AssociationDataAccessObject):
+
+    __tablename__ = "KinematicChainDAO_sensors_association"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_kinematicchaindao_id: Mapped[int] = mapped_column(
+        ForeignKey("KinematicChainDAO.database_id")
+    )
+    target_sensordao_id: Mapped[int] = mapped_column(
+        ForeignKey("SensorDAO.database_id")
+    )
+
+    target: Mapped[SensorDAO] = relationship(
+        "SensorDAO", foreign_keys=[target_sensordao_id]
+    )
 
 
-class WorldmodelmodificationblockdaoModificationsAssociationDAO(
+class WorldModelModificationBlockDAO_modifications_association(
     Base, AssociationDataAccessObject
 ):
 
@@ -964,12 +1017,12 @@ class JointStateDAO(
         use_existing_column=True,
     )
 
-    connections: Mapped[builtins.list[JointstatedaoConnectionsAssociationDAO]] = (
+    connections: Mapped[builtins.list[JointStateDAO_connections_association]] = (
         relationship(
-            "JointstatedaoConnectionsAssociationDAO",
+            "JointStateDAO_connections_association",
             collection_class=builtins.list,
             cascade="all, delete-orphan",
-            foreign_keys="[JointstatedaoConnectionsAssociationDAO.source_jointstatedao_id]",
+            foreign_keys="[JointStateDAO_connections_association.source_jointstatedao_id]",
         )
     )
     name: Mapped[PrefixedNameDAO] = relationship(
@@ -1278,12 +1331,12 @@ class ShapeDAO(
     )
 
     simulator_additional_properties: Mapped[
-        builtins.list[ShapedaoSimulatorAdditionalPropertiesAssociationDAO]
+        builtins.list[ShapeDAO_simulator_additional_properties_association]
     ] = relationship(
-        "ShapedaoSimulatorAdditionalPropertiesAssociationDAO",
+        "ShapeDAO_simulator_additional_properties_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[ShapedaoSimulatorAdditionalPropertiesAssociationDAO.source_shapedao_id]",
+        foreign_keys="[ShapeDAO_simulator_additional_properties_association.source_shapedao_id]",
     )
     origin: Mapped[HomogeneousTransformationMatrixMappingDAO] = relationship(
         "HomogeneousTransformationMatrixMappingDAO",
@@ -1416,13 +1469,11 @@ class ShapeCollectionDAO(
         use_existing_column=True,
     )
 
-    shapes: Mapped[builtins.list[ShapecollectiondaoShapesAssociationDAO]] = (
-        relationship(
-            "ShapecollectiondaoShapesAssociationDAO",
-            collection_class=builtins.list,
-            cascade="all, delete-orphan",
-            foreign_keys="[ShapecollectiondaoShapesAssociationDAO.source_shapecollectiondao_id]",
-        )
+    shapes: Mapped[builtins.list[ShapeCollectionDAO_shapes_association]] = relationship(
+        "ShapeCollectionDAO_shapes_association",
+        collection_class=builtins.list,
+        cascade="all, delete-orphan",
+        foreign_keys="[ShapeCollectionDAO_shapes_association.source_shapecollectiondao_id]",
     )
     reference_frame: Mapped[KinematicStructureEntityDAO] = relationship(
         "KinematicStructureEntityDAO",
@@ -1742,37 +1793,46 @@ class WorldMappingDAO(
         String(255), use_existing_column=True
     )
 
+    state_id: Mapped[int] = mapped_column(
+        ForeignKey("WorldStateMappingDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+
     kinematic_structure_entities: Mapped[
-        builtins.list[WorldmappingdaoKinematicStructureEntitiesAssociationDAO]
+        builtins.list[WorldMappingDAO_kinematic_structure_entities_association]
     ] = relationship(
-        "WorldmappingdaoKinematicStructureEntitiesAssociationDAO",
+        "WorldMappingDAO_kinematic_structure_entities_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[WorldmappingdaoKinematicStructureEntitiesAssociationDAO.source_worldmappingdao_id]",
+        foreign_keys="[WorldMappingDAO_kinematic_structure_entities_association.source_worldmappingdao_id]",
     )
-    connections: Mapped[builtins.list[WorldmappingdaoConnectionsAssociationDAO]] = (
+    connections: Mapped[builtins.list[WorldMappingDAO_connections_association]] = (
         relationship(
-            "WorldmappingdaoConnectionsAssociationDAO",
+            "WorldMappingDAO_connections_association",
             collection_class=builtins.list,
             cascade="all, delete-orphan",
-            foreign_keys="[WorldmappingdaoConnectionsAssociationDAO.source_worldmappingdao_id]",
+            foreign_keys="[WorldMappingDAO_connections_association.source_worldmappingdao_id]",
         )
     )
     semantic_annotations: Mapped[
-        builtins.list[WorldmappingdaoSemanticAnnotationsAssociationDAO]
+        builtins.list[WorldMappingDAO_semantic_annotations_association]
     ] = relationship(
-        "WorldmappingdaoSemanticAnnotationsAssociationDAO",
+        "WorldMappingDAO_semantic_annotations_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[WorldmappingdaoSemanticAnnotationsAssociationDAO.source_worldmappingdao_id]",
+        foreign_keys="[WorldMappingDAO_semantic_annotations_association.source_worldmappingdao_id]",
     )
     degrees_of_freedom: Mapped[
-        builtins.list[WorldmappingdaoDegreesOfFreedomAssociationDAO]
+        builtins.list[WorldMappingDAO_degrees_of_freedom_association]
     ] = relationship(
-        "WorldmappingdaoDegreesOfFreedomAssociationDAO",
+        "WorldMappingDAO_degrees_of_freedom_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[WorldmappingdaoDegreesOfFreedomAssociationDAO.source_worldmappingdao_id]",
+        foreign_keys="[WorldMappingDAO_degrees_of_freedom_association.source_worldmappingdao_id]",
+    )
+    state: Mapped[WorldStateMappingDAO] = relationship(
+        "WorldStateMappingDAO", uselist=False, foreign_keys=[state_id], post_update=True
     )
 
 
@@ -1798,12 +1858,12 @@ class WorldEntityDAO(
     )
 
     simulator_additional_properties: Mapped[
-        builtins.list[WorldentitydaoSimulatorAdditionalPropertiesAssociationDAO]
+        builtins.list[WorldEntityDAO_simulator_additional_properties_association]
     ] = relationship(
-        "WorldentitydaoSimulatorAdditionalPropertiesAssociationDAO",
+        "WorldEntityDAO_simulator_additional_properties_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[WorldentitydaoSimulatorAdditionalPropertiesAssociationDAO.source_worldentitydao_id]",
+        foreign_keys="[WorldEntityDAO_simulator_additional_properties_association.source_worldentitydao_id]",
     )
     name: Mapped[PrefixedNameDAO] = relationship(
         "PrefixedNameDAO", uselist=False, foreign_keys=[name_id], post_update=True
@@ -2566,11 +2626,11 @@ class HasDoorsDAO(
         use_existing_column=True,
     )
 
-    doors: Mapped[builtins.list[HasdoorsdaoDoorsAssociationDAO]] = relationship(
-        "HasdoorsdaoDoorsAssociationDAO",
+    doors: Mapped[builtins.list[HasDoorsDAO_doors_association]] = relationship(
+        "HasDoorsDAO_doors_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[HasdoorsdaoDoorsAssociationDAO.source_hasdoorsdao_id]",
+        foreign_keys="[HasDoorsDAO_doors_association.source_hasdoorsdao_id]",
     )
 
     __mapper_args__ = {
@@ -2593,11 +2653,11 @@ class HasDrawersDAO(
         use_existing_column=True,
     )
 
-    drawers: Mapped[builtins.list[HasdrawersdaoDrawersAssociationDAO]] = relationship(
-        "HasdrawersdaoDrawersAssociationDAO",
+    drawers: Mapped[builtins.list[HasDrawersDAO_drawers_association]] = relationship(
+        "HasDrawersDAO_drawers_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[HasdrawersdaoDrawersAssociationDAO.source_hasdrawersdao_id]",
+        foreign_keys="[HasDrawersDAO_drawers_association.source_hasdrawersdao_id]",
     )
 
     __mapper_args__ = {
@@ -2973,12 +3033,12 @@ class SpoonDAO(
     )
 
     simulator_additional_properties: Mapped[
-        builtins.list[SpoondaoSimulatorAdditionalPropertiesAssociationDAO]
+        builtins.list[SpoonDAO_simulator_additional_properties_association]
     ] = relationship(
-        "SpoondaoSimulatorAdditionalPropertiesAssociationDAO",
+        "SpoonDAO_simulator_additional_properties_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[SpoondaoSimulatorAdditionalPropertiesAssociationDAO.source_spoondao_id]",
+        foreign_keys="[SpoonDAO_simulator_additional_properties_association.source_spoondao_id]",
     )
     name: Mapped[PrefixedNameDAO] = relationship(
         "PrefixedNameDAO", uselist=False, foreign_keys=[name_id], post_update=True
@@ -3104,12 +3164,12 @@ class CupDAO(
     )
 
     simulator_additional_properties: Mapped[
-        builtins.list[CupdaoSimulatorAdditionalPropertiesAssociationDAO]
+        builtins.list[CupDAO_simulator_additional_properties_association]
     ] = relationship(
-        "CupdaoSimulatorAdditionalPropertiesAssociationDAO",
+        "CupDAO_simulator_additional_properties_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[CupdaoSimulatorAdditionalPropertiesAssociationDAO.source_cupdao_id]",
+        foreign_keys="[CupDAO_simulator_additional_properties_association.source_cupdao_id]",
     )
     name: Mapped[PrefixedNameDAO] = relationship(
         "PrefixedNameDAO", uselist=False, foreign_keys=[name_id], post_update=True
@@ -3237,12 +3297,12 @@ class CandyDAO(
     )
 
     simulator_additional_properties: Mapped[
-        builtins.list[CandydaoSimulatorAdditionalPropertiesAssociationDAO]
+        builtins.list[CandyDAO_simulator_additional_properties_association]
     ] = relationship(
-        "CandydaoSimulatorAdditionalPropertiesAssociationDAO",
+        "CandyDAO_simulator_additional_properties_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[CandydaoSimulatorAdditionalPropertiesAssociationDAO.source_candydao_id]",
+        foreign_keys="[CandyDAO_simulator_additional_properties_association.source_candydao_id]",
     )
     name: Mapped[PrefixedNameDAO] = relationship(
         "PrefixedNameDAO", uselist=False, foreign_keys=[name_id], post_update=True
@@ -3288,12 +3348,12 @@ class CerealDAO(
     )
 
     simulator_additional_properties: Mapped[
-        builtins.list[CerealdaoSimulatorAdditionalPropertiesAssociationDAO]
+        builtins.list[CerealDAO_simulator_additional_properties_association]
     ] = relationship(
-        "CerealdaoSimulatorAdditionalPropertiesAssociationDAO",
+        "CerealDAO_simulator_additional_properties_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[CerealdaoSimulatorAdditionalPropertiesAssociationDAO.source_cerealdao_id]",
+        foreign_keys="[CerealDAO_simulator_additional_properties_association.source_cerealdao_id]",
     )
     name: Mapped[PrefixedNameDAO] = relationship(
         "PrefixedNameDAO", uselist=False, foreign_keys=[name_id], post_update=True
@@ -3377,12 +3437,12 @@ class MilkDAO(
     )
 
     simulator_additional_properties: Mapped[
-        builtins.list[MilkdaoSimulatorAdditionalPropertiesAssociationDAO]
+        builtins.list[MilkDAO_simulator_additional_properties_association]
     ] = relationship(
-        "MilkdaoSimulatorAdditionalPropertiesAssociationDAO",
+        "MilkDAO_simulator_additional_properties_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[MilkdaoSimulatorAdditionalPropertiesAssociationDAO.source_milkdao_id]",
+        foreign_keys="[MilkDAO_simulator_additional_properties_association.source_milkdao_id]",
     )
     name: Mapped[PrefixedNameDAO] = relationship(
         "PrefixedNameDAO", uselist=False, foreign_keys=[name_id], post_update=True
@@ -3428,12 +3488,12 @@ class NoodlesDAO(
     )
 
     simulator_additional_properties: Mapped[
-        builtins.list[NoodlesdaoSimulatorAdditionalPropertiesAssociationDAO]
+        builtins.list[NoodlesDAO_simulator_additional_properties_association]
     ] = relationship(
-        "NoodlesdaoSimulatorAdditionalPropertiesAssociationDAO",
+        "NoodlesDAO_simulator_additional_properties_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[NoodlesdaoSimulatorAdditionalPropertiesAssociationDAO.source_noodlesdao_id]",
+        foreign_keys="[NoodlesDAO_simulator_additional_properties_association.source_noodlesdao_id]",
     )
     name: Mapped[PrefixedNameDAO] = relationship(
         "PrefixedNameDAO", uselist=False, foreign_keys=[name_id], post_update=True
@@ -3693,12 +3753,12 @@ class HasAperturesDAO(
         use_existing_column=True,
     )
 
-    apertures: Mapped[builtins.list[HasaperturesdaoAperturesAssociationDAO]] = (
+    apertures: Mapped[builtins.list[HasAperturesDAO_apertures_association]] = (
         relationship(
-            "HasaperturesdaoAperturesAssociationDAO",
+            "HasAperturesDAO_apertures_association",
             collection_class=builtins.list,
             cascade="all, delete-orphan",
-            foreign_keys="[HasaperturesdaoAperturesAssociationDAO.source_hasaperturesdao_id]",
+            foreign_keys="[HasAperturesDAO_apertures_association.source_hasaperturesdao_id]",
         )
     )
 
@@ -3837,12 +3897,12 @@ class HasStorageSpaceDAO(
         use_existing_column=True,
     )
 
-    objects: Mapped[builtins.list[HasstoragespacedaoObjectsAssociationDAO]] = (
+    objects: Mapped[builtins.list[HasStorageSpaceDAO_objects_association]] = (
         relationship(
-            "HasstoragespacedaoObjectsAssociationDAO",
+            "HasStorageSpaceDAO_objects_association",
             collection_class=builtins.list,
             cascade="all, delete-orphan",
-            foreign_keys="[HasstoragespacedaoObjectsAssociationDAO.source_hasstoragespacedao_id]",
+            foreign_keys="[HasStorageSpaceDAO_objects_association.source_hasstoragespacedao_id]",
         )
     )
 
@@ -3922,12 +3982,12 @@ class BowlDAO(
     )
 
     simulator_additional_properties: Mapped[
-        builtins.list[BowldaoSimulatorAdditionalPropertiesAssociationDAO]
+        builtins.list[BowlDAO_simulator_additional_properties_association]
     ] = relationship(
-        "BowldaoSimulatorAdditionalPropertiesAssociationDAO",
+        "BowlDAO_simulator_additional_properties_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[BowldaoSimulatorAdditionalPropertiesAssociationDAO.source_bowldao_id]",
+        foreign_keys="[BowlDAO_simulator_additional_properties_association.source_bowldao_id]",
     )
     name: Mapped[PrefixedNameDAO] = relationship(
         "PrefixedNameDAO", uselist=False, foreign_keys=[name_id], post_update=True
@@ -3935,11 +3995,11 @@ class BowlDAO(
     root: Mapped[BodyDAO] = relationship(
         "BodyDAO", uselist=False, foreign_keys=[root_id], post_update=True
     )
-    objects: Mapped[builtins.list[BowldaoObjectsAssociationDAO]] = relationship(
-        "BowldaoObjectsAssociationDAO",
+    objects: Mapped[builtins.list[BowlDAO_objects_association]] = relationship(
+        "BowlDAO_objects_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[BowldaoObjectsAssociationDAO.source_bowldao_id]",
+        foreign_keys="[BowlDAO_objects_association.source_bowldao_id]",
     )
     supporting_surface: Mapped[RegionDAO] = relationship(
         "RegionDAO",
@@ -4036,11 +4096,11 @@ class CupboardDAO(
         use_existing_column=True,
     )
 
-    objects: Mapped[builtins.list[CupboarddaoObjectsAssociationDAO]] = relationship(
-        "CupboarddaoObjectsAssociationDAO",
+    objects: Mapped[builtins.list[CupboardDAO_objects_association]] = relationship(
+        "CupboardDAO_objects_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[CupboarddaoObjectsAssociationDAO.source_cupboarddao_id]",
+        foreign_keys="[CupboardDAO_objects_association.source_cupboarddao_id]",
     )
     supporting_surface: Mapped[RegionDAO] = relationship(
         "RegionDAO",
@@ -4074,17 +4134,17 @@ class DresserDAO(
         use_existing_column=True,
     )
 
-    drawers: Mapped[builtins.list[DresserdaoDrawersAssociationDAO]] = relationship(
-        "DresserdaoDrawersAssociationDAO",
+    drawers: Mapped[builtins.list[DresserDAO_drawers_association]] = relationship(
+        "DresserDAO_drawers_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[DresserdaoDrawersAssociationDAO.source_dresserdao_id]",
+        foreign_keys="[DresserDAO_drawers_association.source_dresserdao_id]",
     )
-    objects: Mapped[builtins.list[DresserdaoObjectsAssociationDAO]] = relationship(
-        "DresserdaoObjectsAssociationDAO",
+    objects: Mapped[builtins.list[DresserDAO_objects_association]] = relationship(
+        "DresserDAO_objects_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[DresserdaoObjectsAssociationDAO.source_dresserdao_id]",
+        foreign_keys="[DresserDAO_objects_association.source_dresserdao_id]",
     )
     supporting_surface: Mapped[RegionDAO] = relationship(
         "RegionDAO",
@@ -4120,17 +4180,17 @@ class FridgeDAO(
         use_existing_column=True,
     )
 
-    doors: Mapped[builtins.list[FridgedaoDoorsAssociationDAO]] = relationship(
-        "FridgedaoDoorsAssociationDAO",
+    doors: Mapped[builtins.list[FridgeDAO_doors_association]] = relationship(
+        "FridgeDAO_doors_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[FridgedaoDoorsAssociationDAO.source_fridgedao_id]",
+        foreign_keys="[FridgeDAO_doors_association.source_fridgedao_id]",
     )
-    objects: Mapped[builtins.list[FridgedaoObjectsAssociationDAO]] = relationship(
-        "FridgedaoObjectsAssociationDAO",
+    objects: Mapped[builtins.list[FridgeDAO_objects_association]] = relationship(
+        "FridgeDAO_objects_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[FridgedaoObjectsAssociationDAO.source_fridgedao_id]",
+        foreign_keys="[FridgeDAO_objects_association.source_fridgedao_id]",
     )
     supporting_surface: Mapped[RegionDAO] = relationship(
         "RegionDAO",
@@ -4164,17 +4224,17 @@ class WardrobeDAO(
         use_existing_column=True,
     )
 
-    drawers: Mapped[builtins.list[WardrobedaoDrawersAssociationDAO]] = relationship(
-        "WardrobedaoDrawersAssociationDAO",
+    drawers: Mapped[builtins.list[WardrobeDAO_drawers_association]] = relationship(
+        "WardrobeDAO_drawers_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[WardrobedaoDrawersAssociationDAO.source_wardrobedao_id]",
+        foreign_keys="[WardrobeDAO_drawers_association.source_wardrobedao_id]",
     )
-    objects: Mapped[builtins.list[WardrobedaoObjectsAssociationDAO]] = relationship(
-        "WardrobedaoObjectsAssociationDAO",
+    objects: Mapped[builtins.list[WardrobeDAO_objects_association]] = relationship(
+        "WardrobeDAO_objects_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[WardrobedaoObjectsAssociationDAO.source_wardrobedao_id]",
+        foreign_keys="[WardrobeDAO_objects_association.source_wardrobedao_id]",
     )
     supporting_surface: Mapped[RegionDAO] = relationship(
         "RegionDAO",
@@ -4523,12 +4583,12 @@ class SaltContainerDAO(
     )
 
     simulator_additional_properties: Mapped[
-        builtins.list[SaltcontainerdaoSimulatorAdditionalPropertiesAssociationDAO]
+        builtins.list[SaltContainerDAO_simulator_additional_properties_association]
     ] = relationship(
-        "SaltcontainerdaoSimulatorAdditionalPropertiesAssociationDAO",
+        "SaltContainerDAO_simulator_additional_properties_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[SaltcontainerdaoSimulatorAdditionalPropertiesAssociationDAO.source_saltcontainerdao_id]",
+        foreign_keys="[SaltContainerDAO_simulator_additional_properties_association.source_saltcontainerdao_id]",
     )
     name: Mapped[PrefixedNameDAO] = relationship(
         "PrefixedNameDAO", uselist=False, foreign_keys=[name_id], post_update=True
@@ -5020,37 +5080,35 @@ class AbstractRobotDAO(
     base: Mapped[BaseDAO] = relationship(
         "BaseDAO", uselist=False, foreign_keys=[base_id], post_update=True
     )
-    manipulators: Mapped[builtins.set[ManipulatorDAO]] = relationship(
-        "ManipulatorDAO",
-        secondary="AbstractRobotDAO_manipulators_association",
-        primaryjoin="AbstractRobotDAO.database_id == AbstractRobotDAO_manipulators_association.c.source_abstractrobotdao_id",
-        secondaryjoin="ManipulatorDAO.database_id == AbstractRobotDAO_manipulators_association.c.target_manipulatordao_id",
-        collection_class=builtins.set,
-        cascade="save-update, merge",
+    manipulators: Mapped[builtins.set[AbstractRobotDAO_manipulators_association]] = (
+        relationship(
+            "AbstractRobotDAO_manipulators_association",
+            collection_class=builtins.set,
+            cascade="all, delete-orphan",
+            foreign_keys="[AbstractRobotDAO_manipulators_association.source_abstractrobotdao_id]",
+        )
     )
-    sensors: Mapped[builtins.set[SensorDAO]] = relationship(
-        "SensorDAO",
-        secondary="AbstractRobotDAO_sensors_association",
-        primaryjoin="AbstractRobotDAO.database_id == AbstractRobotDAO_sensors_association.c.source_abstractrobotdao_id",
-        secondaryjoin="SensorDAO.database_id == AbstractRobotDAO_sensors_association.c.target_sensordao_id",
+    sensors: Mapped[builtins.set[AbstractRobotDAO_sensors_association]] = relationship(
+        "AbstractRobotDAO_sensors_association",
         collection_class=builtins.set,
-        cascade="save-update, merge",
+        cascade="all, delete-orphan",
+        foreign_keys="[AbstractRobotDAO_sensors_association.source_abstractrobotdao_id]",
     )
-    manipulator_chains: Mapped[builtins.set[KinematicChainDAO]] = relationship(
-        "KinematicChainDAO",
-        secondary="AbstractRobotDAO_manipulator_chains_association",
-        primaryjoin="AbstractRobotDAO.database_id == AbstractRobotDAO_manipulator_chains_association.c.source_abstractrobotdao_id",
-        secondaryjoin="KinematicChainDAO.database_id == AbstractRobotDAO_manipulator_chains_association.c.target_kinematicchaindao_id",
+    manipulator_chains: Mapped[
+        builtins.set[AbstractRobotDAO_manipulator_chains_association]
+    ] = relationship(
+        "AbstractRobotDAO_manipulator_chains_association",
         collection_class=builtins.set,
-        cascade="save-update, merge",
+        cascade="all, delete-orphan",
+        foreign_keys="[AbstractRobotDAO_manipulator_chains_association.source_abstractrobotdao_id]",
     )
-    sensor_chains: Mapped[builtins.set[KinematicChainDAO]] = relationship(
-        "KinematicChainDAO",
-        secondary="AbstractRobotDAO_sensor_chains_association",
-        primaryjoin="AbstractRobotDAO.database_id == AbstractRobotDAO_sensor_chains_association.c.source_abstractrobotdao_id",
-        secondaryjoin="KinematicChainDAO.database_id == AbstractRobotDAO_sensor_chains_association.c.target_kinematicchaindao_id",
-        collection_class=builtins.set,
-        cascade="save-update, merge",
+    sensor_chains: Mapped[builtins.set[AbstractRobotDAO_sensor_chains_association]] = (
+        relationship(
+            "AbstractRobotDAO_sensor_chains_association",
+            collection_class=builtins.set,
+            cascade="all, delete-orphan",
+            foreign_keys="[AbstractRobotDAO_sensor_chains_association.source_abstractrobotdao_id]",
+        )
     )
     default_collision_config: Mapped[CollisionCheckingConfigDAO] = relationship(
         "CollisionCheckingConfigDAO",
@@ -5086,11 +5144,11 @@ class HSRBDAO(
     neck: Mapped[NeckDAO] = relationship(
         "NeckDAO", uselist=False, foreign_keys=[neck_id], post_update=True
     )
-    arms: Mapped[builtins.list[HsrbdaoArmsAssociationDAO]] = relationship(
-        "HsrbdaoArmsAssociationDAO",
+    arms: Mapped[builtins.list[HSRBDAO_arms_association]] = relationship(
+        "HSRBDAO_arms_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[HsrbdaoArmsAssociationDAO.source_hsrbdao_id]",
+        foreign_keys="[HSRBDAO_arms_association.source_hsrbdao_id]",
     )
 
     __mapper_args__ = {
@@ -5153,12 +5211,12 @@ class SemanticRobotAnnotationDAO(
     )
 
     joint_states: Mapped[
-        builtins.list[SemanticrobotannotationdaoJointStatesAssociationDAO]
+        builtins.list[SemanticRobotAnnotationDAO_joint_states_association]
     ] = relationship(
-        "SemanticrobotannotationdaoJointStatesAssociationDAO",
+        "SemanticRobotAnnotationDAO_joint_states_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[SemanticrobotannotationdaoJointStatesAssociationDAO.source_semanticrobotannotationdao_id]",
+        foreign_keys="[SemanticRobotAnnotationDAO_joint_states_association.source_semanticrobotannotationdao_id]",
     )
 
     __mapper_args__ = {
@@ -5197,13 +5255,11 @@ class KinematicChainDAO(
     manipulator: Mapped[ManipulatorDAO] = relationship(
         "ManipulatorDAO", uselist=False, foreign_keys=[manipulator_id], post_update=True
     )
-    sensors: Mapped[builtins.set[SensorDAO]] = relationship(
-        "SensorDAO",
-        secondary="KinematicChainDAO_sensors_association",
-        primaryjoin="KinematicChainDAO.database_id == KinematicChainDAO_sensors_association.c.source_kinematicchaindao_id",
-        secondaryjoin="SensorDAO.database_id == KinematicChainDAO_sensors_association.c.target_sensordao_id",
+    sensors: Mapped[builtins.set[KinematicChainDAO_sensors_association]] = relationship(
+        "KinematicChainDAO_sensors_association",
         collection_class=builtins.set,
-        cascade="save-update, merge",
+        cascade="all, delete-orphan",
+        foreign_keys="[KinematicChainDAO_sensors_association.source_kinematicchaindao_id]",
     )
 
     __mapper_args__ = {
@@ -5839,12 +5895,12 @@ class WorldModelModificationBlockDAO(
     )
 
     modifications: Mapped[
-        builtins.list[WorldmodelmodificationblockdaoModificationsAssociationDAO]
+        builtins.list[WorldModelModificationBlockDAO_modifications_association]
     ] = relationship(
-        "WorldmodelmodificationblockdaoModificationsAssociationDAO",
+        "WorldModelModificationBlockDAO_modifications_association",
         collection_class=builtins.list,
         cascade="all, delete-orphan",
-        foreign_keys="[WorldmodelmodificationblockdaoModificationsAssociationDAO.source_worldmodelmodificationblockdao_id]",
+        foreign_keys="[WorldModelModificationBlockDAO_modifications_association.source_worldmodelmodificationblockdao_id]",
     )
 
 

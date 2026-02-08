@@ -100,12 +100,12 @@ def test_insert(session):
     b1 = Body(name=PrefixedName("b1"), collision=ShapeCollection([shape1]))
 
     dao: BodyDAO = to_dao(b1)
-    assert dao.collision.shapes[0].origin is not None
+    assert dao.collision.shapes[0].target.origin is not None
 
     session.add(dao)
     session.commit()
     queried_body = session.scalar(select(BodyDAO))
-    assert queried_body.collision.shapes[0].origin is not None
+    assert queried_body.collision.shapes[0].target.origin is not None
     reconstructed_body = queried_body.from_dao()
     assert reconstructed_body is reconstructed_body.collision[0].origin.reference_frame
 
