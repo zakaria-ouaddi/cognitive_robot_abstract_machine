@@ -150,15 +150,23 @@ class WrappedClass:
         return introspector
 
     @cached_property
+    def class_to_introspect(self) -> Type:
+        """
+        :return: The class where the introspector should be called on.
+        """
+        return self.clazz
+
+    @cached_property
     def fields(self) -> List[WrappedField]:
         """Return wrapped fields discovered by the diagram’s attribute introspector.
 
         Public names from the introspector are used to index `_wrapped_field_name_map_`.
         """
+
+        wrapped_fields: list[WrappedField] = []
+        introspector = self._get_introspector()
         try:
-            wrapped_fields: list[WrappedField] = []
-            introspector = self._get_introspector()
-            discovered = introspector.discover(self.clazz)
+            discovered = introspector.discover(self.class_to_introspect)
             for item in discovered:
                 wf = WrappedField(
                     self,
@@ -200,35 +208,12 @@ class WrappedSpecializedGeneric(WrappedClass):
         return str(self.clazz)
 
     @cached_property
-    def specialized_dataclass(self):
+    def class_to_introspect(self):
         return make_specialized_dataclass(self.clazz)
 
     @property
     def name(self):
-        return self.specialized_dataclass.__name__
-
-    @cached_property
-    def fields(self) -> List[WrappedField]:
-        introspector = self._get_introspector()
-        wrapped_fields: list[WrappedField] = []
-        try:
-            discovered = introspector.discover(self.specialized_dataclass)
-            for item in discovered:
-                # We want the WrappedField to point to THIS WrappedSpecializedGeneric
-                # but use the field from the specialized dataclass
-                wf = WrappedField(
-                    self,
-                    item.field,
-                    public_name=item.public_name,
-                    property_descriptor=item.property_descriptor,
-                )
-                # Map under the public attribute name
-                self._wrapped_field_name_map_[item.public_name] = wf
-                wrapped_fields.append(wf)
-            return wrapped_fields
-        except TypeError as e:
-            logging.error(f"Error parsing class {self.clazz}: {e}")
-            raise ParseError(e) from e
+        return self.class_to_introspect.__name__
 
 
 @dataclass
