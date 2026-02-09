@@ -48,6 +48,23 @@ class Base(DeclarativeBase):
 
 
 # Association tables for many-to-many relationships
+class GenericClass_PositionDAO_container_association(Base, AssociationDataAccessObject):
+
+    __tablename__ = "GenericClass_PositionDAO_container_association"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_genericclass_positiondao_id: Mapped[int] = mapped_column(
+        ForeignKey("GenericClass_PositionDAO.database_id")
+    )
+    target_positiondao_id: Mapped[int] = mapped_column(
+        ForeignKey("PositionDAO.database_id")
+    )
+
+    target: Mapped[PositionDAO] = relationship(
+        "PositionDAO", foreign_keys=[target_positiondao_id]
+    )
+
+
 class GenericClassAssociationDAO_associated_value_list_association(
     Base, AssociationDataAccessObject
 ):
@@ -440,6 +457,34 @@ class GenericClassDAO(
     }
 
 
+class GenericClass_floatDAO(
+    GenericClassDAO,
+    DataAccessObject[test.krrood_test.dataset.example_classes.GenericClass[float]],
+):
+
+    __tablename__ = "GenericClass_floatDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(GenericClassDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    value: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+    optional_value: Mapped[typing.Optional[builtins.float]] = mapped_column(
+        use_existing_column=True
+    )
+
+    container: Mapped[typing.List[builtins.float]] = mapped_column(
+        JSON, nullable=False, use_existing_column=True
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "GenericClass_floatDAO",
+        "inherit_condition": database_id == GenericClassDAO.database_id,
+    }
+
+
 class GenericClass_PositionDAO(
     GenericClassDAO,
     DataAccessObject[
@@ -462,34 +507,29 @@ class GenericClass_PositionDAO(
         nullable=True,
         use_existing_column=True,
     )
+    optional_value_id: Mapped[typing.Optional[builtins.int]] = mapped_column(
+        ForeignKey("PositionDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
 
     value: Mapped[PositionDAO] = relationship(
         "PositionDAO", uselist=False, foreign_keys=[value_id], post_update=True
     )
+    optional_value: Mapped[PositionDAO] = relationship(
+        "PositionDAO", uselist=False, foreign_keys=[optional_value_id], post_update=True
+    )
+    container: Mapped[builtins.list[GenericClass_PositionDAO_container_association]] = (
+        relationship(
+            "GenericClass_PositionDAO_container_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[GenericClass_PositionDAO_container_association.source_genericclass_positiondao_id]",
+        )
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": "GenericClass_PositionDAO",
-        "inherit_condition": database_id == GenericClassDAO.database_id,
-    }
-
-
-class GenericClass_floatDAO(
-    GenericClassDAO,
-    DataAccessObject[test.krrood_test.dataset.example_classes.GenericClass[float]],
-):
-
-    __tablename__ = "GenericClass_floatDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(GenericClassDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    value: Mapped[builtins.float] = mapped_column(use_existing_column=True)
-
-    __mapper_args__ = {
-        "polymorphic_identity": "GenericClass_floatDAO",
         "inherit_condition": database_id == GenericClassDAO.database_id,
     }
 

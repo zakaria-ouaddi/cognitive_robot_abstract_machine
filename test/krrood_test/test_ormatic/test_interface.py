@@ -763,7 +763,7 @@ def test_generic_class(session, database):
     assert hasattr(GenericClass_PositionDAO, "optional_value")
     assert hasattr(GenericClass_PositionDAO, "container")
 
-    assert hasattr(GenericClassAssociation, "associated_value")
+    assert hasattr(GenericClassAssociationDAO, "associated_value")
     generic_position = GenericClass[Position](Position(1.0, 2.0, 3.0))
     obj = GenericClassAssociation(
         associated_value=GenericClass[float](1.0),

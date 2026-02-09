@@ -7,7 +7,7 @@ from copy import copy
 from dataclasses import dataclass, make_dataclass
 from dataclasses import field, InitVar
 from functools import cached_property, lru_cache
-from typing import get_args, get_origin, _GenericAlias
+from typing import get_args, get_origin, _GenericAlias, Any
 
 import rustworkx as rx
 
@@ -808,33 +808,73 @@ def make_specialized_dataclass(alias: _GenericAlias) -> Type:
     params: Tuple[TypeVar, ...] = template_class.__parameters__
     substitution = dict(zip(params, args))
     # Also map by TypeVar name to handle postponed annotations ('T')
-    name_substitution: Dict[str, Type] = {
-        p.__name__: a for p, a in substitution.items()
-    }
+    name_substitution = {p.__name__: a for p, a in substitution.items()}
 
     def resolve(tp):
         # Resolve string forward refs and TypeVar names
         if isinstance(tp, str):
-            # Direct match for a TypeVar name
             if tp in name_substitution:
                 return name_substitution[tp]
-            # Otherwise, leave as-is; let get_type_hints of the specialized class resolve later if needed
             return tp
 
         if isinstance(tp, TypeVar):
             return substitution.get(tp, tp)
-        o = get_origin(tp)
-        if o is None:
+
+        # Get arguments and recursively resolve them
+        args = get_args(tp)
+        if not args:
             return tp
-        return o[tuple(resolve(a) for a in get_args(tp))]
+
+        resolved_args = tuple(resolve(a) for a in args)
+
+        # If the type itself can be indexed (like List[T] or Optional[T])
+        params = getattr(tp, "__parameters__", None)
+        if hasattr(tp, "__getitem__") and params:
+            if len(params) < len(resolved_args):
+                # Filter out NoneType if it's an Optional/Union and we have more args than parameters
+                new_args = tuple(a for a in resolved_args if a is not type(None))
+                if len(new_args) == len(params):
+                    if len(params) == 1:
+                        return tp[new_args[0]]
+                    return tp[new_args]
+
+            if len(params) == 1 and len(resolved_args) == 1:
+                return tp[resolved_args[0]]
+            return tp[resolved_args]
+
+        # Fallback: re-construct from origin (e.g. for Union/Optional or built-in generics)
+        origin = get_origin(tp)
+        if origin is not None:
+            # Special case for Union which might be represented as typing.Union
+            # and needs to be indexed.
+            if origin is Union:
+                return origin[resolved_args]
+            try:
+                return origin[resolved_args]
+            except TypeError:
+                # Some origins might not be indexable directly or might need single arg
+                if len(resolved_args) == 1:
+                    return origin[resolved_args[0]]
+                raise
+
+        return tp
 
     # Preserve dataclass parameters
     params_obj = template_class.__dataclass_params__
 
     # Build field specs by copying defaults/metadata and substituting types
     new_fields = []
+    # Use get_type_hints to resolve any postponed annotations (strings)
+    # This is important for GenericClass[T] where fields might be strings.
+    try:
+        resolved_hints = get_type_hints(template_class, include_extras=True)
+    except Exception:
+        resolved_hints = {f.name: f.type for f in dataclasses.fields(template_class)}
+
     for f in dataclasses.fields(template_class):
-        new_type = resolve(f.type)
+        # Use the resolved hint if available, else fallback to the raw field type
+        raw_type = resolved_hints.get(f.name, f.type)
+        new_type = resolve(raw_type)
         # Copy defaults and flags
         kwargs = dict(
             default=f.default,
