@@ -29,6 +29,7 @@ members = [
   "krrood",
   "random_events",
   "probabilistic_model",
+  "multiverse_simulators"
 ]
 
 [tool.uv.sources]
@@ -38,7 +39,8 @@ semantic_digital_twin = { workspace = true }
 krrood                = { workspace = true }
 probabilistic_model   = { workspace = true }
 random_events         = { workspace = true }
-random_events_lib     = {git = "https://github.com/tomsch420/random-events-lib/tree/master", branch = "master"}
+random_events_lib     = { git = "https://github.com/tomsch420/random-events-lib/tree/master", branch = "master"}
+multiverse_simulators = { workspace = true }
 
 [tool.poetry]
 package-mode = false
