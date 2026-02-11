@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import inspect
 import logging
+import uuid
 from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import IntEnum
@@ -150,11 +151,6 @@ class WorldModelUpdateContextManager:
     The world to manage updates for.
     """
 
-    publisher_id: UUID = field(default=None, kw_only=True)
-    """
-    The id of the synchronizer that triggered the change, if any
-    """
-
     first: bool = True
     """
     First time flag.
@@ -180,7 +176,7 @@ class WorldModelUpdateContextManager:
             )
             self.world.get_world_model_manager().current_model_modification_block = None
             if exc_type is None:
-                self.world._notify_model_change(publisher_id=self.publisher_id)
+                self.world._notify_model_change()
             self.world.world_is_being_modified = False
 
 
@@ -440,21 +436,15 @@ class WorldModelManager:
     Callbacks to be called when the model of the world changes.
     """
 
-    def update_model_version_and_notify_callbacks(
-        self, publisher_id: UUID = None
-    ) -> None:
+    def update_model_version_and_notify_callbacks(self) -> None:
         """
         Notifies the system of a model change and updates necessary states, caches,
         and forward kinematics expressions while also triggering registered callbacks
         for model changes.
-
-        :param publisher_id: The publisher ID of the model change.
-            If None, the change will just be applied normally
-            If not None, the change may be skipped if the a synchronizer receives its own message
         """
         self.version += 1
         for callback in self.model_change_callbacks:
-            callback.notify(publisher_id=publisher_id)
+            callback.notify()
 
 
 _LRU_CACHE_SIZE: int = 2048
@@ -1500,33 +1490,24 @@ class World(HasSimulatorProperties):
         return new_world
 
     # %% Change Notifications
-    def notify_state_change(self, publisher_id: Optional[UUID] = None) -> None:
+    def notify_state_change(self) -> None:
         """
         If you have changed the state of the world, call this function to trigger necessary events and increase
         the state version.
-
-        :param publisher_id: The publisher ID of the model change.
-            If None, the change will just be applied normally
-            If not None, the change may be skipped if the a synchronizer receives its own message
         """
         if not self.is_empty():
             self._forward_kinematic_manager.recompute()
-        self.state._notify_state_change(publisher_id=publisher_id)
+        self.state._notify_state_change()
 
-    def _notify_model_change(self, publisher_id: Optional[UUID] = None) -> None:
+    def _notify_model_change(self) -> None:
         """
         Notifies the system of a model change and updates the necessary states, caches,
         and forward kinematics expressions while also triggering registered callbacks
         for model changes.
-        :param publisher_id: The publisher ID of the model change.
-            If None, the change will just be applied normally
-            If not None, the change may be skipped if the a synchronizer receives its own message
         """
-        self._model_manager.update_model_version_and_notify_callbacks(
-            publisher_id=publisher_id
-        )
+        self._model_manager.update_model_version_and_notify_callbacks()
         self._compile_forward_kinematics_expressions()
-        self.notify_state_change(publisher_id=publisher_id)
+        self.notify_state_change()
 
         for callback in self.state.state_change_callbacks:
             callback.update_previous_world_state()
@@ -2011,8 +1992,8 @@ class World(HasSimulatorProperties):
     def load_collision_srdf(self, file_path: str):
         self._collision_pair_manager.load_collision_srdf(file_path)
 
-    def modify_world(self, publisher_id: UUID = None) -> WorldModelUpdateContextManager:
-        return WorldModelUpdateContextManager(world=self, publisher_id=publisher_id)
+    def modify_world(self) -> WorldModelUpdateContextManager:
+        return WorldModelUpdateContextManager(world=self)
 
     def reset_state_context(self) -> ResetStateContextManager:
         return ResetStateContextManager(self)

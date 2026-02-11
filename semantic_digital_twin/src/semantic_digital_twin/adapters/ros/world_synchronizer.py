@@ -87,7 +87,6 @@ class Synchronizer(ABC):
         return MetaData(
             node_name=self.node.get_name(),
             process_id=os.getpid(),
-            publisher_id=self._id,
         )
 
     def subscription_callback(self, msg: std_msgs.msg.String):
@@ -96,8 +95,8 @@ class Synchronizer(ABC):
         """
         tracker = WorldEntityWithIDKwargsTracker.from_world(self.world)
         json_msg = json.loads(msg.data)
-        publisher_id = from_json(json_msg["meta_data"]["publisher_id"])
-        if publisher_id == self._id:
+        world_id = from_json(json_msg["meta_data"]["world_id"])
+        if world_id == self._id:
             return
         msg = self.message_type.from_json(
             json.loads(msg.data), **tracker.create_kwargs()
@@ -144,13 +143,11 @@ class SynchronizerOnCallback(Synchronizer, Callback, ABC):
     The messages that the callback did not trigger due to being paused.
     """
 
-    def _notify(self, publisher_id: Optional[UUID] = None):
+    def _notify(self):
         """
         Wrapper method around world_callback that checks if this time the callback should be triggered.
         """
-        if publisher_id == self._id:
-            return
-        self.world_callback(publisher_id=publisher_id)
+        self.world_callback()
 
     def _subscription_callback(self, msg):
         if self._is_paused:
@@ -166,7 +163,7 @@ class SynchronizerOnCallback(Synchronizer, Callback, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def world_callback(self, publisher_id: Optional[UUID] = None):
+    def world_callback(self):
         """
         Called when the world notifies and update that is not caused by this synchronizer.
         """
@@ -209,15 +206,12 @@ class StateSynchronizer(StateChangeCallback, SynchronizerOnCallback):
         if indices:
             self.world.state.data[0, indices] = np.asarray(msg.states, dtype=float)
             self.update_previous_world_state()
-            self.world.notify_state_change(publisher_id=msg.meta_data.publisher_id)
+            self.world.notify_state_change()
 
-    def world_callback(self, publisher_id: UUID = None):
+    def world_callback(self):
         """
         Publish the current world state to the ROS topic.
         """
-        if publisher_id is not None:
-            return
-
         changes = self.compute_state_changes()
 
         if not changes:
@@ -280,15 +274,12 @@ class ModelSynchronizer(
         ]
         for callback in running_callbacks:
             callback.pause()
-        with self.world.modify_world(publisher_id=msg.meta_data.publisher_id):
+        with self.world.modify_world():
             msg.modifications.apply(self.world)
         for callback in running_callbacks:
             callback.resume()
 
-    def world_callback(self, publisher_id: UUID = None):
-        if publisher_id is not None:
-            return
-
+    def world_callback(self):
         msg = ModificationBlock(
             meta_data=self.meta_data,
             modifications=self.world.get_world_model_manager().model_modification_blocks[

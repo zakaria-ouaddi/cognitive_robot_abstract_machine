@@ -29,9 +29,9 @@ class MetaData(SubclassJSONSerializer):
     The id of the process that published this message
     """
 
-    publisher_id: UUID = field(default_factory=uuid.uuid4)
+    world_id: UUID = field(default_factory=uuid.uuid4)
     """
-    The id of this publisher. This is used to identify messages that were published by the same publisher.
+    The id of the origin world. This is used to identify messages that were published by the same publisher.
     """
 
     @lru_cache(maxsize=None)
@@ -40,7 +40,7 @@ class MetaData(SubclassJSONSerializer):
             **super().to_json(),
             "node_name": self.node_name,
             "process_id": self.process_id,
-            "publisher_id": to_json(self.publisher_id),
+            "world_id": to_json(self.world_id),
         }
 
     @classmethod
@@ -48,11 +48,11 @@ class MetaData(SubclassJSONSerializer):
         return cls(
             node_name=data["node_name"],
             process_id=data["process_id"],
-            publisher_id=from_json(data["publisher_id"]),
+            world_id=from_json(data["world_id"]),
         )
 
     def __hash__(self):
-        return hash((self.node_name, self.process_id, self.publisher_id))
+        return hash((self.node_name, self.process_id, self.world_id))
 
 
 @dataclass
