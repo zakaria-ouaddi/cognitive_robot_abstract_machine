@@ -156,30 +156,32 @@ class WorldModelUpdateContextManager:
     The world to manage updates for.
     """
 
-    first: bool = True
+    _id: UUID = field(default_factory=uuid.uuid4)
     """
-    First time flag.
+    Unique identifier for this context manager instance, used to track active world model updates.
     """
 
     def __enter__(self):
-        if self.world.world_is_being_modified:
-            self.first = False
         self.world.world_is_being_modified = True
+        self.world._model_manager._active_world_model_update_context_manager_ids.append(
+            self._id
+        )
 
-        if self.first:
-            self.world.get_world_model_manager().current_model_modification_block = (
-                WorldModelModificationBlock()
-            )
-
+        # print(len(self.world._active_world_model_manager_ids))
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.first:
+        self.world._model_manager._active_world_model_update_context_manager_ids.remove(
+            self._id
+        )
+        if not self.world._model_manager._active_world_model_update_context_manager_ids:
             self.world.delete_orphaned_dofs()
             self.world.get_world_model_manager().model_modification_blocks.append(
                 self.world.get_world_model_manager().current_model_modification_block
             )
-            self.world.get_world_model_manager().current_model_modification_block = None
+            self.world.get_world_model_manager().current_model_modification_block = (
+                WorldModelModificationBlock()
+            )
             if exc_type is None:
                 self.world._notify_model_change(self.publish_changes)
             self.world.world_is_being_modified = False
@@ -230,8 +232,7 @@ def atomic_world_modification(
             bound_args = dict(bound.arguments)
             bound_args.pop("self", None)
             if (
-                current_world.get_world_model_manager().current_model_modification_block
-                is None
+                not current_world._model_manager._active_world_model_update_context_manager_ids
             ):
                 raise MissingWorldModificationContextError(func)
             current_world.get_world_model_manager().current_model_modification_block.append(
@@ -427,8 +428,8 @@ class WorldModelManager:
     The inner list is a block of modifications where change callbacks must not be called in between.
     """
 
-    current_model_modification_block: Optional[WorldModelModificationBlock] = field(
-        default=None, repr=False, init=False
+    current_model_modification_block: WorldModelModificationBlock = field(
+        default_factory=WorldModelModificationBlock, repr=False, init=False
     )
     """
     The current modification block called within one context of @atomic_world_modification.
@@ -439,6 +440,13 @@ class WorldModelManager:
     )
     """
     Callbacks to be called when the model of the world changes.
+    """
+
+    _active_world_model_update_context_manager_ids: List[UUID] = field(
+        init=False, default_factory=list, repr=False
+    )
+    """
+    List of active world model managers currently modifying this world
     """
 
     def update_model_version_and_notify_callbacks(
@@ -518,6 +526,9 @@ class World(HasSimulatorProperties):
     """
 
     _id: UUID = field(init=False, default_factory=uuid.uuid4)
+    """
+    Unique identifier for this world instance.
+    """
 
     _model_manager: WorldModelManager = field(
         default_factory=WorldModelManager, repr=False

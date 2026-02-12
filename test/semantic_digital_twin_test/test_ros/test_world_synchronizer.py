@@ -101,6 +101,20 @@ def create_dummy_world(w: Optional[World] = None) -> World:
     return w
 
 
+def wait_for_sync_kse(w1, w2, timeout=5.0, interval=0.05):
+    start = time.time()
+    while time.time() - start < timeout:
+        body_ids_1 = {body.id for body in w1.kinematic_structure_entities}
+        body_ids_2 = {body.id for body in w2.kinematic_structure_entities}
+        if body_ids_1 == body_ids_2:
+            return body_ids_1, body_ids_2
+        time.sleep(interval)
+
+    body_ids_1 = {body.id for body in w1.kinematic_structure_entities}
+    body_ids_2 = {body.id for body in w2.kinematic_structure_entities}
+    return body_ids_1, body_ids_2
+
+
 def test_state_synchronization(rclpy_node):
     w1 = create_dummy_world()
     w2 = create_dummy_world()
@@ -723,6 +737,52 @@ def test_skipping_incorrect_message(rclpy_node):
 
     time.sleep(1)
     assert len(w1.kinematic_structure_entities) == len(w2.kinematic_structure_entities)
+
+    synchronizer_1.close()
+    synchronizer_2.close()
+
+
+@pytest.mark.parametrize("before_w2", [1, 3, 4])
+@pytest.mark.parametrize("in_w2", [2, 4, 6])
+@pytest.mark.parametrize("after_w2", [1, 2, 3])
+def test_world_simultaneous_synchronization_stress_test(
+    rclpy_node, before_w2, in_w2, after_w2
+):
+    w1 = World(name="w1")
+    w2 = World(name="w2")
+
+    synchronizer_1 = ModelSynchronizer(
+        node=rclpy_node,
+        world=w1,
+    )
+    synchronizer_2 = ModelSynchronizer(
+        node=rclpy_node,
+        world=w2,
+    )
+
+    with w1.modify_world():
+        new_body = Body(name=PrefixedName("b3"))
+        w1.add_kinematic_structure_entity(new_body)
+
+    w1_ids, w2_ids = wait_for_sync_kse(w1, w2)
+
+    with w1.modify_world():
+        # Create handles before nested context
+        for _ in range(before_w2):
+            Handle.create_with_new_body_in_world(PrefixedName("handle"), w1)
+
+        # Nested w2 context
+        with w2.modify_world():
+            for _ in range(in_w2):
+                Handle.create_with_new_body_in_world(PrefixedName("handle2"), w2)
+
+        # Create handles after nested context
+        for _ in range(after_w2):
+            Handle.create_with_new_body_in_world(PrefixedName("handle"), w1)
+
+    w1_ids, w2_ids = wait_for_sync_kse(w1, w2)
+    assert len(w1.kinematic_structure_entities) == len(w2.kinematic_structure_entities)
+    assert w1_ids == w2_ids
 
     synchronizer_1.close()
     synchronizer_2.close()
