@@ -78,4 +78,3 @@ print("Done")
 rt.update_scene()
 rt.scene.show()
 
-print(perception.transform)
