@@ -49,7 +49,7 @@ class Tiago(AbstractRobot, SpecifiesLeftRightArm, HasNeck):
                 name=PrefixedName("tiago", prefix=world.name),
                 root=world.get_body_by_name("base_footprint"),
                 _world=world,
-                full_body_controlled=True,
+                full_body_controlled=False,
             )
 
             # Create left arm
