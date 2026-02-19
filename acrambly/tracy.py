@@ -1,35 +1,29 @@
 import time
-import os
 
-from pycram.datastructures.pose import PoseStamped
-from pycram.datastructures.grasp import GraspDescription
+import rclpy
+
 from pycram.datastructures.dataclasses import Context
-from pycram.language import SequentialPlan
-from pycram.process_module import simulated_robot
 from pycram.datastructures.enums import Arms, ApproachDirection, VerticalAlignment
+from pycram.datastructures.grasp import GraspDescription
+from pycram.datastructures.pose import PoseStamped
+from pycram.language import SequentialPlan
+from pycram.motion_executor import simulated_robot
 from pycram.robot_plans import (
     ParkArmsActionDescription,
     PickUpActionDescription,
     PlaceActionDescription,
-    PickAndPlaceActionDescription,
 )
-import pycram.robot_descriptions.tracy_states
+from semantic_digital_twin.adapters.ros.visualization.viz_marker import VizMarkerPublisher
+from semantic_digital_twin.adapters.urdf import URDFParser
+# import pycram.robot_descriptions.tracy_states
 from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
 from semantic_digital_twin.spatial_computations.raytracer import RayTracer
 from semantic_digital_twin.spatial_types.spatial_types import HomogeneousTransformationMatrix as tm
-
 from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.connections import Connection6DoF
+from semantic_digital_twin.world_description.geometry import Box, Scale, Color
 from semantic_digital_twin.world_description.shape_collection import ShapeCollection
 from semantic_digital_twin.world_description.world_entity import Body
-from semantic_digital_twin.adapters.urdf import URDFParser
-
-from semantic_digital_twin.world_description.geometry import Box, Scale,Color
-
-from semantic_digital_twin.adapters.ros.visualization.viz_marker import VizMarkerPublisher
-
-import rclpy
-
 
 sw = World()
 # root = Body(name= PrefixedName('root', "world"))
@@ -115,7 +109,7 @@ time.sleep(5)
 # )
 
 print(PoseStamped.from_list(frame=root, position=box1_target[0:3]))
-import pycram.robot_descriptions.tracy_states
+#import pycram.robot_descriptions.tracy_states
 rt = RayTracer(tracy_world)
 rt.update_scene()
 rt.scene.show()
@@ -151,6 +145,10 @@ with simulated_robot:
 
 print("done")
 node.destroy_node()
+
+rt.update_scene()
+rt.scene.show()
+
 try:
     rclpy.shutdown()
 except Exception:
