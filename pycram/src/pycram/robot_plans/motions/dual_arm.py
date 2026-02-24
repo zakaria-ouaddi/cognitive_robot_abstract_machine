@@ -13,6 +13,10 @@ from .base import BaseMotion
 from ...datastructures.enums import Arms
 from ...datastructures.pose import PoseStamped
 from ...view_manager import ViewManager
+from semantic_digital_twin.world_description.world_entity import Body
+from giskardpy.motion_statechart.goals.collision_avoidance import CollisionAvoidance
+from giskardpy.model.collision_matrix_manager import CollisionRequest, CollisionAvoidanceTypes
+from krrood.symbolic_math.symbolic_math import Scalar
 
 
 @dataclass
@@ -33,6 +37,9 @@ class DualArmMotion(BaseMotion):
 
     reference_angular_velocity: float = 0.2
     """Maximum angular velocity for both arms (rad/s)."""
+
+    ignored_collision_bodies: Optional[List[Body]] = None
+    """Optional list of bodies that the grippers are allowed to collide with (e.g., the handover object)."""
 
     def perform(self):
         return
@@ -64,7 +71,48 @@ class DualArmMotion(BaseMotion):
             reference_linear_velocity=self.reference_linear_velocity,
             reference_angular_velocity=self.reference_angular_velocity,
         )
-        return Parallel(nodes=[left_task, right_task])
+        
+        nodes_list = [left_task, right_task]
+        
+        # Build CollisionAvoidance
+        left_gripper_links = ViewManager().get_arm_view(Arms.LEFT, self.robot_view).gripper.gripper_links
+        right_gripper_links = ViewManager().get_arm_view(Arms.RIGHT, self.robot_view).gripper.gripper_links
+        all_grippers = left_gripper_links + right_gripper_links
+        left_gripper_bodies = [self.world.get_body_by_name(l) for l in left_gripper_links if hasattr(self.world, 'get_body_by_name')]
+        right_gripper_bodies = [self.world.get_body_by_name(l) for l in right_gripper_links if hasattr(self.world, 'get_body_by_name')]
+        
+        # Filter Nones if bodies don't exist
+        left_gripper_bodies = [b for b in left_gripper_bodies if b is not None]
+        right_gripper_bodies = [b for b in right_gripper_bodies if b is not None]
+        all_gripper_bodies = left_gripper_bodies + right_gripper_bodies
+        
+        if all_gripper_bodies:
+            safe_entries = []
+            
+            # Allow left to collide with right
+            if left_gripper_bodies and right_gripper_bodies:
+                safe_entries.append(CollisionRequest(
+                    type_=CollisionAvoidanceTypes.ALLOW_COLLISION,
+                    body_group1=left_gripper_bodies,
+                    body_group2=right_gripper_bodies,
+                    distance=0.05
+                ))
+            
+            # Allow grippers to collide with ignored bodies (e.g. the object)
+            if self.ignored_collision_bodies:
+                safe_entries.append(CollisionRequest(
+                    type_=CollisionAvoidanceTypes.ALLOW_COLLISION,
+                    body_group1=all_gripper_bodies,
+                    body_group2=self.ignored_collision_bodies,
+                    distance=0.05
+                ))
+                
+            if safe_entries:
+                allow_col = CollisionAvoidance(collision_entries=safe_entries)
+                allow_col.start_condition = Scalar.const_true()
+                nodes_list.append(allow_col)
+
+        return Parallel(nodes=nodes_list)
 
 
 @dataclass

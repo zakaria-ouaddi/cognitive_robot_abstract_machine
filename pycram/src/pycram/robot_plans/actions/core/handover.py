@@ -14,6 +14,7 @@ from ....datastructures.pose import PoseStamped
 from ....failures import ObjectNotGraspedError
 from ....language import SequentialPlan, ParallelPlan
 from ....robot_plans.actions.base import ActionDescription
+from tf_transformations import quaternion_from_euler
 from ....robot_plans.motions.dual_arm import DualArmMotion
 from ....robot_plans.motions.gripper import MoveGripperMotion, MoveTCPMotion
 from ....datastructures.enums import MovementType
@@ -59,23 +60,28 @@ class HandoverAction(ActionDescription):
         z = self.meeting_pose.position.z
         frame = self.meeting_pose.header.frame_id
 
-        def _ps(px, py, pz):
+        def _ps(px, py, pz, r=0.0, p=0.0, y_ang=0.0):
             ps = PoseStamped()
             ps.header.frame_id = frame
             ps.pose.position.x = px
             ps.pose.position.y = py
             ps.pose.position.z = pz
-            ps.pose.orientation.w = 1.0
+            
+            q = quaternion_from_euler(r, p, y_ang)
+            ps.pose.orientation.x = q[0]
+            ps.pose.orientation.y = q[1]
+            ps.pose.orientation.z = q[2]
+            ps.pose.orientation.w = q[3]
             return ps
 
         if self.giver_arm == Arms.RIGHT:
-            giver_pose = _ps(x, y - self.handover_offset, z)
-            recv_grasp = _ps(x, y + self.handover_offset, z)
-            recv_pre = _ps(x, y + self.handover_offset + self.approach_offset, z)
+            giver_pose = _ps(x, y - self.handover_offset, z, r=-1.57, p=0.0, y_ang=0.0)
+            recv_grasp = _ps(x, y + self.handover_offset, z, r=1.57, p=0.0, y_ang=0.0)
+            recv_pre = _ps(x, y + self.handover_offset + self.approach_offset, z, r=1.57, p=0.0, y_ang=0.0)
         else:
-            giver_pose = _ps(x, y + self.handover_offset, z)
-            recv_grasp = _ps(x, y - self.handover_offset, z)
-            recv_pre = _ps(x, y - self.handover_offset - self.approach_offset, z)
+            giver_pose = _ps(x, y + self.handover_offset, z, r=1.57, p=0.0, y_ang=0.0)
+            recv_grasp = _ps(x, y - self.handover_offset, z, r=-1.57, p=0.0, y_ang=0.0)
+            recv_pre = _ps(x, y - self.handover_offset - self.approach_offset, z, r=-1.57, p=0.0, y_ang=0.0)
 
         return giver_pose, recv_pre, recv_grasp
 
@@ -93,6 +99,7 @@ class HandoverAction(ActionDescription):
             DualArmMotion(
                 left_pose=giver_pose if self.giver_arm == Arms.LEFT else recv_pre,
                 right_pose=giver_pose if self.giver_arm == Arms.RIGHT else recv_pre,
+                ignored_collision_bodies=[self.object_designator]
             ),
         ).perform()
 
@@ -102,6 +109,7 @@ class HandoverAction(ActionDescription):
             DualArmMotion(
                 left_pose=giver_pose if self.giver_arm == Arms.LEFT else recv_grasp,
                 right_pose=giver_pose if self.giver_arm == Arms.RIGHT else recv_grasp,
+                ignored_collision_bodies=[self.object_designator]
             ),
         ).perform()
 
@@ -112,8 +120,11 @@ class HandoverAction(ActionDescription):
         ).perform()
 
         receiver_tip = ViewManager.get_end_effector_view(receiver, self.robot_view).tool_frame
+        
         with self.world.modify_world():
-            self.world.move_branch_with_fixed_connection(self.object_designator, receiver_tip)
+            self.world.move_branch_with_fixed_connection(
+                self.object_designator, receiver_tip
+            )
 
         # Phase 4: giver fully opens and both arms retreat
         SequentialPlan(
