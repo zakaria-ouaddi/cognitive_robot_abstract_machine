@@ -17,8 +17,8 @@ def detect_pose(obj):
     print(obj)
     if obj == "blue_box":
         pose = geometry_msgs.msg.PoseStamped()
-        pose.header.frame_id = "camera_link"
-        pose.pose.position.x, pose.pose.position.y, pose.pose.position.z = 1.0, 0.0, 0.25
+        pose.header.frame_id = "camera_color_optical_frame"
+        pose.pose.position.x, pose.pose.position.y, pose.pose.position.z = 0.0, 0.0, 0.9
         pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w = 0.0, 0.0, 0.0, 1.0
         print(pose)
         return pose
