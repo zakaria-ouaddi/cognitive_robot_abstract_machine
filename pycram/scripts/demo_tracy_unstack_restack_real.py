@@ -14,6 +14,14 @@ import sys
 import time
 import os
 
+# Ensure the SOURCE version of pycram is used (not the older installed version
+# from /install/ which colcon build puts on PYTHONPATH and which lacks Context).
+_PYCRAM_SRC = os.path.join(
+    os.path.dirname(__file__), "..", "src"
+)
+if _PYCRAM_SRC not in sys.path:
+    sys.path.insert(0, os.path.abspath(_PYCRAM_SRC))
+
 import rclpy
 
 from giskardpy_ros.python_interface.python_interface import GiskardWrapper
@@ -38,6 +46,9 @@ from pycram.robot_plans.actions.core.pick_up import PickUpActionDescription
 from pycram.robot_plans.actions.core.placing import PlaceActionDescription
 from pycram.robot_plans.motions.gripper import MoveTCPMotion
 from pycram.view_manager import ViewManager
+# Register real-robot gripper alternative for Tracy (calls Robotiq action servers
+# instead of a Giskard joint task when inside `with real_robot:`).
+import pycram.alternative_motion_mappings.tracy_motion_mapping  # noqa: F401
 
 
 def create_pose(world, x, y, z, roll=0.0, pitch=0.0, yaw=0.0):
@@ -88,7 +99,7 @@ def spawn_urdf(world, name, filepath, pose_stamped):
     print(f"Spawned URDF {name} at {p}")
     return obj_body
 
-def generate_colored_box_urdf(color_name, r, g, b, size):
+def generate_colored_box_urdf(color_name, r, g, b, sz_x, sz_y, sz_z):
     urdf = f"""<?xml version="1.0"?>
 <robot name="{color_name}_box">
   <link name="{color_name}_link">
@@ -100,7 +111,7 @@ def generate_colored_box_urdf(color_name, r, g, b, size):
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <box size="{size} {size} {size}"/>
+        <box size="{sz_x} {sz_y} {sz_z}"/>
       </geometry>
       <material name="{color_name}_mat">
         <color rgba="{r} {g} {b} 1.0"/>
@@ -109,7 +120,7 @@ def generate_colored_box_urdf(color_name, r, g, b, size):
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <box size="{size} {size} {size}"/>
+        <box size="{sz_x} {sz_y} {sz_z}"/>
       </geometry>
     </collision>
   </link>
@@ -143,30 +154,37 @@ def main():
     context = Context(world, tracy, ros_node=node)
     
     print("\n[2/3] Setting up scene (Spawning a stack of 3 boxes on the right) and RViz...")
-    # VizMarkerPublisher runs automatically in the background
-    from semantic_digital_twin.adapters.ros.visualization.viz_marker import VizMarkerPublisher
-    viz_pub = VizMarkerPublisher(world=world, node=node)
-    
-    box_height = 0.06
-    
-    red_urdf = generate_colored_box_urdf("red", 1.0, 0.0, 0.0, box_height)
-    blue_urdf = generate_colored_box_urdf("blue", 0.0, 0.0, 1.0, box_height)
-    green_urdf = generate_colored_box_urdf("green", 0.0, 1.0, 0.0, box_height)
-    
+
+    box_height = 0.05
+
+    red_urdf = generate_colored_box_urdf("red", 1.0, 0.0, 0.0, box_height, box_height, box_height)
+    blue_urdf = generate_colored_box_urdf("blue", 0.0, 0.0, 1.0, box_height, box_height, box_height)
+    green_urdf = generate_colored_box_urdf("green", 0.0, 1.0, 0.0, box_height, box_height, box_height)
+
     # Spawning positions (Stacked perfectly on the right side)
     st_x = 0.80  # Closer to robot base
     st_y = -0.30 # Closer to center
+    # st_z = center-height of the BOTTOM box in the MAP frame.
+    # This must equal (real_table_surface_z + box_height / 2).
+    # Run `ros2 topic echo /tf --once` and measure the "table" link z, then add the
+    # physical table top height from the URDF to get real_table_surface_z.
+    # Current value 0.93 is calibrated to our TracyBot table (surface ≈ 0.90 m in map frame).
     st_z = 0.93
     pick_pos_red =   (st_x, st_y, st_z)
     pick_pos_blue =  (st_x, st_y, st_z + box_height + 0.005)
     pick_pos_green = (st_x, st_y, st_z + (2 * box_height) + 0.010)
-    
+
     # We apply yaw=1.57 so that PyCRAM computes a grasp pose that does NOT twist the robot wrist
     box_red = spawn_urdf(world, "red_box", red_urdf, create_pose(world, *pick_pos_red, yaw=1.57))
     box_blue = spawn_urdf(world, "blue_box", blue_urdf, create_pose(world, *pick_pos_blue, yaw=1.57))
     box_green = spawn_urdf(world, "green_box", green_urdf, create_pose(world, *pick_pos_green, yaw=1.57))
-    
+
     time.sleep(1.0)
+
+    # VizMarkerPublisher is started AFTER all objects are fully spawned at their correct
+    # positions so its initial publish already contains correctly-placed markers.
+    from semantic_digital_twin.adapters.ros.visualization.viz_marker import VizMarkerPublisher
+    viz_pub = VizMarkerPublisher(world=world, node=node)
 
     # Create top-down GraspDescription (approach from above, gripper pointing down)
     arm = Arms.RIGHT
@@ -174,6 +192,8 @@ def main():
     grasp = GraspDescription(
         approach_direction=ApproachDirection.FRONT,
         vertical_alignment=VerticalAlignment.TOP,
+        manipulation_offset=0.15,  # Lift object 15cm up before moving sideways to clear stacks
+        grasp_position_offset=-0.015, # Grasp 1cm lower to ensure solid grip without crowding the table
         manipulator=manipulator
     )
 
@@ -181,17 +201,19 @@ def main():
     
     with real_robot:
         # The middle stacking location (closer to robot)
-        mid_x = 0.75
+        mid_x = 0.85
         mid_y = 0.0
-        mid_z = 0.93
+        mid_z = 0.925
         
         # Maintain the same 1.57 yaw to prevent wrist twisting during placement
         place_pos_1 = create_pose(world, mid_x, mid_y, mid_z, yaw=1.57)
-        place_pos_2 = create_pose(world, mid_x, mid_y, mid_z + box_height + 0.005, yaw=1.57)
-        place_pos_3 = create_pose(world, mid_x, mid_y, mid_z + (2 * box_height) + 0.010, yaw=1.57)
+        place_pos_2 = create_pose(world, mid_x, mid_y, (mid_z + box_height)-0.003, yaw=1.57)
+        place_pos_3 = create_pose(world, mid_x, mid_y, (mid_z + (2 * box_height))-0.003, yaw=1.57)
         
-        # Safe overhead via-point to prevent arm from swiping through the stack (Pitch 3.14 = gripper down)
-        safe_pose = create_pose(world, 0.55, -0.15, 1.25, pitch=3.14, yaw=1.57)
+        # Safe overhead via-point to prevent arm from swiping through the stack.
+        # roll=3.14 (not pitch) rotates around X by ~180deg which, combined with
+        # the gripper's front_facing_orientation, points the gripper straight down.
+        safe_pose = create_pose(world, 0.55, -0.15, 1.25, roll=3.14, yaw=1.57)
         
         print("\n--- Starting UNSTACK and RESTACK sequence ---")
         SequentialPlan(

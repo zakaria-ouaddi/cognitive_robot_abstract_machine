@@ -38,6 +38,9 @@ from pycram.robot_plans.actions.core.placing import PlaceActionDescription
 from pycram.robot_plans.actions.core.handover import HandoverActionDescription
 from pycram.robot_plans.motions.gripper import MoveTCPMotion
 from pycram.view_manager import ViewManager
+# Register real-robot gripper alternative for Tracy (calls Robotiq action servers
+# instead of a Giskard joint task when inside `with real_robot:`).
+import pycram.alternative_motion_mappings.tracy_motion_mapping  # noqa: F401
 
 
 def create_pose(world, x, y, z, roll=0.0, pitch=0.0, yaw=0.0):
@@ -142,8 +145,6 @@ def main():
     context = Context(world, tracy, ros_node=node)
     
     print("\n[2/3] Setting up scene (Spawning a stack of 3 boxes on the right) and RViz...")
-    from semantic_digital_twin.adapters.ros.visualization.viz_marker import VizMarkerPublisher
-    viz_pub = VizMarkerPublisher(world=world, node=node)
     
     box_height = 0.06
     
@@ -166,12 +167,19 @@ def main():
     
     time.sleep(1.0)
 
+    # VizMarkerPublisher is started AFTER all objects are fully spawned at their correct
+    # positions so its initial publish already contains correctly-placed markers.
+    from semantic_digital_twin.adapters.ros.visualization.viz_marker import VizMarkerPublisher
+    viz_pub = VizMarkerPublisher(world=world, node=node)
+
     # Right Grasp Description
     arm_right = Arms.RIGHT
     manipulator_right = ViewManager.get_arm_view(arm_right, tracy).manipulator
     grasp_right = GraspDescription(
         approach_direction=ApproachDirection.FRONT,
         vertical_alignment=VerticalAlignment.TOP,
+        manipulation_offset=0.20,  # Lift object 20cm up before moving sideways to clear stacks
+        grasp_position_offset=-0.02, # Grasp 2cm lower to ensure solid grip
         manipulator=manipulator_right
     )
 
@@ -185,7 +193,7 @@ def main():
         # The stacking location for Left arm
         place_x = 0.65
         place_y = 0.35 # On the left side
-        place_z = 0.95
+        place_z = 0.93
         
         # Maintain yaw=1.57 for left arm to place safely without twisting wrists too
         place_pos_1 = create_pose(world, place_x, place_y, place_z, yaw=1.57)

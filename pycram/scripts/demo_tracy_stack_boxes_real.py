@@ -35,6 +35,9 @@ from pycram.datastructures.pose import PoseStamped
 from pycram.robot_plans.actions.core.pick_up import PickUpActionDescription
 from pycram.robot_plans.actions.core.placing import PlaceActionDescription
 from pycram.view_manager import ViewManager
+# Register real-robot gripper alternative for Tracy (calls Robotiq action servers
+# instead of a Giskard joint task when inside `with real_robot:`).
+import pycram.alternative_motion_mappings.tracy_motion_mapping  # noqa: F401
 
 
 def create_pose(world, x, y, z, roll=0.0, pitch=0.0, yaw=0.0):
@@ -153,9 +156,6 @@ def main():
     context = Context(world, tracy, ros_node=node)
     
     print("\n[2/3] Setting up scene (Spawning 3 boxes on the right) and RViz...")
-    # VizMarkerPublisher runs automatically in the background
-    from semantic_digital_twin.adapters.ros.visualization.viz_marker import VizMarkerPublisher
-    viz_pub = VizMarkerPublisher(world=world, node=node)
     
     # We will use 0.06m (6cm) cubes for stacking
     box_height = 0.06
@@ -165,7 +165,7 @@ def main():
     blue_urdf = generate_colored_box_urdf("blue", 0.0, 0.0, 1.0, box_height)
     green_urdf = generate_colored_box_urdf("green", 0.0, 1.0, 0.0, box_height)
     
-    # Spawning positions (on the right side)
+    # Spawning positions (on the right side, each at different x for easy individual picking)
     pick_pos_red = (0.6, -0.4, 0.95)
     pick_pos_blue = (0.75, -0.4, 0.95)
     pick_pos_green = (0.9, -0.4, 0.95)
@@ -176,6 +176,11 @@ def main():
     
     time.sleep(1.0) # Let world sync
 
+    # VizMarkerPublisher is started AFTER all objects are fully spawned at their correct
+    # positions so its initial publish already contains correctly-placed markers.
+    from semantic_digital_twin.adapters.ros.visualization.viz_marker import VizMarkerPublisher
+    viz_pub = VizMarkerPublisher(world=world, node=node)
+
 
     # Create top-down GraspDescription (approach from above, gripper pointing down)
     arm = Arms.RIGHT
@@ -185,6 +190,8 @@ def main():
     grasp = GraspDescription(
         approach_direction=ApproachDirection.FRONT,
         vertical_alignment=VerticalAlignment.TOP,
+        manipulation_offset=0.20,  # Lift object 20cm up before moving sideways to clear stacks
+        grasp_position_offset=-0.02, # Grasp 2cm lower to ensure solid grip
         manipulator=manipulator
     )
 
@@ -192,7 +199,7 @@ def main():
     
     with real_robot:
         # The middle stacking location
-        middle_pos = (0.6, 0.0, 0.96)
+        middle_pos = (0.6, 0.0, 0.93)
         place_pos_blue = create_pose(world, middle_pos[0], middle_pos[1], middle_pos[2] + box_height + 0.005)
         place_pos_green = create_pose(world, middle_pos[0], middle_pos[1], middle_pos[2] + (2 * box_height) + 0.010)
         
