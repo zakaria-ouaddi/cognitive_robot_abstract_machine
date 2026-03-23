@@ -4,6 +4,7 @@ import casadi as ca
 import numpy as np
 import pytest
 import scipy
+import scipy.sparse as sp
 
 import krrood.symbolic_math.symbolic_math as sm
 from krrood.symbolic_math.exceptions import (
@@ -1166,6 +1167,11 @@ class TestMatrix:
         assert np.allclose(np.array(flat), np_flat)
         # Shape should be (n,1) like Vector
         assert flat.shape == (np_flat.size, 1)
+
+    def test_from_sparse_matrix(self):
+        matrix = sp.eye(100, format="csc")
+        sm_matrix = sm.Matrix(matrix)
+        assert np.allclose(sm_matrix.to_np(), matrix.toarray())
 
     def test_flatten_empty(self):
         data = np.eye(0)

@@ -1540,6 +1540,8 @@ def array_like_to_casadi_sx(data: VectorData) -> ca.SX:
         such as a list, tuple, or numpy array.
     :return: A CasADi SX object representation of the input data.
     """
+    if sp.issparse(data):
+        return ca.SX(data)
     x = len(data)
     if x == 0:
         return ca.SX()
