@@ -35,8 +35,10 @@ date_str = datetime.datetime.now().strftime("%Yy-%mm-%dd--%Hh-%Mm-%Ss")
 @dataclass
 class QPDebugger:
     qp_data_symbolic: QPDataSymbolic
-    last_solution: np.ndarray = field(init=False)
+    last_solution: np.ndarray | None = field(default=None)
     direct_limits: pandas.DataFrame = field(init=False)
+    equality_constraints: pandas.DataFrame = field(init=False)
+    equality_matrix: pandas.DataFrame = field(init=False)
     # weights: pandas.DataFrame = field(init=False)
     # A: pandas.DataFrame = field(init=False)
     # b: pandas.DataFrame = field(init=False)
@@ -48,10 +50,12 @@ class QPDebugger:
     # debug: pandas.DataFrame = field(init=False)
 
     def __post_init__(self):
-        self.last_solution = (
-            np.ones(self.qp_data_symbolic.box_lower_constraints.shape[0]) * np.nan
-        )
+        if self.last_solution is None:
+            self.last_solution = (
+                np.ones(self.qp_data_symbolic.box_lower_constraints.shape[0]) * np.nan
+            )
         self.create_direct_limits()
+        self.create_equality_constraints()
 
     def create_direct_limits(self):
         self.direct_limits = pd.DataFrame(
@@ -67,15 +71,23 @@ class QPDebugger:
         )
 
     def create_equality_constraints(self):
+        eq_matrix_dofs_np = self.qp_data_symbolic.eq_matrix_dofs.evaluate()
+        eq_matrix_slack_np = self.qp_data_symbolic.eq_matrix_slack.evaluate()
+        Ex = eq_matrix_dofs_np @ self.last_solution[: eq_matrix_dofs_np.shape[1]]
+        bounds = self.qp_data_symbolic.eq_bounds.evaluate()
         self.equality_constraints = pd.DataFrame(
             {
-                "Ex": self.qp_data_symbolic.box_lower_constraints.evaluate(),
-                "solution": self.last_solution,
-                "upper bounds": self.qp_data_symbolic.box_upper_constraints.evaluate(),
-                "quadratic weight": self.qp_data_symbolic.quadratic_weights.evaluate(),
-                "linear weight": self.qp_data_symbolic.linear_weights.evaluate(),
+                "Ex": Ex,
+                "slack": bounds - Ex,
+                "bounds": bounds,
             },
-            self.free_variable_names,
+            self.equality_constr_names,
+            dtype=float,
+        )
+        self.equality_matrix = pd.DataFrame(
+            eq_matrix_dofs_np,
+            self.equality_constr_names,
+            self.degree_of_freedom_names,
             dtype=float,
         )
 
@@ -299,7 +311,10 @@ class QPDebugger:
 
     @property
     def free_variable_names(self) -> list[str]:
-        return self.degree_of_freedom_names + self.equality_constr_names
+        return self.degree_of_freedom_names + [
+            c.name
+            for c in self.qp_data_symbolic.constraint_collection.equality_constraints
+        ]
 
     @property
     def degree_of_freedom_names(self) -> list[str]:
@@ -317,10 +332,7 @@ class QPDebugger:
 
     @property
     def equality_constr_names(self):
-        return [
-            c.name
-            for c in self.qp_data_symbolic.constraint_collection.equality_constraints
-        ]
+        return self.qp_data_symbolic.eq_constraint_names
 
     @property
     def inequality_constr_names(self):

@@ -13,6 +13,7 @@ from giskardpy.qp.constraint_collection import ConstraintCollection
 from giskardpy.qp.qp_controller_config import QPControllerConfig
 from giskardpy.qp.qp_data_factories import QPDataExplicitFactory
 from giskardpy.qp.qp_debugger import QPDebugger
+from giskardpy.qp.solvers.qp_solver_piqp import QPSolverPIQP
 from krrood.symbolic_math.symbolic_math import (
     create_float_variables,
     FloatVariable,
@@ -204,6 +205,7 @@ def test_mpc_model(prismatic_bot2):
     assert len(mpc_model.bounds[2].free_variables()) == 1
     assert len(mpc_model.bounds[3].free_variables()) == 1
     assert len(mpc_model.bounds[4:].free_variables()) == 0
+    assert len(mpc_model.constraint_names) == len(mpc_model.bounds)
 
     variables = []
     variable_dicts = defaultdict(lambda: defaultdict(dict))
@@ -315,13 +317,13 @@ def test_qp_data_symbolic(prismatic_bot2):
         equality_bound=1,
         quadratic_weight=1,
         reference_velocity=1,
+        name="position_constraint",
     )
     qp_data_symbolic = QPDataSymbolic(
         degrees_of_freedom=prismatic_bot2.active_degrees_of_freedom,
         constraint_collection=constraints,
         config=QPControllerConfig(target_frequency=20, prediction_horizon=10),
     )
-    debugger = QPDebugger(qp_data_symbolic)
     adapter = QPDataExplicitFactory(qp_data_symbolic)
     adapter.compile(
         world_state_symbols=prismatic_bot2.state.get_variables(),
@@ -333,5 +335,7 @@ def test_qp_data_symbolic(prismatic_bot2):
         life_cycle_state=np.array([]),
         float_variables=np.array([]),
     )
+    solution = QPSolverPIQP().solver_call(qp_data)
+    debugger = QPDebugger(qp_data_symbolic=qp_data_symbolic, last_solution=solution)
 
     pass

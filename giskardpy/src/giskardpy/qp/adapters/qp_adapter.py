@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from abc import ABC
+from abc import ABC, abstractproperty, abstractmethod
 from dataclasses import dataclass, field
 from itertools import product
 from typing import Tuple, List, Dict, TYPE_CHECKING, Type
@@ -478,6 +478,10 @@ class EqualityQPComponent(ABC):
     slack_variables: DirectLimits = field(init=False)
 
     @property
+    @abstractmethod
+    def constraint_names(self) -> list[str]: ...
+
+    @property
     def number_of_free_variables(self) -> int:
         return len(self.degrees_of_freedom)
 
@@ -557,6 +561,14 @@ class EqualityDerivativeLinkModel(EqualityQPComponent):
         self.compute_bounds()
         self.slack_matrix = Matrix.zeros(self.matrix.shape[0], 0)
 
+    @property
+    def constraint_names(self) -> list[str]:
+        names = []
+        for k in range(self.config.prediction_horizon):
+            for dof in self.degrees_of_freedom:
+                names.append(f"{dof.name} k_{k} vel/jerk link")
+        return names
+
     def create_matrix(self):
         matrix = np.zeros(
             (
@@ -622,6 +634,10 @@ class EqualityConstraintModel(EqualityQPComponent):
         self.create_bounds()
         self.create_slack_matrix()
         self.create_slack_variables()
+
+    @property
+    def constraint_names(self) -> list[str]:
+        return [c.name for c in self.constraint_collection.equality_constraints]
 
     def create_matrix(self):
         if len(self.constraint_collection.equality_constraints) == 0:
@@ -1695,18 +1711,12 @@ class QPDataSymbolic:
     eq_matrix_dofs: Matrix = field(init=False)
     eq_matrix_slack: Matrix = field(init=False)
     eq_bounds: Vector = field(init=False)
+    eq_constraint_names: List[str] = field(init=False)
 
     neq_matrix_dofs: Matrix = field(init=False)
     neq_matrix_slack: Matrix = field(init=False)
     neq_lower_bounds: Vector = field(init=False)
     neq_upper_bounds: Vector = field(init=False)
-
-    # _weights: Weights
-    # _free_variable_bounds: FreeVariableBounds
-    # _equality_model: EqualityModel
-    # _equality_bounds: EqualityBounds
-    # _inequality_model: InequalityModel
-    # _inequality_bounds: InequalityBounds
 
     def __post_init__(self):
         direct_limits = DofLimits.create(self.degrees_of_freedom, self.config)
@@ -1736,11 +1746,20 @@ class QPDataSymbolic:
             direct_limits.upper_bounds,
             eq_constraints.slack_variables.upper_bounds,
         )
+
         self.eq_matrix_dofs = sm.vstack([mpc_model.matrix, eq_constraints.matrix])
         self.eq_matrix_slack = sm.diag_stack(
             [mpc_model.slack_matrix, eq_constraints.slack_matrix]
         )
         self.eq_bounds = sm.concatenate(mpc_model.bounds, eq_constraints.bounds)
+        self.eq_constraint_names = (
+            mpc_model.constraint_names + eq_constraints.constraint_names
+        )
+
+        self.neq_matrix_dofs = Matrix()
+        self.neq_matrix_slack = Matrix()
+        self.neq_lower_bounds = Vector()
+        self.neq_upper_bounds = Vector()
 
     def __hash__(self):
         return hash(id(self))
