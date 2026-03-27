@@ -98,6 +98,9 @@ from krrood.symbolic_math.symbolic_math import (
     FloatVariable,
     shortest_angular_distance,
 )
+from semantic_digital_twin.adapters.ros.visualization.viz_marker import (
+    VizMarkerPublisher,
+)
 from semantic_digital_twin.adapters.world_entity_kwargs_tracker import (
     WorldEntityWithIDKwargsTracker,
 )
@@ -3377,7 +3380,10 @@ class TestOpenClose:
 
 
 class TestCollisionAvoidance:
-    def test_external_collision_avoidance(self, cylinder_bot_world: World):
+    def test_external_collision_avoidance(self, cylinder_bot_world: World, rclpy_node):
+        VizMarkerPublisher(
+            _world=cylinder_bot_world, node=rclpy_node
+        ).with_tf_publisher()
         robot = cylinder_bot_world.get_semantic_annotations_by_type(AbstractRobot)[0]
         tip = cylinder_bot_world.get_kinematic_structure_entity_by_name("bot")
         env1 = cylinder_bot_world.get_kinematic_structure_entity_by_name("environment")

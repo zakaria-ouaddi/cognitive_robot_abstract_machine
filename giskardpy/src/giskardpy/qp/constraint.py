@@ -1,8 +1,14 @@
 from dataclasses import dataclass, field
 
 import krrood.symbolic_math.symbolic_math as sm
+from giskardpy.motion_statechart.data_types import FloatEnum
 from krrood.symbolic_math.symbolic_math import Scalar
 from semantic_digital_twin.spatial_types.derivatives import Derivatives
+
+
+class NormalizationFactors(FloatEnum):
+    meter_per_second = 0.2
+    radian_per_second = 0.2
 
 
 @dataclass
@@ -19,10 +25,7 @@ class BaseConstraint:
 
     linear_weight: sm.ScalarData
 
-
-@dataclass
-class IntegralConstraint(BaseConstraint):
-    normalization_factor: float
+    normalization_factor: NormalizationFactors
     """
     This value is important to make constraints with different units comparable.
     The meaning depends on derivative.
@@ -34,6 +37,10 @@ class IntegralConstraint(BaseConstraint):
         - a m/s limit for translation
         - a rad/s value for rotation
     """
+
+
+@dataclass
+class IntegralConstraint(BaseConstraint): ...
 
 
 @dataclass
@@ -77,7 +84,7 @@ class DerivativeConstraint(BaseConstraint):
     As a result, position constraints are cheaper, as they only require a single constraint.
     """
 
-    normalization_factor: sm.ScalarData = field(kw_only=True)
+    # normalization_factor: sm.ScalarData = field(kw_only=True)
     """
     This value is important to make constraints with different units comparable.
     The meaning depends on derivative.
