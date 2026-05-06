@@ -94,6 +94,7 @@ import pycram.plans.plan_entity
 import pycram.plans.plan_node
 import pycram.robot_plans.actions.base
 import pycram.robot_plans.actions.composite.facing
+import pycram.robot_plans.actions.composite.sage10k_actions
 import pycram.robot_plans.actions.composite.searching
 import pycram.robot_plans.actions.composite.tool_based
 import pycram.robot_plans.actions.composite.transporting
@@ -1494,6 +1495,32 @@ class DrawerDAO_objects_association(Base, AssociationDataAccessObject):
     target: Mapped[HasRootBodyDAO] = relationship(
         "HasRootBodyDAO", foreign_keys=[target_hasrootbodydao_id]
     )
+
+
+class RoomWithWallsAndDoorsDAO_walls_association(Base, AssociationDataAccessObject):
+
+    __tablename__ = "_59279835155553331916320829121624451516437301546125700947447732"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_roomwithwallsanddoorsdao_id: Mapped[int] = mapped_column(
+        ForeignKey("RoomWithWallsAndDoorsDAO.database_id")
+    )
+    target_walldao_id: Mapped[int] = mapped_column(ForeignKey("WallDAO.database_id"))
+
+    target: Mapped[WallDAO] = relationship("WallDAO", foreign_keys=[target_walldao_id])
+
+
+class RoomWithWallsAndDoorsDAO_doors_association(Base, AssociationDataAccessObject):
+
+    __tablename__ = "_41651222075607285598093561901844381163868576790321323113299336"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_roomwithwallsanddoorsdao_id: Mapped[int] = mapped_column(
+        ForeignKey("RoomWithWallsAndDoorsDAO.database_id")
+    )
+    target_doordao_id: Mapped[int] = mapped_column(ForeignKey("DoorDAO.database_id"))
+
+    target: Mapped[DoorDAO] = relationship("DoorDAO", foreign_keys=[target_doordao_id])
 
 
 class AbstractRobotDAO_manipulators_association(Base, AssociationDataAccessObject):
@@ -7538,80 +7565,6 @@ class OpenActionDAO(
     }
 
 
-class OpenWithHandleActionDAO(
-    ActionDescriptionDAO,
-    DataAccessObject[pycram.robot_plans.actions.sage10k_actions.OpenWithHandleAction],
-):
-
-    __tablename__ = "OpenWithHandleActionDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(ActionDescriptionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    handle_id: Mapped[int] = mapped_column(
-        ForeignKey("HandleDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-    manipulator_id: Mapped[int] = mapped_column(
-        ForeignKey("ManipulatorDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    handle: Mapped[HandleDAO] = relationship(
-        "HandleDAO", uselist=False, foreign_keys=[handle_id], post_update=True
-    )
-    manipulator: Mapped[ManipulatorDAO] = relationship(
-        "ManipulatorDAO", uselist=False, foreign_keys=[manipulator_id], post_update=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "OpenWithHandleActionDAO",
-        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
-    }
-
-
-class OpenWithHandleMotionDAO(
-    BaseMotionDAO,
-    DataAccessObject[pycram.robot_plans.actions.sage10k_actions.OpenWithHandleMotion],
-):
-
-    __tablename__ = "OpenWithHandleMotionDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(BaseMotionDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    handle_id: Mapped[int] = mapped_column(
-        ForeignKey("BodyDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-    manipulator_id: Mapped[int] = mapped_column(
-        ForeignKey("ManipulatorDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-
-    handle: Mapped[BodyDAO] = relationship(
-        "BodyDAO", uselist=False, foreign_keys=[handle_id], post_update=True
-    )
-    manipulator: Mapped[ManipulatorDAO] = relationship(
-        "ManipulatorDAO", uselist=False, foreign_keys=[manipulator_id], post_update=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "OpenWithHandleMotionDAO",
-        "inherit_condition": database_id == BaseMotionDAO.database_id,
-    }
-
-
 class OpeningMotionDAO(
     BaseMotionDAO, DataAccessObject[pycram.robot_plans.motions.container.OpeningMotion]
 ):
@@ -10177,6 +10130,48 @@ class RotationMappedDAO(
     angle: Mapped[builtins.float] = mapped_column(use_existing_column=True)
 
 
+class Sage10kAbstractDemoDAO(
+    Base,
+    DataAccessObject[pycram.robot_plans.actions.sage10k_actions.Sage10kAbstractDemo],
+):
+
+    __tablename__ = "Sage10kAbstractDemoDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    polymorphic_type: Mapped[str] = mapped_column(
+        String(255), nullable=False, use_existing_column=True
+    )
+
+    __mapper_args__ = {
+        "polymorphic_on": "polymorphic_type",
+        "polymorphic_identity": "Sage10kAbstractDemoDAO",
+    }
+
+
+class Sage10kAmericanBuffetDemoDAO(
+    Sage10kAbstractDemoDAO,
+    DataAccessObject[
+        pycram.robot_plans.actions.sage10k_actions.Sage10kAmericanBuffetDemo
+    ],
+):
+
+    __tablename__ = "Sage10kAmericanBuffetDemoDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(Sage10kAbstractDemoDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "Sage10kAmericanBuffetDemoDAO",
+        "inherit_condition": database_id == Sage10kAbstractDemoDAO.database_id,
+    }
+
+
 class Sage10kBaseDAO(
     Base,
     DataAccessObject[
@@ -10223,6 +10218,48 @@ class HasXYZDAO(
     }
 
 
+class Sage10kBrutalistStoreDemoDAO(
+    Sage10kAbstractDemoDAO,
+    DataAccessObject[
+        pycram.robot_plans.actions.sage10k_actions.Sage10kBrutalistStoreDemo
+    ],
+):
+
+    __tablename__ = "Sage10kBrutalistStoreDemoDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(Sage10kAbstractDemoDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "Sage10kBrutalistStoreDemoDAO",
+        "inherit_condition": database_id == Sage10kAbstractDemoDAO.database_id,
+    }
+
+
+class Sage10kCraftsmanLobbyDemoDAO(
+    Sage10kAbstractDemoDAO,
+    DataAccessObject[
+        pycram.robot_plans.actions.sage10k_actions.Sage10kCraftsmanLobbyDemo
+    ],
+):
+
+    __tablename__ = "Sage10kCraftsmanLobbyDemoDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(Sage10kAbstractDemoDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "Sage10kCraftsmanLobbyDemoDAO",
+        "inherit_condition": database_id == Sage10kAbstractDemoDAO.database_id,
+    }
+
+
 class Sage10kDatasetLoaderDAO(
     Base,
     DataAccessObject[
@@ -10235,6 +10272,77 @@ class Sage10kDatasetLoaderDAO(
     database_id: Mapped[builtins.int] = mapped_column(
         Integer, primary_key=True, use_existing_column=True
     )
+
+
+class Sage10kEclecticResidenceDAO(
+    Sage10kAbstractDemoDAO,
+    DataAccessObject[
+        pycram.robot_plans.actions.sage10k_actions.Sage10kEclecticResidence
+    ],
+):
+
+    __tablename__ = "Sage10kEclecticResidenceDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(Sage10kAbstractDemoDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "Sage10kEclecticResidenceDAO",
+        "inherit_condition": database_id == Sage10kAbstractDemoDAO.database_id,
+    }
+
+
+class Sage10kGymDemoDAO(
+    Sage10kAbstractDemoDAO,
+    DataAccessObject[pycram.robot_plans.actions.sage10k_actions.Sage10kGymDemo],
+):
+
+    __tablename__ = "Sage10kGymDemoDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(Sage10kAbstractDemoDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "Sage10kGymDemoDAO",
+        "inherit_condition": database_id == Sage10kAbstractDemoDAO.database_id,
+    }
+
+
+class Sage10kOpenDoorDAO(
+    ActionDescriptionDAO,
+    DataAccessObject[
+        pycram.robot_plans.actions.composite.sage10k_actions.Sage10kOpenDoor
+    ],
+):
+
+    __tablename__ = "Sage10kOpenDoorDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(ActionDescriptionDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    door_id: Mapped[int] = mapped_column(
+        ForeignKey("DoorDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+
+    door: Mapped[DoorDAO] = relationship(
+        "DoorDAO", uselist=False, foreign_keys=[door_id], post_update=True
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "Sage10kOpenDoorDAO",
+        "inherit_condition": database_id == ActionDescriptionDAO.database_id,
+    }
 
 
 class Sage10kPhysicallyBasedRenderingDAO(
@@ -10317,6 +10425,67 @@ class Sage10kSizeDAO(
     }
 
 
+class Sage10kSouthwesternStoreDemoDAO(
+    Sage10kAbstractDemoDAO,
+    DataAccessObject[
+        pycram.robot_plans.actions.sage10k_actions.Sage10kSouthwesternStoreDemo
+    ],
+):
+
+    __tablename__ = "Sage10kSouthwesternStoreDemoDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(Sage10kAbstractDemoDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "Sage10kSouthwesternStoreDemoDAO",
+        "inherit_condition": database_id == Sage10kAbstractDemoDAO.database_id,
+    }
+
+
+class Sage10kTVStudioDemoDAO(
+    Sage10kAbstractDemoDAO,
+    DataAccessObject[pycram.robot_plans.actions.sage10k_actions.Sage10kTVStudioDemo],
+):
+
+    __tablename__ = "Sage10kTVStudioDemoDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(Sage10kAbstractDemoDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "Sage10kTVStudioDemoDAO",
+        "inherit_condition": database_id == Sage10kAbstractDemoDAO.database_id,
+    }
+
+
+class Sage10kTropicalWarehouseDAO(
+    Sage10kAbstractDemoDAO,
+    DataAccessObject[
+        pycram.robot_plans.actions.sage10k_actions.Sage10kTropicalWarehouse
+    ],
+):
+
+    __tablename__ = "Sage10kTropicalWarehouseDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(Sage10kAbstractDemoDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "Sage10kTropicalWarehouseDAO",
+        "inherit_condition": database_id == Sage10kAbstractDemoDAO.database_id,
+    }
+
+
 class Sage10kTypeNameCleanerDAO(
     Base,
     DataAccessObject[
@@ -10329,6 +10498,25 @@ class Sage10kTypeNameCleanerDAO(
     database_id: Mapped[builtins.int] = mapped_column(
         Integer, primary_key=True, use_existing_column=True
     )
+
+
+class Sage10kVaporwaveDAO(
+    Sage10kAbstractDemoDAO,
+    DataAccessObject[pycram.robot_plans.actions.sage10k_actions.Sage10kVaporwave],
+):
+
+    __tablename__ = "Sage10kVaporwaveDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(Sage10kAbstractDemoDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "Sage10kVaporwaveDAO",
+        "inherit_condition": database_id == Sage10kAbstractDemoDAO.database_id,
+    }
 
 
 class Sage10kWithIDDAO(
@@ -14341,7 +14529,7 @@ class ViewDependentSpatialRelationDAO(
         use_existing_column=True
     )
 
-    point_of_semantic_annotation_id: Mapped[int] = mapped_column(
+    point_of_view_id: Mapped[int] = mapped_column(
         ForeignKey(
             "HomogeneousTransformationMatrixMappingDAO.database_id", use_alter=True
         ),
@@ -14349,13 +14537,11 @@ class ViewDependentSpatialRelationDAO(
         use_existing_column=True,
     )
 
-    point_of_semantic_annotation: Mapped[HomogeneousTransformationMatrixMappingDAO] = (
-        relationship(
-            "HomogeneousTransformationMatrixMappingDAO",
-            uselist=False,
-            foreign_keys=[point_of_semantic_annotation_id],
-            post_update=True,
-        )
+    point_of_view: Mapped[HomogeneousTransformationMatrixMappingDAO] = relationship(
+        "HomogeneousTransformationMatrixMappingDAO",
+        uselist=False,
+        foreign_keys=[point_of_view_id],
+        post_update=True,
     )
 
     __mapper_args__ = {
@@ -16965,6 +17151,29 @@ class DoorDAO(
     }
 
 
+class DoorWithTypeDAO(
+    DoorDAO,
+    DataAccessObject[
+        semantic_digital_twin.adapters.sage_10k_dataset.semantic_annotations.DoorWithType
+    ],
+):
+
+    __tablename__ = "DoorWithTypeDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(DoorDAO.database_id), primary_key=True, use_existing_column=True
+    )
+
+    type_description: Mapped[typing.Optional[builtins.str]] = mapped_column(
+        sqlalchemy.sql.sqltypes.Text, use_existing_column=True
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "DoorWithTypeDAO",
+        "inherit_condition": database_id == DoorDAO.database_id,
+    }
+
+
 class HasStorageSpaceDAO(
     HasRootBodyDAO,
     DataAccessObject[semantic_digital_twin.semantic_annotations.mixins.HasStorageSpace],
@@ -18256,6 +18465,46 @@ class LivingRoomDAO(
 
     __mapper_args__ = {
         "polymorphic_identity": "LivingRoomDAO",
+        "inherit_condition": database_id == RoomDAO.database_id,
+    }
+
+
+class RoomWithWallsAndDoorsDAO(
+    RoomDAO,
+    DataAccessObject[
+        semantic_digital_twin.adapters.sage_10k_dataset.semantic_annotations.RoomWithWallsAndDoors
+    ],
+):
+
+    __tablename__ = "RoomWithWallsAndDoorsDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(RoomDAO.database_id), primary_key=True, use_existing_column=True
+    )
+
+    room_type: Mapped[typing.Optional[builtins.str]] = mapped_column(
+        sqlalchemy.sql.sqltypes.Text, use_existing_column=True
+    )
+
+    walls: Mapped[builtins.list[RoomWithWallsAndDoorsDAO_walls_association]] = (
+        relationship(
+            "RoomWithWallsAndDoorsDAO_walls_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[RoomWithWallsAndDoorsDAO_walls_association.source_roomwithwallsanddoorsdao_id]",
+        )
+    )
+    doors: Mapped[builtins.list[RoomWithWallsAndDoorsDAO_doors_association]] = (
+        relationship(
+            "RoomWithWallsAndDoorsDAO_doors_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[RoomWithWallsAndDoorsDAO_doors_association.source_roomwithwallsanddoorsdao_id]",
+        )
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "RoomWithWallsAndDoorsDAO",
         "inherit_condition": database_id == RoomDAO.database_id,
     }
 

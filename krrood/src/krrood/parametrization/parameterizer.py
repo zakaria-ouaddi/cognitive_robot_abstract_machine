@@ -45,29 +45,6 @@ from random_events.variable import compatible_types, variable_from_name_and_type
 from semantic_digital_twin.world_description.world_entity import Body
 
 
-@symbolic_function
-def symbolic_hash(value: Any) -> int:
-    return hash(value)
-
-
-def get_clean_name_from_mapped_variable(variable: MappedVariable) -> str:
-    """
-    Get a clean name from a mapped variable by joining its attribute names.
-
-    :param variable: The mapped variable.
-    :return: The clean name.
-    """
-    names = []
-    for step in variable._access_path_:
-        if isinstance(step, Attribute):
-            names.append(step._attribute_name_)
-        elif isinstance(step, Index):
-            names.append(f"[{step._key_}]")
-        elif isinstance(step, Call):
-            names.append(f"()")
-    return ".".join(names)
-
-
 @dataclass
 class UnderspecifiedParameters:
     """
@@ -89,24 +66,26 @@ class UnderspecifiedParameters:
     Only exists if the statement has a where condition.
     """
 
-    truncation_event: Optional[Event] = field(init=False, default=None)
+    truncation_assignments_from_where_conditions: Optional[Event] = field(
+        init=False, default=None
+    )
     """
     The where condition as random event.
     Only exists if the statement has a where condition.
     """
 
-    _events_from_symbolic_expression: typing.List[Event] = field(
-        init=False, default_factory=list
-    )
+    conditioning_assignments_from_literal_values: Dict[
+        random_events.variable.Variable, Any
+    ] = field(init=False, default_factory=dict)
     """
-    List of events that are created from symbolic expressions, e.g. fixed variable assignments
+    Dictionary of events that are created from literal values, e.g. actual values. These are the assignments, that the probabilistic model is *conditioned* on.
     """
 
-    _events_from_literal_values: typing.List[Event] = field(
+    truncation_assignments_from_krrood_variables: typing.List[Event] = field(
         init=False, default_factory=list
     )
     """
-    List of events that are created from literal values
+    List of events that are created from symbolic expressions, e.g. variable assignments. These are the assignments, that the probabilistic model is *truncated* on. They may contain literals in their domains, however, the difference to `_events_from_literal_values` is, that these events are not directly used for conditioning, but rather for truncation. This means, that the events of this list do not change the weights of sum nodes in probabilistic circuits.
     """
 
     _symbolic_expression_event_cache: Dict[
@@ -122,7 +101,9 @@ class UnderspecifiedParameters:
             and_(*self.statement._where_conditions_)
         )
         if self.statement._where_conditions_:
-            self.truncation_event = self._random_event_compiler.translate()
+            self.truncation_assignments_from_where_conditions = (
+                self._random_event_compiler.translate()
+            )
 
     @cached_property
     def variables(self) -> Dict[str, random_events.variable.Variable]:
@@ -176,9 +157,7 @@ class UnderspecifiedParameters:
             krrood_variable._type_, compatible_types
         ):
             result = {name: variable_from_name_and_type(name=name, type_=type(value))}
-            self._register_literal_conditioning_event(
-                attribute_match, krrood_variable, result
-            )
+            self.conditioning_assignments_from_literal_values[result[name]] = value
             return result
 
         if isinstance(value, types.EllipsisType):
@@ -229,7 +208,9 @@ class UnderspecifiedParameters:
         if not domain_objects:
             raise EmptyVariableDomain(attribute_match.variable)
 
-        if issubclass(attribute_match.assigned_variable._type_, compatible_types):
+        if not attribute_match.assigned_variable._type_ is None and issubclass(
+            attribute_match.assigned_variable._type_, compatible_types
+        ):
             return self._extract_variables_from_primitive_krrood_variable(
                 attribute_match, domain_objects
             )
@@ -263,7 +244,7 @@ class UnderspecifiedParameters:
                 SimpleEvent.from_data({re_variable: singleton(obj)})
                 for obj in domain_objects
             ]
-        self._events_from_symbolic_expression.append(
+        self.truncation_assignments_from_krrood_variables.append(
             Event.from_simple_sets(*simple_events)
         )
         return result
@@ -292,10 +273,9 @@ class UnderspecifiedParameters:
 
         # extract feature variables
         for feature in extractor.features:
-            relative_feature_name = get_clean_name_from_mapped_variable(feature)
+            feature_name = feature.get_clean_name_from_mapped_variable()
             name = (
-                f"{attribute_match.name_from_variable_access_path}."
-                f"{relative_feature_name}"
+                f"{attribute_match.name_from_variable_access_path}." f"{feature_name}"
             )
             re_variable = variable_from_name_and_type(name=name, type_=feature._type_)
             result[re_variable.name] = re_variable
@@ -312,69 +292,22 @@ class UnderspecifiedParameters:
 
             data = {identifier_variable: hash_}
             for feature, value in zip(features, current_feature_values):
-                relative_name = get_clean_name_from_mapped_variable(feature)
-                full_name = (
-                    f"{attribute_match.name_from_variable_access_path}.{relative_name}"
+                feature_name = feature.get_clean_name_from_mapped_variable()
+                name = (
+                    f"{attribute_match.name_from_variable_access_path}.{feature_name}"
                 )
-                data[result[full_name]] = value
+                data[result[name]] = value
 
             simple_events.append(SimpleEvent.from_data(data))
 
         resulting_event = Event.from_simple_sets(*simple_events)
-        self._events_from_symbolic_expression.append(resulting_event)
+        self.truncation_assignments_from_krrood_variables.append(resulting_event)
         self._symbolic_expression_event_cache[attribute_match.assigned_value] = (
             resulting_event,
             result,
         )
 
         return result
-
-    @property
-    def assignments_for_conditioning(
-        self,
-    ) -> Dict[random_events.variable.Variable, Any]:
-        """
-        :return: A dictionary that contains all facts from the statement and that can be directly used for
-        conditioning a probabilistic model. These values ignore the `where` conditions.
-        """
-        result = {}
-        for literal in self.statement.matches_with_variables:
-            variable = self.variables.get(literal.assigned_variable._name_, None)
-            if variable is None or isinstance(
-                literal.assigned_variable._value_, (type(Ellipsis), SymbolicExpression)
-            ):
-                continue
-
-            result[variable] = literal.assigned_variable._value_
-        return result
-
-    @cached_property
-    def conditioning_event(self) -> Optional[Event]:
-        """
-        :return: An event that can be used for conditioning a probabilistic model. This event includes all facts from the statement,
-        including the `where` conditions.
-        """
-        if not self._events_from_symbolic_expression:
-            return None
-
-        variables = self.variables.values()
-
-        [
-            event.fill_missing_variables(variables)
-            for event in self._events_from_symbolic_expression
-        ]
-        [
-            event.fill_missing_variables(variables)
-            for event in self._events_from_literal_values
-        ]
-
-        complete_event = self._events_from_symbolic_expression[0]
-        complete_event.fill_missing_variables(variables)
-        for other_event in (
-            self._events_from_symbolic_expression[1:] + self._events_from_literal_values
-        ):
-            complete_event = complete_event.intersection_with(other_event)
-        return complete_event
 
     def construct_instance_from_model_sample(
         self,
@@ -450,7 +383,6 @@ class UnderspecifiedParameters:
             )
         else:
             mapping = attribute_match.assigned_value
-        event = Event.from_simple_sets(
-            SimpleEvent.from_data({result[attribute._name_]: mapping})
+        self.conditioning_assignments_from_literal_values[result[attribute._name_]] = (
+            mapping
         )
-        self._events_from_literal_values.append(event)

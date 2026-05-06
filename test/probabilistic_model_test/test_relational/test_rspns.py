@@ -115,11 +115,20 @@ def data_preparation(mutable_model_world):
 
     parameters = UnderspecifiedParameters(move_and_pick_up_description)
     fully_factorized_circuit = fully_factorized(parameters.variables.values())
-    assert len(parameters._events_from_symbolic_expression) == 3
+    assert len(parameters.truncation_assignments_from_krrood_variables) == 3
 
-    if parameters.conditioning_event is not None:
+    if parameters.truncation_assignments_from_krrood_variables is not None:
+        events = parameters.truncation_assignments_from_krrood_variables
+        variables = parameters.variables.values()
+
+        [event.fill_missing_variables(variables) for event in events]
+
+        complete_event = events[0]
+        for other_event in events:
+            complete_event = complete_event.intersection_with(other_event)
+
         fully_factorized_circuit, _ = fully_factorized_circuit.truncated(
-            parameters.conditioning_event, singleton_allowed=True
+            complete_event, singleton_allowed=True
         )
     probabilistic_registry = DictRegistry(
         {MoveAndPickUpAction: fully_factorized_circuit}
@@ -166,8 +175,8 @@ def test_move_and_pick_up(database, mutable_model_world, data_preparation):
 def test_features_extraction(database, data_preparation):
     values, move_and_pick_up_distribution = data_preparation
 
-    features = get_features_of_class(
-        to_dao(values[0]), variable(MoveAndPickUpAction, []), [], set()
+    features = get_features_of_class_bfs(
+        to_dao(values[0]), variable(MoveAndPickUpAction, [])
     )
 
     feature_extractor = FeatureExtractor(features)

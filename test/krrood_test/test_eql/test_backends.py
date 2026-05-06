@@ -116,21 +116,12 @@ def test_nested_action(mutable_model_world):
         ].domain.simple_sets
         == reals().simple_sets
     )
-    assert len(parameters._events_from_literal_values) == 1
+    assert len(parameters.conditioning_assignments_from_literal_values) == 1
 
-    manipulation_offset_variable_of_conditioning_event = (
-        parameters._events_from_literal_values[0].simple_sets[0]
-    )
-
-    assert (
-        len(
-            [
-                assignment
-                for assignment in manipulation_offset_variable_of_conditioning_event.assignments
-                if assignment == singleton(manipulation_offset)
-            ]
+    assert manipulation_offset == (
+        parameters.conditioning_assignments_from_literal_values.get(
+            variables["MoveAndPickUpAction.grasp_description.manipulation_offset"]
         )
-        == 1
     )
 
 
@@ -190,8 +181,17 @@ def test_underspecified_parameters_with_partly_symbolic_expression():
     assert variables["KRROODPosition.y"].is_numeric
     assert variables["KRROODPosition.z"].domain == reals()
     assert variables["KRROODPosition.z"].is_numeric
-    assert len(parameters.conditioning_event.simple_sets) == 3
-    assert len(parameters.conditioning_event.simplify().simple_sets) == 1
+    assert (
+        len(parameters.truncation_assignments_from_krrood_variables[0].simple_sets) == 3
+    )
+    assert (
+        len(
+            parameters.truncation_assignments_from_krrood_variables[0]
+            .simplify()
+            .simple_sets
+        )
+        == 1
+    )
 
 
 def test_underspecified_parameters_with_full_symbolic_expression():

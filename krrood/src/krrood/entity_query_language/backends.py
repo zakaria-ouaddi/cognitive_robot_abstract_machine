@@ -224,14 +224,18 @@ class ProbabilisticBackend(GenerativeBackend):
         model = self.model_registry.get_model(parameters)
 
         # apply conditions from the parameters
-        conditioned, _ = model.conditional(parameters.assignments_for_conditioning)
+        conditioned, _ = model.conditional(
+            parameters.conditioning_assignments_from_literal_values
+        )
 
         if conditioned is None:
             raise NoSolutionFound(expression.expression)
 
         # apply conditions from the where statements
-        if parameters.truncation_event:
-            truncated, _ = conditioned.truncated(parameters.truncation_event)
+        if parameters.truncation_assignments_from_where_conditions:
+            truncated, _ = conditioned.truncated(
+                parameters.truncation_assignments_from_where_conditions
+            )
 
             if truncated is None:
                 raise NoSolutionFound(expression.expression)
