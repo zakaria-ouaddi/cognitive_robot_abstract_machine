@@ -683,7 +683,7 @@ def get_scope_from_imports(
     return scope
 
 
-def get_and_import_import_module(
+def get_and_import_module(
     module_name: str, package_name: Optional[str]
 ) -> types.ModuleType:
     """
@@ -788,7 +788,7 @@ def _handle_import_node(
     for alias in node.names:
         module_name = alias.name
         asname = alias.asname or alias.name
-        module = get_and_import_import_module(module_name, package_name)
+        module = get_and_import_module(module_name, package_name)
         scope[asname] = module
 
 
@@ -822,11 +822,11 @@ def _handle_import_from_node(
 
     module = None
     if resolved_module_name is not None:
-        module = get_and_import_import_module(resolved_module_name, package_name)
+        module = get_and_import_module(resolved_module_name, package_name)
 
     if module is None and resolved_package_name and resolved_module_name:
         # Fallback already attempted in _import_module_safely; keep for parity
-        module = get_and_import_import_module(
+        module = get_and_import_module(
             f"{resolved_package_name}.{resolved_module_name}", None
         )
 
