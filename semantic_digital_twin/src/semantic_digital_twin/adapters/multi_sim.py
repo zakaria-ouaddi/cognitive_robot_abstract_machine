@@ -1,6 +1,8 @@
 import logging
 import inspect
 import os
+from typing import Tuple
+
 import trimesh
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -1331,7 +1333,7 @@ class MultiSimBuilder(ABC):
     The world to be built.
     """
 
-    _ignore_connection_types = (FixedConnection, OmniDrive, DifferentialDrive)
+    _ignore_connection_types: ClassVar[Tuple[FixedConnection, OmniDrive, DifferentialDrive]]
     """
     A list of connection types to ignore when building connections in the simulator.
     FixedConnection is ignored because in MuJoCo, all bodies that are not connected by a joint are implicitly fixed to the parent body.
