@@ -1058,36 +1058,37 @@ class EQLTranslator:
         return aliased_target
 
 
-def eql_to_sql(query: Query, session: Session) -> EQLTranslator:
+def eql_to_sql(query: Query, session: Session,
+               as_common_table_expression: Optional[str] = None) -> Union[EQLTranslator, Any]:
     """
     Translate an EQL query to SQL.
 
+    If `as_common_table_expression` is provided, the query is translated to a
+    SQLAlchemy CTE instead of a full SELECT statement.
+
+    .. code-block:: python
+
+        # Normal translation:
+        translator = eql_to_sql(query, session)
+
+        # As CTE:
+        large_bodies = eql_to_sql(inner_query, session, as_common_table_expression="large_bodies")
+        outer_translator = eql_to_sql(outer_query, session)
+        outer_translator.sql_query = (
+            outer_translator.sql_query
+            .join(large_bodies, large_bodies.c.database_id == ContainerDAO.database_id)
+        )
+
     :param query: The EQL query
     :param session: The SQLAlchemy session
-    :return: The translator instance
+    :param as_common_table_expression: If provided, returns a SQLAlchemy CTE with this name
+    :return: EQLTranslator or SQLAlchemy CTE
     """
     query.build()
     result = EQLTranslator(query, session)
     result.translate()
+
+    if as_common_table_expression is not None:
+        return result.sql_query.cte(as_common_table_expression)
+
     return result
-
-def eql_to_cte(query: Query, session: Session, name: str) -> Any:
-    """
-    Translate an EQL query to a SQLAlchemy CTE.
-
-    .. code-block:: python
-
-        # Inner query becomes CTE:
-        inner = eql_to_cte(inner_query, session, "plan_actions")
-
-        # Outer query uses the CTE:
-        outer_translator = eql_to_sql(outer_query, session)
-        outer_translator.sql_query = outer_translator.sql_query.join(inner, ...)
-
-    :param query: The EQL query to translate into a CTE
-    :param session: The SQLAlchemy session
-    :param name: The name of the CTE
-    :return: A SQLAlchemy CTE object
-    """
-    translator = eql_to_sql(query, session)
-    return translator.sql_query.cte(name)
