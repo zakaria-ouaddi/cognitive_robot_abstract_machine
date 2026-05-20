@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import inspect
 import weakref
 from dataclasses import dataclass, field
 from functools import cached_property
 from types import ModuleType
-from typing import Any, List, Optional, Type, Union
+from typing import Any, Callable, List, Optional, Type, Union
 from uuid import UUID
 
 from ordered_set import OrderedSet
@@ -14,10 +13,10 @@ from typing_extensions import TYPE_CHECKING
 # Import monitoring infrastructure from the isolated sub-module that has no
 # EQL dependencies, breaking the variable.py ↔ explanation.py import cycle.
 from krrood.entity_query_language._monitoring import (
-    filter_stack,
     MonitoredRegistry,
     monitored,
 )
+from krrood.entity_query_language._stack import CallStack, StackFrame
 
 from krrood.entity_query_language.predicate import HasType
 from krrood.entity_query_language.factories import (
@@ -81,9 +80,9 @@ class InferenceExplanation(Symbol):
     """
     The query node that was used to create the instance.
     """
-    stack: List[inspect.FrameInfo]
+    stack: CallStack
     """
-    The stack trace at the point of creation.
+    The call stack at the point of creation, as a :class:`~krrood.entity_query_language._stack.CallStack`.
     """
     query_root: Optional[Query] = None
     """
@@ -170,13 +169,13 @@ class InferenceExplanation(Symbol):
         """
         if isinstance(focus_package, ModuleType):
             focus_package = focus_package.__name__
-        display_stack = filter_stack(self.stack, internal_package=focus_package)
+        display_stack = self.stack.filter(package=focus_package)
 
         formatted_stack = []
-        for frame_info in display_stack:
+        for frame in display_stack:
             formatted_stack.append(
-                f'  File "{frame_info.filename}", line {frame_info.lineno}, in {frame_info.function}\n'
-                f'    {frame_info.code_context[0].strip() if frame_info.code_context else "???"}\n'
+                f'  File "{frame.filename}", line {frame.lineno}, in {frame.function_name}\n'
+                f'    {frame.code_snippet if frame.code_snippet else "???"}\n'
             )
 
         stack_str = "".join(formatted_stack[:10])  # Limit to 10 frames
@@ -186,6 +185,55 @@ class InferenceExplanation(Symbol):
             f"Part of query: {self.query_root}\n"
             f"Call stack at definition:\n{stack_str}"
         )
+
+    # ------------------------------------------------------------------
+    # Stack query methods
+    # ------------------------------------------------------------------
+
+    @property
+    def frame_count(self) -> int:
+        """Number of frames in the captured call stack."""
+        return len(self.stack)
+
+    def is_triggered_from_method(self) -> bool:
+        """
+        Return ``True`` if any frame in the call stack is inside a class method
+        or classmethod (i.e. at least one frame has a non-``None`` ``class_object``).
+        """
+        return self.stack.is_from_method()
+
+    def triggering_classes(self) -> List[type]:
+        """
+        Return the distinct class objects that appear in the call stack,
+        in order of first occurrence (innermost first).
+
+        Useful for answering "from which class was this inference triggered?"
+        """
+        return self.stack.classes()
+
+    def triggering_functions(self) -> List[Callable]:
+        """
+        Return the distinct function objects that appear in the call stack,
+        in order of first occurrence (innermost first).
+
+        Note: nested functions defined inside other functions may not be
+        resolvable and will be absent from this list.
+        """
+        return self.stack.functions()
+
+    def root_frame_in(self, package: str) -> Optional[StackFrame]:
+        """
+        Return the outermost :class:`~krrood.entity_query_language._stack.StackFrame`
+        whose ``module_name`` contains *package*.
+
+        This identifies the highest-level entry point into *package* that
+        triggered the inference, which is useful for understanding where inside
+        your own library the query was constructed.
+
+        :param package: Substring matched against ``StackFrame.module_name``.
+        :return: The outermost matching frame, or ``None`` if no frame matches.
+        """
+        return self.stack.root_frame_in(package)
 
     def get_satisfied_condition_expressions_for_the_instance(self) -> Entity[SymbolicExpression]:
         """
@@ -311,7 +359,7 @@ def register_inference(
     satisfied_ids = result.satisfied_condition_ids if result else None
     explanation = InferenceExplanation(
         query_node=variable_node,
-        stack=monitored.get_stack(variable_node) or [],
+        stack=monitored.get_stack(variable_node) or CallStack([]),
         query_root=variable_node._root_,
         satisfied_condition_ids=satisfied_ids,
         operation_result=result,

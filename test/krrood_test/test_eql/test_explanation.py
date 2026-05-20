@@ -7,6 +7,7 @@ import pytest
 from krrood.entity_query_language.core.base_expressions import SymbolicExpression
 from krrood.entity_query_language.core.mapped_variable import Attribute
 from krrood.entity_query_language.evaluation import is_condition_participant
+from krrood.entity_query_language._stack import CallStack
 from krrood.entity_query_language.explanation.explanation import (
     explain_inference,
     register_inference, monitored,
@@ -167,11 +168,11 @@ def test_query_stack_tracking():
     query = entity(person_inf(name="Eve"))
 
     assert hasattr(query, "_creation_stack")
-    assert isinstance(query._creation_stack, list)
+    assert isinstance(query._creation_stack, CallStack)
     # The stack should contain this test function
     filenames = [f.filename for f in query._creation_stack]
     assert any("test_explanation.py" in f for f in filenames)
-    functions = [f.function for f in query._creation_stack]
+    functions = [f.function_name for f in query._creation_stack]
     assert "test_query_stack_tracking" in functions
 
 
@@ -210,7 +211,7 @@ def test_variable_stack_tracking():
     v = variable_from([1, 2, 3])
 
     assert monitored.is_monitored(v)
-    assert isinstance(monitored.get_stack(v), list)
+    assert isinstance(monitored.get_stack(v), CallStack)
     filenames = [f.filename for f in monitored.get_stack(v)]
     assert any("test_explanation.py" in f for f in filenames)
 

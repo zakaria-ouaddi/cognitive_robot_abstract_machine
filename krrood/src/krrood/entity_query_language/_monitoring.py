@@ -11,28 +11,9 @@ from __future__ import annotations
 import inspect
 from dataclasses import dataclass, field
 from functools import wraps
-from typing import Any, List, Optional, Type, Callable, Union
+from typing import Any, Optional, Type, Callable, Union
 
-
-def filter_stack(
-        stack: List[inspect.FrameInfo], internal_package: Optional[str] = None
-) -> List[inspect.FrameInfo]:
-    """
-    Filter the stack to remove external libraries and optionally keep only a specific package.
-
-    :param stack: The stack to filter.
-    :param internal_package: The name of the package to focus on.
-    :return: The filtered stack.
-    """
-    filtered = []
-    for frame in stack:
-        path = frame.filename
-        if "site-packages" in path or "dist-packages" in path:
-            continue
-        if internal_package and internal_package not in path:
-            continue
-        filtered.append(frame)
-    return filtered
+from krrood.entity_query_language._stack import CallStack, StackFrame
 
 
 @dataclass
@@ -44,7 +25,7 @@ class MonitoredRegistry:
     _monitored: set[type] = field(default_factory=set)
 
     def __call__(self, cls: Type) -> Type:
-        """Decorate a class to automatically record its creation stack."""
+        """Decorate a class to automatically record its creation stack as a :class:`CallStack`."""
         cls._is_monitored_ = True
         self._monitored.add(cls)
 
@@ -52,14 +33,15 @@ class MonitoredRegistry:
 
         @wraps(original_post_init)
         def new_post_init(self, *args, **kwargs):
-            raw_stack = inspect.stack()[1:]
-            self._creation_stack = filter_stack(raw_stack)
+            raw_frames = inspect.stack()[1:]
+            stack = CallStack([StackFrame.from_frame_info(fi) for fi in raw_frames])
+            self._creation_stack = stack.filter()  # drop site-packages immediately
             original_post_init(self, *args, **kwargs)
 
         cls.__post_init__ = new_post_init
         return cls
 
-    def get_stack(self, instance: Any) -> Optional[List[inspect.FrameInfo]]:
+    def get_stack(self, instance: Any) -> Optional[CallStack]:
         """Retrieve the creation stack for a monitored instance."""
         if not self.is_monitored(type(instance)):
             return None
