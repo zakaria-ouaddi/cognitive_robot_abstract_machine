@@ -141,17 +141,11 @@ source statement where the query was written, and the satisfied conditions rende
 print(expl.as_string())
 ```
 
-Pass `show_trace=True` to also append the call stack recorded at query-definition time:
-
-```{code-cell} ipython3
-print(expl.as_string(show_trace=True))
-```
-
 Calling `explain_inference` on a directly constructed object returns `None`:
 
 ```{code-cell} ipython3
 direct = ExampleDrawer(container=containers[0], handle=handles[0])
-print(explain_inference(direct))  # None
+print(f"{explain_inference(direct)} -> Was not Inferred by an EQL rule")  # None
 ```
 
 ### Satisfied conditions via `ConditionAndBindings`

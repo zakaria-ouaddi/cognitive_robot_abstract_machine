@@ -586,7 +586,7 @@ def test_condition_graph_pipeline_non_symbol():
 
 
 def test_query_graph_satisfaction_colors():
-    """Unsatisfied nodes and edges are faded; satisfied keep full color."""
+    """Unsatisfied nodes get red borders; satisfied nodes keep full color and no border."""
     from krrood.entity_query_language.query_graph import ColorLegend
 
     val = variable_from([6])
@@ -609,23 +609,24 @@ def test_query_graph_satisfaction_colors():
 
     for node in qg.expression_node_map.values():
         if isinstance(node.data, Comparator) and node.data._name_ == ">":
-            # val > 5 is satisfied: full color, not faded
+            # val > 5 is satisfied: full fill color retained, not faded, no red border
             assert node.color.color == original_colors[id(node.data)]
             assert not node.faded
-            assert "not satisfied" not in node.color.name.lower()
+            assert node.border_color is None
         if isinstance(node.data, Comparator) and node.data._name_ == "<":
-            # val < 10 is short-circuited (unsatisfied): faded fill, border, and flag
-            assert node.color.color != original_colors[id(node.data)]
+            # val < 10 is short-circuited (unsatisfied): fill color unchanged,
+            # faded flag set, red border applied instead of transparency
+            assert node.color.color == original_colors[id(node.data)]
             assert node.faded
-            assert "not satisfied" in node.color.name.lower()
+            assert node.border_color == "red"
 
     for node in qg.expression_node_map.values():
         if not is_condition_participant(node.data):
-            # Non-condition nodes may be faded if they are exclusive
-            # descendants of an unsatisfied node (e.g. Literal(10) under <).
-            # They may also be shared (same Variable used in both > and <).
+            # Non-condition nodes may be faded if they are exclusive descendants
+            # of an unsatisfied node (e.g. Literal(10) under <); they get red borders too.
+            # Shared nodes (Variable reachable via a satisfied path) stay unfaded.
             if not node.faded:
-                assert "not satisfied" not in node.color.name.lower()
+                assert node.border_color is None
 
 
 def test_query_graph_faded_subtree_propagation():
