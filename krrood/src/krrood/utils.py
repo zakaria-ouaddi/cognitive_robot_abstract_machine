@@ -650,11 +650,28 @@ def get_generic_type_params(
                 if not isinstance(arg, TypeVar):
                     params.append(arg)
                 elif not include_root_generic_base:
-                    # If we specifically excluded root params, we might still want
-                    # TypeVars that are being passed to this specialized base.
+                    # If we specifically excluded root generic params, we might still want
+                    # TypeVars that are being passed to this specialized base
+                    # Example: For `class Child(Generic[T, U], Parent[T])`:
+                    # - `include_root_generic_base=True` returns `[T, U]` (captures all definitions, avoids duplicates).
+                    # - `include_root_generic_base=False` returns `[T]` (captures only what is specifically passed to `Parent`).
                     params.append(arg)
 
     return params
+
+
+def get_existing_field_by_name(cls, name: str) -> Optional[Field]:
+    """
+    Find the existing field in the MRO if it exists.
+
+    :param name: The name of the field.
+    :return: The existing field if found, otherwise None.
+    """
+    for base in cls.__mro__:
+        fields = getattr(base, "__dataclass_fields__", None)
+        if fields and name in fields:
+            return fields[name]
+    return None
 
 
 def is_hashable(obj) -> bool:
@@ -887,10 +904,10 @@ def _handle_import_from_node(
     return package_name
 
 
-F = TypeVar("F", bound=Callable[..., Any])
+TCallable = TypeVar("TCallable", bound=Callable[..., Any])
 
 
-def memoize(function: F) -> F:
+def memoize(function: TCallable) -> TCallable:
     """
     Caches the return value of a function call at the instance level.
     """
@@ -912,7 +929,7 @@ def memoize(function: F) -> F:
     return wrapper  # type: ignore
 
 
-def copy_memoize(function: F) -> F:
+def copy_memoize(function: TCallable) -> TCallable:
     """
     Caches the return value of a function call at the instance level but returns a deepcopy of the value.
     """

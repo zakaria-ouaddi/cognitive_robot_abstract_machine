@@ -5,7 +5,7 @@ from copy import copy
 from dataclasses import dataclass, fields, Field, field
 from functools import lru_cache
 from inspect import isclass
-from typing import Tuple
+from typing import Tuple, ClassVar
 
 from typing_extensions import (
     Generic,
@@ -29,7 +29,7 @@ from krrood.utils import (
     get_generic_type_params,
     T,
     ensure_hashable,
-    memoize,
+    get_existing_field_by_name,
 )
 
 if TYPE_CHECKING:
@@ -46,6 +46,8 @@ class AbstractSubClassSafeGeneric(ABC):
     this class. Here it is important that in the inheritance order, ``Generic[...]`` is positioned before
     ``AbstractSubClassSafeGeneric`` similar to how it is done in ``SubClassSafeGeneric``.
     """
+
+    _subclass_safe_substitutions: ClassVar[Dict[Type, Type]] = {}
 
     def __init_subclass__(cls, **kwargs):
         """
@@ -77,7 +79,7 @@ class AbstractSubClassSafeGeneric(ABC):
         :param kwargs: Keyword arguments to update the field with.
         :param type_: The type of the field.
         """
-        existing_field = cls._get_existing_field(name)
+        existing_field = get_existing_field_by_name(cls, name)
 
         # Check if we should update an existing attribute or field on the current class
         target_field = None
@@ -95,11 +97,6 @@ class AbstractSubClassSafeGeneric(ABC):
             for key, value in kwargs.items():
                 setattr(new_field, key, value)
             setattr(cls, name, new_field)
-        else:
-            # Create a new field if it doesn't exist
-            field_kwargs = {k: v for k, v in kwargs.items() if k != "type"}
-            if field_kwargs:
-                setattr(cls, name, field(**field_kwargs))
 
         # Update annotations
         if "type" in kwargs:
@@ -113,20 +110,6 @@ class AbstractSubClassSafeGeneric(ABC):
         cls.__annotations__[name] = resolved_type
 
     @classmethod
-    def _get_existing_field(cls, name: str) -> Optional[Field]:
-        """
-        Find the existing field in the MRO if it exists.
-
-        :param name: The name of the field.
-        :return: The existing field if found, otherwise None.
-        """
-        for base in cls.__mro__:
-            fields = getattr(base, "__dataclass_fields__", None)
-            if fields and name in fields:
-                return fields[name]
-        return None
-
-    @classmethod
     def _get_generic_type_substitutions(cls) -> Dict[Type, Type]:
         """
         Get the generic type substitutions for this class.
@@ -134,11 +117,13 @@ class AbstractSubClassSafeGeneric(ABC):
         :return: A mapping from each old generic type (as declared on the parent class) to the
             new generic type used by this class, for every position whose binding changed.
         """
-        if cls is AbstractSubClassSafeGeneric:
+        if cls is AbstractSubClassSafeGeneric or not issubclass(
+            cls, AbstractSubClassSafeGeneric
+        ):
             return {}
 
         # Use a class-level cache to avoid redundant recursive calculations
-        if "_subclass_safe_substitutions" in cls.__dict__:
+        if cls._subclass_safe_substitutions:
             return cls._subclass_safe_substitutions
 
         substitutions = {}
@@ -151,7 +136,12 @@ class AbstractSubClassSafeGeneric(ABC):
 
             # Map the root TypeVars of the base to the concrete arguments provided here
             if resolved_types:
-                root_parameters = base_origin.get_generic_types(True, False)
+                root_parameters = get_generic_type_params(
+                    base_origin,
+                    AbstractSubClassSafeGeneric,
+                    include_root_generic_base=True,
+                    include_specialized_generic_base=False,
+                )
                 if len(root_parameters) != len(resolved_types):
                     assert_never(base)
 
@@ -201,7 +191,7 @@ class AbstractSubClassSafeGeneric(ABC):
 
     @classmethod
     def _resolve_base_origin_and_arguments(
-        cls, base: Any
+        cls, base: Type
     ) -> Tuple[Optional[Type], Tuple[Type, ...]]:
         """
         Resolve the origin and generic arguments for a base class.
@@ -220,25 +210,6 @@ class AbstractSubClassSafeGeneric(ABC):
             return origin, get_args(base)
 
         return None, ()
-
-    @classmethod
-    @memoize
-    def get_generic_types(
-        cls,
-        include_root_generic_base: bool = True,
-        include_specialized_generic_base: bool = True,
-    ) -> List[Type]:
-        """
-        :param include_root_generic_base: Whether to include type parameters the class gets from its own typing.Generic directly.
-        :param include_specialized_generic_base: Whether to include type parameters from superclasses that are generic, which are not typing.Generic.
-        :return: The concrete generic type parameters bound for this class, in declaration order.
-        """
-        return get_generic_type_params(
-            cls,
-            AbstractSubClassSafeGeneric,
-            include_root_generic_base,
-            include_specialized_generic_base,
-        )
 
 
 @dataclass
