@@ -940,5 +940,14 @@ def test_repeated_collision_pr2_apartment_does_not_increase_execution_time(
             end_time = time.time()
             execution_times.append(end_time - start_time)
 
-    mean_execution_time = np.mean(execution_times)
-    np.testing.assert_allclose(execution_times, mean_execution_time, rtol=0.5)
+    # Split execution times into two halves
+    half = len(execution_times) // 2
+    first_half_median = np.median(execution_times[:half])
+    second_half_median = np.median(execution_times[half:])
+
+    # Assert that the second half is not significantly slower than the first half.
+    # We allow a small margin (e.g., 20%) for natural noise.
+    assert second_half_median <= first_half_median * 1.2, (
+        f"Execution time is increasing: first half median {first_half_median:.4f}s, "
+        f"second half median {second_half_median:.4f}s"
+    )
