@@ -157,26 +157,22 @@ class HasRobotParts(ABC):
 
         Handles Union types by initializing one instance of each type in the Union.
         """
-        # Resolve Union types (e.g., Union[PR2LeftArm, PR2RightArm]) to get concrete types
         if get_origin(item_type) in (Union, getattr(types, "UnionType", Union)):
             types_to_initialize = get_args(item_type)
         else:
             types_to_initialize = [item_type]
 
         current_list = getattr(self, field_name)
-        # Ensure the field is initialized as a list if it's currently None
         if not isinstance(current_list, list):
             current_list = []
             setattr(self, field_name, current_list)
 
         for concrete_type in types_to_initialize:
-            # Only process concrete subclasses of AbstractRobotPart
             if (
                 inspect.isclass(concrete_type)
                 and issubclass(concrete_type, AbstractRobotPart)
                 and not inspect.isabstract(concrete_type)
             ):
-                # Requirement: Each semantic annotation type should only be initialized once
                 if any(type(item) is concrete_type for item in self._robot_parts):
                     continue
 
@@ -185,10 +181,9 @@ class HasRobotParts(ABC):
                         self.root
                     )
                 )
-                if part:
-                    current_list.append(part)
-                    # Recursive call for nested robot parts
-                    part.setup_robot_part_semantic_annotations()
+                current_list.append(part)
+                # Recursive call for nested robot parts
+                part.setup_robot_part_semantic_annotations()
 
 
 @dataclass(eq=False)

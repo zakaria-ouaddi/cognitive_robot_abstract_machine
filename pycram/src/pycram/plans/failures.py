@@ -112,10 +112,19 @@ class BodyUnfetchable(PlanFailure):
 
 @dataclass
 class EndEffectorDidNotReachTarget(PlanFailure):
+    """
+    Raised when an end effector did not reach its target during a motion
+    """
 
     end_effector: EndEffector
+    """
+    The end effector that did not reach its target.
+    """
 
     target: Pose
+    """
+    The target pose that the end effector did not reach.
+    """
 
     def __post_init__(self):
         self.message = (

@@ -308,16 +308,20 @@ def _compute_attribute_diff(
 
     :return JSONAttributeDiff describing the changes that need to be applied to first json to get second json for a specific key.
     """
-    original_value = original_json.get(key)
-    new_value = new_json.get(key)
+    original_values = original_json.get(key)
+    new_values = new_json.get(key)
 
-    if not isinstance(original_value, list_like_classes):
-        if original_value == new_value:
+    if not isinstance(original_values, list_like_classes):
+        if original_values == new_values:
             return None
-        return JSONAttributeDiff(attribute_name=key, added_values=[new_value])
+        return JSONAttributeDiff(attribute_name=key, added_values=[new_values])
 
-    add = [x for x in new_value if x not in original_value]
-    remove = [x for x in original_value if x not in new_value]
+    add = [new_value for new_value in new_values if new_value not in original_values]
+    remove = [
+        original_value
+        for original_value in original_values
+        if original_value not in new_values
+    ]
     if not (add or remove):
         return None
     return JSONAttributeDiff(
