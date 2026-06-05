@@ -80,13 +80,14 @@ from semantic_digital_twin.world import World
 @pytest.fixture(
     scope="session",
     params=[
-        pytest.param(
-            "garmi",
-            marks=pytest.mark.skipif(
-                Garmi is None,
-                reason="GARMI semantic annotation not installed",
-            ),
-        ),
+        # Garmi commented out until we get access to the robot description in CI
+        # pytest.param(
+        #     "garmi",
+        #     marks=pytest.mark.skipif(
+        #         Garmi is None,
+        #         reason="GARMI semantic annotation not installed",
+        #     ),
+        # ),
         "hsrb",
         "stretch",
         "tiago",
