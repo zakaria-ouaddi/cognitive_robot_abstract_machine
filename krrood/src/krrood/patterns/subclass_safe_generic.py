@@ -22,6 +22,7 @@ from typing_extensions import (
     Unpack,
 )
 
+from krrood.adapters.json_serializer import list_like_classes
 from krrood.class_diagrams.utils import (
     get_and_resolve_generic_type_hints_of_object_using_substitutions,
 )
@@ -169,6 +170,10 @@ class AbstractSubClassSafeGeneric(ABC):
     ) -> dict[Any, ResolvableType]:
         """
         Retrieves resolved type substitutions for a given base origin and resolved types.
+
+        :param base_origin: The base origin type for which substitutions are retrieved.
+        :param resolved_types: The resolved types to match against the base origin's generic parameters.
+        :return: A dictionary of resolved type substitutions.
         """
         root_parameters = get_generic_type_params(
             base_origin,
@@ -212,6 +217,10 @@ class AbstractSubClassSafeGeneric(ABC):
     ) -> bool:
         """
         Determines if a substitution condition is fulfilled based on the old and new types.
+
+        :param old_type: The old type to compare against.
+        :param new_type: The new type to compare with.
+        :return: True if the substitution condition is fulfilled, False otherwise.
         """
         if not isinstance(old_type, (TypeVar, TypeVarTuple)):
             return False
@@ -309,18 +318,17 @@ class AbstractSubClassSafeGeneric(ABC):
                     )
                 return current_type
 
-            if isinstance(current_type, list):
-                return [_resolve_recursive(item, visited) for item in current_type]
-
-            if isinstance(current_type, tuple):
+            if isinstance(current_type, list_like_classes):
                 resolved_items = []
                 for item in current_type:
                     result = _resolve_recursive(item, visited)
-                    if get_origin(item) is Unpack and isinstance(result, tuple):
+                    if get_origin(item) is Unpack and isinstance(
+                        result, list_like_classes
+                    ):
                         resolved_items.extend(result)
                     else:
                         resolved_items.append(result)
-                return tuple(resolved_items)
+                return type(current_type)(resolved_items)
 
             origin = get_origin(current_type)
             if origin is None:

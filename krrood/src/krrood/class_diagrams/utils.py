@@ -199,27 +199,29 @@ def resolve_type(
 
     # If the type itself can be indexed (like List[T] or Optional[T])
     parameters = getattr(type_to_resolve, "__parameters__", None)
-    if hasattr(type_to_resolve, "__getitem__") and parameters:
-        new_parameters = []
-        resolved: bool = False  # whether any substitutions were made
-        for parameter in parameters:
-            if parameter in substitution:
-                value = substitution[parameter]
-                if isinstance(parameter, TypeVarTuple) and isinstance(value, tuple):
-                    new_parameters.extend(value)
-                else:
-                    new_parameters.append(value)
-                resolved = True
-            else:
-                new_parameters.append(parameter)
-        subscript_parameter = (
-            new_parameters[0] if len(new_parameters) == 1 else tuple(new_parameters)
-        )
-        return TypeHintResolutionResult(
-            type_to_resolve[subscript_parameter], resolved, type_to_resolve
-        )
+    if not (hasattr(type_to_resolve, "__getitem__") and parameters):
+        return TypeHintResolutionResult(type_to_resolve, False, type_to_resolve)
 
-    return TypeHintResolutionResult(type_to_resolve, False, type_to_resolve)
+    new_parameters = []
+    resolved: bool = False
+    for parameter in parameters:
+        if parameter not in substitution:
+            new_parameters.append(parameter)
+            continue
+
+        value = substitution[parameter]
+        if isinstance(parameter, TypeVarTuple) and isinstance(value, tuple):
+            new_parameters.extend(value)
+        else:
+            new_parameters.append(value)
+        resolved = True
+
+    subscript_parameter = (
+        new_parameters[0] if len(new_parameters) == 1 else tuple(new_parameters)
+    )
+    return TypeHintResolutionResult(
+        type_to_resolve[subscript_parameter], resolved, type_to_resolve
+    )
 
 
 @lru_cache
