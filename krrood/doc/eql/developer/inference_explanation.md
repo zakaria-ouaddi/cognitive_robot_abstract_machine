@@ -40,46 +40,34 @@ instance produced by an EQL `inference(...)` rule. The design is governed by fou
 
 The subsystem is built from four collaborating layers:
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  LAYER 1: Call-stack capture (krrood/entity_query_language/_stack.py,  │
-│                               krrood/entity_query_language/_monitoring.py) │
-│                                                                     │
-│  @monitored decorator patches __post_init__ to capture a CallStack  │
-│  of StackFrame objects as each monitored InstantiatedVariable is    │
-│  created. StackFrame eagerly extracts all data from the live frame. │
-└───────────────────────────────┬─────────────────────────────────────┘
-                                │ _creation_stack stored on variable instance
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  LAYER 2: Evaluation observer pipeline                              │
-│  (krrood/entity_query_language/evaluation.py)                       │
-│                                                                     │
-│  EvaluationContext  ──observers──► EvaluationTracker               │
-│                                    SatisfiedConditionTracker        │
-│                                    InferenceRecorder                │
-│                                              │                      │
-│                                              ▼ on_result_yielded    │
-│                               register_inference(instance, node, result) │
-└───────────────────────────────┬─────────────────────────────────────┘
-                                │ explanation attached to instance
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  LAYER 3: Explanation storage                                       │
-│  (krrood/symbol_graph/symbol_graph.py)                              │
-│                                                                     │
-│  Symbol._inference_explanation_: Optional[InferenceExplanation]    │
-│  Declared init=False; set by register_inference after construction. │
-└───────────────────────────────┬─────────────────────────────────────┘
-                                │ callers query the explanation
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  LAYER 4: Explanation API                                           │
-│  (krrood/entity_query_language/explanation/explanation.py)          │
-│                                                                     │
-│  InferenceExplanation(Symbol): meta-query methods, stack methods,  │
-│  condition_graph(), as_string()                                     │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph L1["Layer 1: Call-stack capture"]
+        L1_paths["krrood/entity_query_language/_stack.py<br>krrood/entity_query_language/_monitoring.py"]
+        L1_desc["@monitored decorator patches __post_init__ to capture a CallStack<br>of StackFrame objects as each monitored InstantiatedVariable is<br>created. StackFrame eagerly extracts all data from the live frame."]
+    end
+
+    subgraph L2["Layer 2: Evaluation observer pipeline"]
+        L2_paths["krrood/entity_query_language/evaluation.py"]
+        EC[EvaluationContext] -->|observers| ET[EvaluationTracker]
+        ET --> SCT[SatisfiedConditionTracker]
+        SCT --> IR[InferenceRecorder]
+        IR -->|on_result_yielded| RI[register_inference(instance, node, result)]
+    end
+
+    subgraph L3["Layer 3: Explanation storage"]
+        L3_paths["krrood/symbol_graph/symbol_graph.py"]
+        L3_desc["Symbol._inference_explanation_: Optional[InferenceExplanation]<br>Declared init=False; set by register_inference after construction."]
+    end
+
+    subgraph L4["Layer 4: Explanation API"]
+        L4_paths["krrood/entity_query_language/explanation/explanation.py"]
+        L4_desc["InferenceExplanation(Symbol): meta-query methods, stack methods,<br>condition_graph(), as_string()"]
+    end
+
+    L1 -->|_creation_stack stored on variable instance| L2
+    L2 -->|explanation attached to instance| L3
+    L3 -->|callers query the explanation| L4
 ```
 
 ## Layer 1 — Call-Stack Provenance
@@ -214,8 +202,10 @@ The runtime import of `InferenceExplanation` inside `symbol_graph.py` is guarded
 `InferenceExplanation` stores a `weakref.ref` back to its instance rather than a strong
 reference. Without this, the ownership chain would create a cycle:
 
-```
-instance  ──strong──►  InferenceExplanation  ──strong──►  (back to instance)
+```mermaid
+graph LR
+    instance -- strong --> IE[InferenceExplanation]
+    IE -- strong --> back["(back to instance)"]
 ```
 
 Both objects would keep each other alive indefinitely even when no external code holds either.

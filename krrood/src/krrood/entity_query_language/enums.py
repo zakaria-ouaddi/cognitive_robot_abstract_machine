@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from enum import Enum, auto
+from enum import Enum, auto, StrEnum
 
 
 class InferMode(Enum):
@@ -56,7 +56,7 @@ class DomainSource(Enum):
     """
 
 
-class EvaluationContextKey(str, Enum):
+class EvaluationContextKey(StrEnum):
     """
     Enumeration of keys used in the evaluation context's data dictionary.
     """

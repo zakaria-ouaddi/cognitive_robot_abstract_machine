@@ -199,7 +199,7 @@ def get_function_argument_names(function: Callable) -> List[str]:
 
 
 def merge_args_and_kwargs(
-    function_or_class: Union[Callable, Type],
+    function_or_class: Callable,
     args: Tuple[Any, ...],
     kwargs: Dict[str, Any],
     ignore_first: bool = False,
