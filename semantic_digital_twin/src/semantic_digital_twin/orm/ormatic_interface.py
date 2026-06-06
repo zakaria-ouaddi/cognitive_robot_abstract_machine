@@ -2484,141 +2484,6 @@ class FrozenIndexBoxDAO(
     z1: Mapped[builtins.int] = mapped_column(use_existing_column=True)
 
 
-class HasArmsDAO(
-    Base, DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasArms]
-):
-
-    __tablename__ = "HasArmsDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        Integer, primary_key=True, use_existing_column=True
-    )
-
-    polymorphic_type: Mapped[str] = mapped_column(
-        String(255), nullable=False, use_existing_column=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_on": "polymorphic_type",
-        "polymorphic_identity": "HasArmsDAO",
-    }
-
-
-class HasEndEffectorDAO(
-    Base,
-    DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasEndEffector],
-):
-
-    __tablename__ = "HasEndEffectorDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        Integer, primary_key=True, use_existing_column=True
-    )
-
-    polymorphic_type: Mapped[str] = mapped_column(
-        String(255), nullable=False, use_existing_column=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_on": "polymorphic_type",
-        "polymorphic_identity": "HasEndEffectorDAO",
-    }
-
-
-class HasFingersDAO(
-    Base, DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasFingers]
-):
-
-    __tablename__ = "HasFingersDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        Integer, primary_key=True, use_existing_column=True
-    )
-
-    polymorphic_type: Mapped[str] = mapped_column(
-        String(255), nullable=False, use_existing_column=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_on": "polymorphic_type",
-        "polymorphic_identity": "HasFingersDAO",
-    }
-
-
-class HasLeftRightArmDAO(
-    HasArmsDAO,
-    DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasLeftRightArm],
-):
-
-    __tablename__ = "HasLeftRightArmDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(HasArmsDAO.database_id), primary_key=True, use_existing_column=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "HasLeftRightArmDAO",
-        "inherit_condition": database_id == HasArmsDAO.database_id,
-    }
-
-
-class HasMobileBaseDAO(
-    Base, DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasMobileBase]
-):
-
-    __tablename__ = "HasMobileBaseDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        Integer, primary_key=True, use_existing_column=True
-    )
-
-    polymorphic_type: Mapped[str] = mapped_column(
-        String(255), nullable=False, use_existing_column=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_on": "polymorphic_type",
-        "polymorphic_identity": "HasMobileBaseDAO",
-    }
-
-
-class HasNeckDAO(
-    Base, DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasNeck]
-):
-
-    __tablename__ = "HasNeckDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        Integer, primary_key=True, use_existing_column=True
-    )
-
-    polymorphic_type: Mapped[str] = mapped_column(
-        String(255), nullable=False, use_existing_column=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_on": "polymorphic_type",
-        "polymorphic_identity": "HasNeckDAO",
-    }
-
-
-class HasOneArmDAO(
-    HasArmsDAO,
-    DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasOneArm],
-):
-
-    __tablename__ = "HasOneArmDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(HasArmsDAO.database_id), primary_key=True, use_existing_column=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "HasOneArmDAO",
-        "inherit_condition": database_id == HasArmsDAO.database_id,
-    }
-
-
 class HasRobotPartsDAO(
     Base, DataAccessObject[semantic_digital_twin.robots.robot_parts.HasRobotParts]
 ):
@@ -2636,26 +2501,6 @@ class HasRobotPartsDAO(
     __mapper_args__ = {
         "polymorphic_on": "polymorphic_type",
         "polymorphic_identity": "HasRobotPartsDAO",
-    }
-
-
-class HasSensorsDAO(
-    Base, DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasSensors]
-):
-
-    __tablename__ = "HasSensorsDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        Integer, primary_key=True, use_existing_column=True
-    )
-
-    polymorphic_type: Mapped[str] = mapped_column(
-        String(255), nullable=False, use_existing_column=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_on": "polymorphic_type",
-        "polymorphic_identity": "HasSensorsDAO",
     }
 
 
@@ -2687,45 +2532,6 @@ class HasSimulatorPropertiesDAO(
     __mapper_args__ = {
         "polymorphic_on": "polymorphic_type",
         "polymorphic_identity": "HasSimulatorPropertiesDAO",
-    }
-
-
-class HasTorsoDAO(
-    Base, DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasTorso]
-):
-
-    __tablename__ = "HasTorsoDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        Integer, primary_key=True, use_existing_column=True
-    )
-
-    polymorphic_type: Mapped[str] = mapped_column(
-        String(255), nullable=False, use_existing_column=True
-    )
-
-    __mapper_args__ = {
-        "polymorphic_on": "polymorphic_type",
-        "polymorphic_identity": "HasTorsoDAO",
-    }
-
-
-class HasTwoFingersDAO(
-    HasFingersDAO,
-    DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasTwoFingers],
-):
-
-    __tablename__ = "HasTwoFingersDAO"
-
-    database_id: Mapped[builtins.int] = mapped_column(
-        ForeignKey(HasFingersDAO.database_id),
-        primary_key=True,
-        use_existing_column=True,
-    )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "HasTwoFingersDAO",
-        "inherit_condition": database_id == HasFingersDAO.database_id,
     }
 
 
@@ -3709,6 +3515,213 @@ class QPProblemDAO(
         foreign_keys=[target_id],
         post_update=True,
     )
+
+
+class RobotPartMixinDAO(
+    Base,
+    DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.RobotPartMixin],
+):
+
+    __tablename__ = "RobotPartMixinDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    polymorphic_type: Mapped[str] = mapped_column(
+        String(255), nullable=False, use_existing_column=True
+    )
+
+    __mapper_args__ = {
+        "polymorphic_on": "polymorphic_type",
+        "polymorphic_identity": "RobotPartMixinDAO",
+    }
+
+
+class HasArmsDAO(
+    RobotPartMixinDAO,
+    DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasArms],
+):
+
+    __tablename__ = "HasArmsDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(RobotPartMixinDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "HasArmsDAO",
+        "inherit_condition": database_id == RobotPartMixinDAO.database_id,
+    }
+
+
+class HasEndEffectorDAO(
+    RobotPartMixinDAO,
+    DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasEndEffector],
+):
+
+    __tablename__ = "HasEndEffectorDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(RobotPartMixinDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "HasEndEffectorDAO",
+        "inherit_condition": database_id == RobotPartMixinDAO.database_id,
+    }
+
+
+class HasFingersDAO(
+    RobotPartMixinDAO,
+    DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasFingers],
+):
+
+    __tablename__ = "HasFingersDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(RobotPartMixinDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "HasFingersDAO",
+        "inherit_condition": database_id == RobotPartMixinDAO.database_id,
+    }
+
+
+class HasTwoFingersDAO(
+    HasFingersDAO,
+    DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasTwoFingers],
+):
+
+    __tablename__ = "HasTwoFingersDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(HasFingersDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "HasTwoFingersDAO",
+        "inherit_condition": database_id == HasFingersDAO.database_id,
+    }
+
+
+class HasLeftRightArmDAO(
+    HasArmsDAO,
+    DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasLeftRightArm],
+):
+
+    __tablename__ = "HasLeftRightArmDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(HasArmsDAO.database_id), primary_key=True, use_existing_column=True
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "HasLeftRightArmDAO",
+        "inherit_condition": database_id == HasArmsDAO.database_id,
+    }
+
+
+class HasMobileBaseDAO(
+    RobotPartMixinDAO,
+    DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasMobileBase],
+):
+
+    __tablename__ = "HasMobileBaseDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(RobotPartMixinDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "HasMobileBaseDAO",
+        "inherit_condition": database_id == RobotPartMixinDAO.database_id,
+    }
+
+
+class HasNeckDAO(
+    RobotPartMixinDAO,
+    DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasNeck],
+):
+
+    __tablename__ = "HasNeckDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(RobotPartMixinDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "HasNeckDAO",
+        "inherit_condition": database_id == RobotPartMixinDAO.database_id,
+    }
+
+
+class HasOneArmDAO(
+    HasArmsDAO,
+    DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasOneArm],
+):
+
+    __tablename__ = "HasOneArmDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(HasArmsDAO.database_id), primary_key=True, use_existing_column=True
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "HasOneArmDAO",
+        "inherit_condition": database_id == HasArmsDAO.database_id,
+    }
+
+
+class HasSensorsDAO(
+    RobotPartMixinDAO,
+    DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasSensors],
+):
+
+    __tablename__ = "HasSensorsDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(RobotPartMixinDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "HasSensorsDAO",
+        "inherit_condition": database_id == RobotPartMixinDAO.database_id,
+    }
+
+
+class HasTorsoDAO(
+    RobotPartMixinDAO,
+    DataAccessObject[semantic_digital_twin.robots.robot_part_mixins.HasTorso],
+):
+
+    __tablename__ = "HasTorsoDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(RobotPartMixinDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "HasTorsoDAO",
+        "inherit_condition": database_id == RobotPartMixinDAO.database_id,
+    }
 
 
 class RootNodeNotFoundErrorDAO(

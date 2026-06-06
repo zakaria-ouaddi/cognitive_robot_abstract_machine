@@ -47,8 +47,24 @@ TGenericSensors = TypeVarTuple("TGenericSensors")
 
 
 @dataclass(eq=False)
+class RobotPartMixin(ABC):
+    """
+    Base mixin class for robot parts.
+    """
+
+    @abstractmethod
+    def validate(self):
+        """
+        Validation method that describes assumptions made about the robot part.
+        """
+
+
+@dataclass(eq=False)
 class HasFingers(
-    Generic[TGenericThumb, Unpack[TGenericFingers]], AbstractSubClassSafeGeneric, ABC
+    Generic[TGenericThumb, Unpack[TGenericFingers]],
+    AbstractSubClassSafeGeneric,
+    RobotPartMixin,
+    ABC,
 ):
     """
     Mixin class for robots or robot parts that have fingers as their direct children.
@@ -60,6 +76,14 @@ class HasFingers(
     """
     The list of fingers attached to the robot.
     """
+
+    def validate(self):
+        """
+        Validation method that checks that there is exactly one thumb in the fingers list.
+        """
+        assert (
+            len(self.fingers) >= 3
+        ), f"Expected at least 3 fingers, got {len(self.fingers)}. If this RobotPart is supposed to only have two use HasTwoFingers instead."
 
     @property
     def thumb(self) -> TGenericThumb:
@@ -83,6 +107,11 @@ class HasTwoFingers(
     Mixin class for robots or robot parts that have exactly two fingers, one of which is a thumb.
     """
 
+    def validate(self):
+        assert (
+            len(self.fingers) == 2
+        ), f"Expected exactly 2 fingers, got {len(self.fingers)}"
+
     @property
     def finger(self) -> Union[TGenericLeftFinger, TGenericRightFinger]:
         concrete_thumb_class = get_generic_type_params(self, HasFingers)[0]
@@ -96,7 +125,9 @@ class HasTwoFingers(
 
 
 @dataclass(eq=False)
-class HasSensors(Generic[Unpack[TGenericSensors]], AbstractSubClassSafeGeneric, ABC):
+class HasSensors(
+    Generic[Unpack[TGenericSensors]], AbstractSubClassSafeGeneric, RobotPartMixin, ABC
+):
     """
     Mixin class for robots or robot parts that have sensors
     """
@@ -108,9 +139,14 @@ class HasSensors(Generic[Unpack[TGenericSensors]], AbstractSubClassSafeGeneric, 
     The list of sensors associated with the robot part.
     """
 
+    def validate(self):
+        assert len(self.sensors) > 0, f"Expected at least one sensor, got 0"
+
 
 @dataclass(eq=False)
-class HasEndEffector(Generic[TGenericEndEffector], AbstractSubClassSafeGeneric, ABC):
+class HasEndEffector(
+    Generic[TGenericEndEffector], AbstractSubClassSafeGeneric, RobotPartMixin, ABC
+):
     """
     Mixin class for robots or robot parts that have an end effector as their direct child.
     """
@@ -120,9 +156,14 @@ class HasEndEffector(Generic[TGenericEndEffector], AbstractSubClassSafeGeneric, 
     The end effector attached to the robot part.
     """
 
+    def validate(self):
+        assert self.end_effector is not None, f"Expected end effector, got None"
+
 
 @dataclass(eq=False)
-class HasArms(Generic[Unpack[TGenericArms]], AbstractSubClassSafeGeneric, ABC):
+class HasArms(
+    Generic[Unpack[TGenericArms]], AbstractSubClassSafeGeneric, RobotPartMixin, ABC
+):
     """
     Mixin class for robots or robot parts that have arms as their direct children.
     """
@@ -132,12 +173,20 @@ class HasArms(Generic[Unpack[TGenericArms]], AbstractSubClassSafeGeneric, ABC):
     The list of arms attached to the robot part.
     """
 
+    def validate(self):
+        assert (
+            len(self.arms) > 2
+        ), f"Expected at least three arms, got {len(self.arms)}. If your robot only has one arm, use HasOneArm instead. If it has two arms, consider using HasLeftRightArm instead."
+
 
 @dataclass(eq=False)
-class HasOneArm(HasArms[TGenericArm], ABC):
+class HasOneArm(HasArms[TGenericArm], RobotPartMixin, ABC):
     """
     Mixin class for robots or robot parts that have exactly one arm.
     """
+
+    def validate(self):
+        assert len(self.arms) == 1, f"Expected exactly one arm, got {len(self.arms)}"
 
     @property
     def arm(self) -> TGenericArm:
@@ -150,11 +199,15 @@ class HasLeftRightArm(
     Generic[TGenericLeftArm, TGenericRightArm],
     HasArms[TGenericLeftArm, TGenericRightArm],
     AbstractSubClassSafeGeneric,
+    RobotPartMixin,
     ABC,
 ):
     """
     Mixin class for robots or robot parts that have two arms and can specify which is the left and which is the right arm.
     """
+
+    def validate(self):
+        assert len(self.arms) == 2, f"Expected exactly two arms, got {len(self.arms)}"
 
     @cached_property
     def left_arm(self) -> TGenericLeftArm:
@@ -197,7 +250,9 @@ class HasLeftRightArm(
 
 
 @dataclass(eq=False)
-class HasMobileBase(Generic[TGenericMobileBase], AbstractSubClassSafeGeneric, ABC):
+class HasMobileBase(
+    Generic[TGenericMobileBase], AbstractSubClassSafeGeneric, RobotPartMixin, ABC
+):
     """
     Mixin class for robots that have a mobile base.
     """
@@ -207,9 +262,14 @@ class HasMobileBase(Generic[TGenericMobileBase], AbstractSubClassSafeGeneric, AB
     The mobile base attached to the robot part.
     """
 
+    def validate(self):
+        assert self.mobile_base is not None, "Expected mobile base, got None"
+
 
 @dataclass(eq=False)
-class HasTorso(Generic[TGenericTorso], AbstractSubClassSafeGeneric, ABC):
+class HasTorso(
+    Generic[TGenericTorso], AbstractSubClassSafeGeneric, RobotPartMixin, ABC
+):
     """
     Mixin class for robots or robot parts that have a torso as their direct child.
     """
@@ -219,9 +279,12 @@ class HasTorso(Generic[TGenericTorso], AbstractSubClassSafeGeneric, ABC):
     The torso attached to the robot part.
     """
 
+    def validate(self):
+        assert self.torso is not None, f"Expected torso, got None"
+
 
 @dataclass(eq=False)
-class HasNeck(Generic[TGenericNeck], AbstractSubClassSafeGeneric, ABC):
+class HasNeck(Generic[TGenericNeck], AbstractSubClassSafeGeneric, RobotPartMixin, ABC):
     """
     Mixin class for robots or robot parts that have a neck as their direct child.
     """
@@ -230,3 +293,6 @@ class HasNeck(Generic[TGenericNeck], AbstractSubClassSafeGeneric, ABC):
     """
     The neck attached to the robot part.
     """
+
+    def validate(self):
+        assert self.neck is not None, f"Expected neck, got None"

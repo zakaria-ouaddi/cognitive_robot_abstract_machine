@@ -16,11 +16,10 @@ from typing import (
     DefaultDict,
     Union,
     Any,
-    Generic,
 )
 from uuid import UUID
 
-from typing_extensions import get_origin, get_args, TypeVarTuple, Unpack
+from typing_extensions import get_origin, get_args, Unpack
 
 from krrood.adapters.json_serializer import list_like_classes
 from krrood.class_diagrams.attribute_introspector import (
@@ -43,6 +42,7 @@ from semantic_digital_twin.robots.robot_part_mixins import (
     TGenericEndEffector,
     HasLeftRightArm,
     TGenericSensors,
+    RobotPartMixin,
 )
 from semantic_digital_twin.semantic_annotations.mixins import HasRootBody
 from semantic_digital_twin.semantic_annotations.semantic_annotations import Agent
@@ -571,6 +571,7 @@ class AbstractRobot(Agent, HasRobotParts, ABC):
             1. Deepcopy the resulting world to ensure that all parts of the robot are initialized in the correct order
             2. Assert that the copied world is the same as the original world
             3. Assert that the robot semantic annotation has a default camera.
+            4. Call validate method on all robot parts inheriting froma RobotPartMixin
 
         :return: True if the robot semantic annotation is valid, False otherwise.
         """
@@ -586,6 +587,12 @@ class AbstractRobot(Agent, HasRobotParts, ABC):
             ].get_default_camera()
             is not None
         )
+
+        for part in self._robot_parts:
+            assert part._robot == self, f"Part {part} refers to wrong robot"
+
+            if isinstance(part, RobotPartMixin):
+                part.validate()
 
         return True
 

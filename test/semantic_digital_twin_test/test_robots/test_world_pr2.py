@@ -6,6 +6,7 @@ from typing_extensions import List
 
 from semantic_digital_twin.adapters.urdf import URDFParser
 from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
+from semantic_digital_twin.exceptions import DuplicateRobotAssignmentsError
 from semantic_digital_twin.orm.ormatic_interface import *  # noqa
 from semantic_digital_twin.reasoning.predicates import LeftOf
 from semantic_digital_twin.robots.hsrb import HSRB
@@ -101,13 +102,13 @@ def test_compute_chain_of_connections_pr2(pr2_world_state_reset):
     ]
 
 
-def test_compute_chain_of_bodies_error_pr2(pr2_world_state_reset):
-    root = pr2_world_state_reset.get_kinematic_structure_entity_by_name(
-        "r_gripper_tool_frame"
-    )
-    tip = pr2_world_state_reset.get_kinematic_structure_entity_by_name("base_footprint")
-    with pytest.raises(AssertionError):
-        pr2_world_state_reset.compute_chain_of_kinematic_structure_entities(root, tip)
+def test_duplicate_robot_assignments_error_pr2(pr2_world_state_reset):
+    [pr2] = pr2_world_state_reset.get_semantic_annotations_by_type(PR2)
+    assert pr2 is not None, "PR2 robot not found in world state reset"
+
+    # Create another robot
+    with pytest.raises(DuplicateRobotAssignmentsError):
+        pr2_2 = PR2.from_world(pr2_world_state_reset)
 
 
 def test_compute_chain_of_connections_error_pr2(pr2_world_state_reset):
