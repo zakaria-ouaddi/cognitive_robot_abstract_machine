@@ -485,7 +485,68 @@ class MobileBase(AbstractRobotPart, ABC):
 @dataclass(eq=False)
 class AbstractRobot(Agent, HasRobotParts, ABC):
     """
-    Specification of an abstract robot
+    This implementation was initially introduced in https://github.com/cram2/cognitive_robot_abstract_machine/pull/290
+    To see a more detailed account of the reasoning, refer to that PRs description.
+
+    ---------------------------------------------------------------------------------------------
+
+    Specification of an abstract robot and its semantic annotations.
+
+    This class serves as the foundation for robot handling within the framework,
+    designed to ensure consistency and expressiveness in robot definitions.
+
+    Design Evolution and Rationale
+    ------------------------------
+    Before settling on the current architecture, two primary approaches were
+    considered for representing diverse robot structures:
+
+    1.  **Unified Base Class**: Providing every robot part with all possible
+        fields (e.g., arms, torso, mobile base) regardless of actual hardware.
+        This was rejected because it led to redundant data, confusing APIs where
+        most fields remained ``None``, and a significant maintenance burden to
+        keep duplicated information synchronized.
+    2.  **Specialized Structures (Chosen)**: Defining only the fields relevant
+        to a specific robot part (e.g., ``Tracy.arms``, but
+        ``PR2.mobile_base.torso.arms``). This approach was chosen because it
+        accurately describes any robot structure without duplication.
+
+    To overcome the lack of deep type-hinting in specialized structures, the
+    framework utilizes Python Generics and the ``SubclassSafeGeneric`` pattern.
+    While this involves more "under-the-hood" complexity, it was judged
+    superior to alternatives like ``typing.Annotated`` or manual field
+    overrides, which require excessive boilerplate and increase the risk of
+    developer error.
+
+    Implementation and Automation
+    -----------------------------
+    To reduce the learning curve and prevent invalid world states, several
+    critical processes are automated:
+
+    *   **Synchronization**: The framework automatically handles the order in
+        which semantic annotations are added to the world, removing the need
+        for developers to understand complex internal synchronization
+        requirements.
+    *   **Initialization**: Sub-parts are automatically instantiated based on
+        generic type hints, ensuring that robot structures are valid by
+        construction.
+
+    Rules for Implementing a New Robot
+    ----------------------------------
+    When implementing a new robot, follow these three rules:
+
+    1.  **Map Concepts**: Create a new class for every distinct part of the
+        robot defined in ``robot_parts.py``.
+    2.  **Define Hierarchy**: Use mixins and generics to define direct
+        parent-child relationships (e.g.,
+        ``PR2RightArm(HasEndEffector[PR2RightGripper])``).
+    3.  **Implement Abstract Methods**: Fill in the required abstract methods.
+        If a method does not apply (e.g., no hardware interface), a simple
+        ``pass`` is sufficient.
+
+    Validation
+    ----------
+    Call the ``validate()`` method to confirm that all fields are plausibly
+    filled and that the robot can be synchronized without issues.
     """
 
     @classmethod
