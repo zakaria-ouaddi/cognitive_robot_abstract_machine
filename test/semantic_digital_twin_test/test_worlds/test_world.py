@@ -817,10 +817,8 @@ def test_copy_drawer(apartment_world_copy):
         handle=handle,
     )
     with apartment_world_copy.modify_world():
-        apartment_world_copy.add_semantic_annotation(drawer)
         apartment_world_copy.add_semantic_annotation(handle)
-
-        # apartment_world_copy.add_semantic_annotations([handle, drawer])
+        apartment_world_copy.add_semantic_annotation(drawer)
 
     apartment_copy = deepcopy(apartment_world_copy)
     copied_handle = apartment_copy.get_semantic_annotation_by_name(handle.name)
