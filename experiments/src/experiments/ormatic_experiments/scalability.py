@@ -102,10 +102,14 @@ def ormatic_scalability_experiment(
     writing_to_file_time = time.perf_counter()
 
     return ORMaticScalabilityExperimentResult(
-        total_duration=writing_to_file_time - begin,
-        class_diagram_creation_duration=class_diagram_creation_time - begin,
-        ormatic_reasoning_duration=ormatic_reasoning_time - class_diagram_creation_time,
-        writing_to_file_duration=writing_to_file_time - ormatic_reasoning_time,
+        total_duration=round(writing_to_file_time - begin, 2),
+        class_diagram_creation_duration=round(class_diagram_creation_time - begin, 2),
+        ormatic_reasoning_duration=round(
+            ormatic_reasoning_time - class_diagram_creation_time, 2
+        ),
+        writing_to_file_duration=round(
+            writing_to_file_time - ormatic_reasoning_time, 2
+        ),
         number_of_classes=len(filtered_classes),
         number_of_associations=len(class_diagram.associations),
         number_of_inheritances=len(class_diagram.inheritance_relations),
@@ -115,7 +119,7 @@ def ormatic_scalability_experiment(
 def main():
     results = []
     for class_drop_probability in tqdm.tqdm(
-        [0.0, 0.1]  # , 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     ):
         results.append(ormatic_scalability_experiment(classes, class_drop_probability))
 
