@@ -533,11 +533,9 @@ class WrappedTable:
             (
                 wrapped_field.is_underspecified_generic
                 and not any(
-                    [
-                        am
-                        for am in self.ormatic.alternative_mappings
-                        if issubclass(wrapped_field.type_endpoint, am.original_class())
-                    ]
+                    am
+                    for am in self.ormatic.alternative_mappings
+                    if issubclass(wrapped_field.type_endpoint, am.original_class())
                 )
             )
             or issubclass(wrapped_field.type_endpoint, dict)
