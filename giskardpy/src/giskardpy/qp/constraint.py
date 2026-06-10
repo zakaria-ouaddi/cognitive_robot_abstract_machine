@@ -168,153 +168,161 @@ class DofLimits(DirectLimits):
                 for dof in degrees_of_freedom:
                     self.names.append(f"{dof.name}_{derivative}_k_{k}")
 
-    # todo memorize
-    def b_profile(
+    def _compute_position_constrained_velocity_bounds(
         self,
         dof_symbols: DerivativeMap[FloatVariable],
         lower_limits: DerivativeMap[float],
         upper_limits: DerivativeMap[float],
-        solver_class,
-        dt: float,
-        ph: int,
-        eps: float = 0.00001,
-    ) -> DegreeOfFreedomLimits[sm.Vector]:
-        vel_limit = upper_limits.velocity
-        acc_limit = upper_limits.acceleration
-        jerk_limit = upper_limits.jerk
-        if lower_limits.position is not None:
-            pos_range = upper_limits.position - lower_limits.position
-            # reduce vel limit, if it can surpass position limits in one dt
-            vel_limit = min(vel_limit * dt, pos_range / 2) / dt
-            # %% compute max possible profile
-            profile = gm.simple_mpc(
-                vel_limit=vel_limit,
-                acc_limit=acc_limit,
-                jerk_limit=jerk_limit,
-                current_vel=vel_limit,
-                current_acc=0,
-                dt=dt,
-                ph=ph,
-                q_weight=(0, 0, 0),
-                lin_weight=(-1, 0, 0),
-                solver_class=solver_class,
-            )
-            vel_profile_mpc = profile[:ph]
-            acc_profile_mpc = profile[ph : ph * 2]
-            pos_error_lb = lower_limits.position - dof_symbols.position
-            pos_error_ub = upper_limits.position - dof_symbols.position
-            # %% limits to profile, if vel integral bigger than remaining distance to pos limits
-            pos_vel_profile_lb, _ = shifted_velocity_profile(
-                vel_profile=vel_profile_mpc,
-                acc_profile=acc_profile_mpc,
-                distance=-pos_error_lb,
-                dt=dt,
-            )
-            pos_vel_profile_lb *= -1
-            pos_vel_profile_ub, _ = shifted_velocity_profile(
-                vel_profile=vel_profile_mpc,
-                acc_profile=acc_profile_mpc,
-                distance=pos_error_ub,
-                dt=dt,
-            )
-            # %% when limits are violated, compute the max velocity that can be reached in one step from zero and put it as
-            # negative limits
-            one_step_change_ = jerk_limit * dt**2
-            one_step_change_lb = sm.min(
-                sm.max(Scalar(0), pos_error_lb / dt), Scalar(one_step_change_)
-            )
-            one_step_change_lb = sm.limit(one_step_change_lb, -vel_limit, vel_limit)
-            one_step_change_ub = sm.max(
-                sm.min(Scalar(0), pos_error_ub / dt), -Scalar(one_step_change_)
-            )
-            one_step_change_ub = sm.limit(one_step_change_ub, -vel_limit, vel_limit)
-            pos_vel_profile_lb[0] = sm.if_greater(
-                pos_error_lb, 0, one_step_change_lb, copy(pos_vel_profile_lb[0])
-            )
-            pos_vel_profile_ub[0] = sm.if_less(
-                pos_error_ub, 0, one_step_change_ub, copy(pos_vel_profile_ub[0])
-            )
-
-            # all 0, unless lower or upper position limits are violated
-            goal_profile = sm.max(pos_vel_profile_lb, 0) + sm.min(pos_vel_profile_ub, 0)
-            # skip first when lower or upper position limit are violated
-            skip_first = sm.logic_or(
-                pos_vel_profile_lb[0] >= 0, pos_vel_profile_ub[0] <= 0
-            )
-        else:
-            goal_profile = sm.Vector.zeros(ph)
-            pos_vel_profile_ub = sm.Vector.ones(ph) * vel_limit
-            pos_vel_profile_lb = -pos_vel_profile_ub
+        solver_class: Type[QPSolver],
+        time_step: float,
+        prediction_horizon: int,
+    ) -> tuple[sm.Vector, sm.Vector, sm.Vector, sm.Scalar]:
+        velocity_limit = upper_limits.velocity
+        if lower_limits.position is None:
+            velocity_upper_bound = sm.Vector.ones(prediction_horizon) * velocity_limit
+            velocity_lower_bound = -velocity_upper_bound
+            goal_profile = sm.Vector.zeros(prediction_horizon)
             skip_first = sm.Scalar.const_false()
+            return velocity_lower_bound, velocity_upper_bound, goal_profile, skip_first
 
-        acc_profile = sm.Vector.ones(pos_vel_profile_ub.shape[0]) * acc_limit
-        jerk_profile = sm.Vector.ones(pos_vel_profile_ub.shape[0]) * jerk_limit
+        acceleration_limit = upper_limits.acceleration
+        jerk_limit = upper_limits.jerk
+        position_range = upper_limits.position - lower_limits.position
+        velocity_limit = min(velocity_limit * time_step, position_range / 2) / time_step
+        profile = gm.simple_mpc(
+            vel_limit=velocity_limit,
+            acc_limit=acceleration_limit,
+            jerk_limit=jerk_limit,
+            current_vel=velocity_limit,
+            current_acc=0,
+            dt=time_step,
+            ph=prediction_horizon,
+            q_weight=(0, 0, 0),
+            lin_weight=(-1, 0, 0),
+            solver_class=solver_class,
+        )
+        mpc_velocity_profile = profile[:prediction_horizon]
+        mpc_acceleration_profile = profile[prediction_horizon : prediction_horizon * 2]
+        position_error_lower_bound = lower_limits.position - dof_symbols.position
+        position_error_upper_bound = upper_limits.position - dof_symbols.position
+        velocity_lower_bound, _ = shifted_velocity_profile(
+            vel_profile=mpc_velocity_profile,
+            acc_profile=mpc_acceleration_profile,
+            distance=-position_error_lower_bound,
+            dt=time_step,
+        )
+        velocity_lower_bound *= -1
+        velocity_upper_bound, _ = shifted_velocity_profile(
+            vel_profile=mpc_velocity_profile,
+            acc_profile=mpc_acceleration_profile,
+            distance=position_error_upper_bound,
+            dt=time_step,
+        )
+        one_step_change = jerk_limit * time_step**2
+        one_step_change_lower_bound = sm.min(
+            sm.max(Scalar(0), position_error_lower_bound / time_step), Scalar(one_step_change)
+        )
+        one_step_change_lower_bound = sm.limit(one_step_change_lower_bound, -velocity_limit, velocity_limit)
+        one_step_change_upper_bound = sm.max(
+            sm.min(Scalar(0), position_error_upper_bound / time_step), -Scalar(one_step_change)
+        )
+        one_step_change_upper_bound = sm.limit(one_step_change_upper_bound, -velocity_limit, velocity_limit)
+        velocity_lower_bound[0] = sm.if_greater(
+            position_error_lower_bound, 0, one_step_change_lower_bound, copy(velocity_lower_bound[0])
+        )
+        velocity_upper_bound[0] = sm.if_less(
+            position_error_upper_bound, 0, one_step_change_upper_bound, copy(velocity_upper_bound[0])
+        )
+        goal_profile = sm.max(velocity_lower_bound, 0) + sm.min(velocity_upper_bound, 0)
+        skip_first = sm.logic_or(velocity_lower_bound[0] >= 0, velocity_upper_bound[0] <= 0)
+        return velocity_lower_bound, velocity_upper_bound, goal_profile, skip_first
 
-        # vel and acc profile for slowing down asap
-        proj_vel_profile, proj_acc_profile, _ = compute_slowdown_asap_vel_profile(
+    def compute_horizon_bounds(
+        self,
+        dof_symbols: DerivativeMap[FloatVariable],
+        lower_limits: DerivativeMap[float],
+        upper_limits: DerivativeMap[float],
+        solver_class: Type[QPSolver],
+        time_step: float,
+        prediction_horizon: int,
+        epsilon: float = 0.00001,
+    ) -> DegreeOfFreedomLimits[sm.Vector]:
+        jerk_limit = upper_limits.jerk
+        acceleration_limit = upper_limits.acceleration
+
+        velocity_lower_bound, velocity_upper_bound, goal_profile, skip_first = (
+            self._compute_position_constrained_velocity_bounds(
+                dof_symbols=dof_symbols,
+                lower_limits=lower_limits,
+                upper_limits=upper_limits,
+                solver_class=solver_class,
+                time_step=time_step,
+                prediction_horizon=prediction_horizon,
+            )
+        )
+
+        acceleration_profile = sm.Vector.ones(velocity_upper_bound.shape[0]) * acceleration_limit
+        jerk_profile = sm.Vector.ones(velocity_upper_bound.shape[0]) * jerk_limit
+
+        projected_velocity_profile, _, _ = compute_slowdown_asap_vel_profile(
             dof_symbols.velocity,
             dof_symbols.acceleration,
             goal_profile,
             Scalar(jerk_limit),
-            Scalar(dt),
-            ph,
+            Scalar(time_step),
+            prediction_horizon,
             skip_first,
         )
-        # jerk profile when slowing down without jerk limits
-        _, _, proj_jerk_profile_violated = compute_slowdown_asap_vel_profile(
+        _, _, projected_jerk_profile_violated = compute_slowdown_asap_vel_profile(
             dof_symbols.velocity,
             dof_symbols.acceleration,
             goal_profile,
             Scalar(np.inf),
-            Scalar(dt),
-            ph,
+            Scalar(time_step),
+            prediction_horizon,
             skip_first,
         )
-        # check if my projected vel profile violated position limits
-        vel_lb_violated = sm.logic_or(
-            sm.logic_any(proj_vel_profile < pos_vel_profile_lb - eps),
-            sm.abs(proj_vel_profile[-1]) >= eps,
+        velocity_lower_bound_violated = sm.logic_or(
+            sm.logic_any(projected_velocity_profile < velocity_lower_bound - epsilon),
+            sm.abs(projected_velocity_profile[-1]) >= epsilon,
         )
-        vel_ub_violated = sm.logic_or(
-            sm.logic_any(proj_vel_profile > pos_vel_profile_ub + eps),
-            sm.abs(proj_vel_profile[-1]) >= eps,
+        velocity_upper_bound_violated = sm.logic_or(
+            sm.logic_any(projected_velocity_profile > velocity_upper_bound + epsilon),
+            sm.abs(projected_velocity_profile[-1]) >= epsilon,
         )
-
-        # if either lower or upper position limits would get violated, relax jerk constraints to max slow down.
-        special_jerk_limits = sm.logic_or(vel_lb_violated, vel_ub_violated)
-        # with 3 derivatives, slow down is possible in 3 steps
+        needs_relaxed_jerk_limits = sm.logic_or(velocity_lower_bound_violated, velocity_upper_bound_violated)
         jerk_profile[0] = sm.if_else(
-            special_jerk_limits,
-            sm.max(Scalar(jerk_limit), sm.abs(proj_jerk_profile_violated[0])),
+            needs_relaxed_jerk_limits,
+            sm.max(Scalar(jerk_limit), sm.abs(projected_jerk_profile_violated[0])),
             sm.Scalar(jerk_limit),
         )
         jerk_profile[1] = sm.if_else(
-            special_jerk_limits,
-            sm.max(Scalar(jerk_limit), sm.abs(proj_jerk_profile_violated[1])),
+            needs_relaxed_jerk_limits,
+            sm.max(Scalar(jerk_limit), sm.abs(projected_jerk_profile_violated[1])),
             sm.Scalar(jerk_limit),
         )
         jerk_profile[2] = sm.if_else(
-            special_jerk_limits,
-            sm.max(Scalar(jerk_limit), sm.abs(proj_jerk_profile_violated[2])),
+            needs_relaxed_jerk_limits,
+            sm.max(Scalar(jerk_limit), sm.abs(projected_jerk_profile_violated[2])),
             sm.Scalar(jerk_limit),
         )
 
-        pos_vel_profile_lb = sm.min(pos_vel_profile_lb, pos_vel_profile_ub)
-        pos_vel_profile_ub = sm.max(pos_vel_profile_lb, pos_vel_profile_ub)
-        acc_profile_lb = -acc_profile
-        acc_profile_ub = acc_profile
-        jerk_profile_lb = sm.min(jerk_profile, -jerk_profile) * dt**2
-        jerk_profile_ub = sm.max(jerk_profile, jerk_profile) * dt**2
+        velocity_lower_bound = sm.min(velocity_lower_bound, velocity_upper_bound)
+        velocity_upper_bound = sm.max(velocity_lower_bound, velocity_upper_bound)
+        acceleration_lower_bounds = -acceleration_profile
+        acceleration_upper_bounds = acceleration_profile
+        jerk_lower_bounds = sm.min(jerk_profile, -jerk_profile) * time_step**2
+        jerk_upper_bounds = sm.max(jerk_profile, jerk_profile) * time_step**2
         return DegreeOfFreedomLimits[sm.Vector](
             lower=DerivativeMap(
-                velocity=pos_vel_profile_lb,
-                acceleration=acc_profile_lb,
-                jerk=jerk_profile_lb,
+                velocity=velocity_lower_bound,
+                acceleration=acceleration_lower_bounds,
+                jerk=jerk_lower_bounds,
             ),
             upper=DerivativeMap(
-                velocity=pos_vel_profile_ub,
-                acceleration=acc_profile_ub,
-                jerk=jerk_profile_ub,
+                velocity=velocity_upper_bound,
+                acceleration=acceleration_upper_bounds,
+                jerk=jerk_upper_bounds,
             ),
         )
 
@@ -407,13 +415,13 @@ class DofLimits(DirectLimits):
             lower_limits.jerk = degree_of_freedom.limits.lower.jerk
 
         try:
-            return self.b_profile(
+            return self.compute_horizon_bounds(
                 dof_symbols=degree_of_freedom.variables,
                 lower_limits=lower_limits,
                 upper_limits=upper_limits,
                 solver_class=config.qp_solver_class,
-                dt=config.mpc_dt,
-                ph=config.prediction_horizon,
+                time_step=config.mpc_dt,
+                prediction_horizon=config.prediction_horizon,
             )
         except InfeasibleException as e:
             max_reachable_vel = max_velocity_from_horizon_and_jerk_qp(
