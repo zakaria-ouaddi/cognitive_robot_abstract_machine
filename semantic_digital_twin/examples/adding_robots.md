@@ -60,16 +60,16 @@ on your robot.
 
 | Concept | What it represents | What you need from the URDF                        |
 |---|---|----------------------------------------------------|
-| `MobileBase` | The part responsible for locomotion (wheels, legs, tracks) | A single root body. Should have collision geometry |
-| `Torso` | A kinematic chain that serves as a shared mounting point for arms, neck, or other sub-parts | Root body + tip body                               |
-| `Arm` | A kinematic chain ending at a manipulator | Root body + tip body                               |
-| `EndEffector` | The manipulator at the end of an arm | Root body + tool-frame body                        |
-| `Finger` | A kinematic sub-chain of an end-effector | Root body + tip body                               |
-| `Neck` | A kinematic chain that carries a sensor | Root body + tip body                               |
-| `Camera` | A sensor body | A single body + optical parameters                 |
+| :class:`~semantic_digital_twin.robots.robot_parts.MobileBase` | The part responsible for locomotion (wheels, legs, tracks) | A single root body. Should have collision geometry |
+| :class:`~semantic_digital_twin.robots.robot_parts.Torso` | A kinematic chain that serves as a shared mounting point for arms, neck, or other sub-parts | Root body + tip body                               |
+| :class:`~semantic_digital_twin.robots.robot_parts.Arm` | A kinematic chain ending at a manipulator | Root body + tip body                               |
+| :class:`~semantic_digital_twin.robots.robot_parts.EndEffector` | The manipulator at the end of an arm | Root body + tool-frame body                        |
+| :class:`~semantic_digital_twin.robots.robot_parts.Finger` | A kinematic sub-chain of an end-effector | Root body + tip body                               |
+| :class:`~semantic_digital_twin.robots.robot_parts.Neck` | A kinematic chain that carries a sensor | Root body + tip body                               |
+| :class:`~semantic_digital_twin.robots.robot_parts.Camera` | A sensor body | A single body + optical parameters                 |
 
-`MobileBase`, `EndEffector`, and `Camera` only require a single root body.
-`Torso`, `Arm`, `Neck`, and `Finger` are `KinematicChain` subclasses and need
+:class:`~semantic_digital_twin.robots.robot_parts.MobileBase`, :class:`~semantic_digital_twin.robots.robot_parts.EndEffector`, and :class:`~semantic_digital_twin.robots.robot_parts.Camera` only require a single root body.
+:class:`~semantic_digital_twin.robots.robot_parts.Torso`, :class:`~semantic_digital_twin.robots.robot_parts.Arm`, :class:`~semantic_digital_twin.robots.robot_parts.Neck`, and :class:`~semantic_digital_twin.robots.robot_parts.Finger` are :class:`~semantic_digital_twin.robots.robot_parts.KinematicChain` subclasses and need
 both a **root** and a **tip** body — the framework computes all bodies and
 connections between them automatically.
 
@@ -82,13 +82,13 @@ Common names are `base_footprint`, `pelvis`, or `root_link`.
 ### Work downward from the root
 
 Starting at the robot root, follow the tree downward and ask:
-- Does this robot move through the world? → it has a `MobileBase`.
-- Is there a shared kinematic chain connecting the mobile base to the arms and neck? → it has a `Torso`.
-- Are there chains ending at a manipulator? → each is an `Arm` with an `EndEffector`.
-- Are there dexterous sub-chains on the end-effector? → each is a `Finger`.
-- Is there a chain carrying a sensor? → it is a `Neck` with a `Camera`.
-- Is the camera mounted rigidly (no moving neck joints)? → the `Camera` hangs
-  directly off whatever part holds it, without a `Neck`.
+- Does this robot move through the world? → it has a :class:`~semantic_digital_twin.robots.robot_parts.MobileBase`.
+- Is there a shared kinematic chain connecting the mobile base to the arms and neck? → it has a :class:`~semantic_digital_twin.robots.robot_parts.Torso`.
+- Are there chains ending at a manipulator? → each is an :class:`~semantic_digital_twin.robots.robot_parts.Arm` with an :class:`~semantic_digital_twin.robots.robot_parts.EndEffector`.
+- Are there dexterous sub-chains on the end-effector? → each is a :class:`~semantic_digital_twin.robots.robot_parts.Finger`.
+- Is there a chain carrying a sensor? → it is a :class:`~semantic_digital_twin.robots.robot_parts.Neck` with a :class:`~semantic_digital_twin.robots.robot_parts.Camera`.
+- Is the camera mounted rigidly (no moving neck joints)? → the :class:`~semantic_digital_twin.robots.robot_parts.Camera` hangs
+  directly off whatever part holds it, without a :class:`~semantic_digital_twin.robots.robot_parts.Neck`.
 
 ---
 
@@ -99,25 +99,25 @@ A's class definition. The available mixins are:
 
 | Mixin | Field it adds | Typical placement |
 |---|---|---|
-| `HasMobileBase[T]` | `mobile_base: T` | On the robot class, or skipped entirely |
-| `HasTorso[T]` | `torso: T` | On `MobileBase` if the base carries the torso; on the robot directly if there is no base |
-| `HasOneArm[T]` | `arm: T` | On `Torso` or directly on the robot |
-| `HasLeftRightArm[L, R]` | `arms: list`, `left_arm`, `right_arm` | On `Torso` or directly on the robot |
-| `HasArms[...]` | `arms: list` | For three or more arms |
-| `HasNeck[T]` | `neck: T` | On `Torso` or directly on the robot |
-| `HasEndEffector[T]` | `end_effector: T` | Already provided by `Arm[T]` |
-| `HasTwoFingers[L, R]` | `fingers: list` | On `EndEffector` |
-| `HasFingers[Thumb, ...]` | `fingers: list` | On `EndEffector` for three or more fingers |
-| `HasSensors[...]` | `sensors: list` | On `Neck`, or directly on the robot if there is no neck |
+| :class:`HasMobileBase[T] <semantic_digital_twin.robots.robot_part_mixins.HasMobileBase>` | `mobile_base: T` | On the robot class, or skipped entirely |
+| :class:`HasTorso[T] <semantic_digital_twin.robots.robot_part_mixins.HasTorso>` | `torso: T` | On :class:`~semantic_digital_twin.robots.robot_parts.MobileBase` if the base carries the torso; on the robot directly if there is no base |
+| :class:`HasOneArm[T] <semantic_digital_twin.robots.robot_part_mixins.HasOneArm>` | `arm: T` | On :class:`~semantic_digital_twin.robots.robot_parts.Torso` or directly on the robot |
+| :class:`HasLeftRightArm[L, R] <semantic_digital_twin.robots.robot_part_mixins.HasLeftRightArm>` | `arms: list`, `left_arm`, `right_arm` | On :class:`~semantic_digital_twin.robots.robot_parts.Torso` or directly on the robot |
+| :class:`HasArms[...] <semantic_digital_twin.robots.robot_part_mixins.HasArms>` | `arms: list` | For three or more arms |
+| :class:`HasNeck[T] <semantic_digital_twin.robots.robot_part_mixins.HasNeck>` | `neck: T` | On :class:`~semantic_digital_twin.robots.robot_parts.Torso` or directly on the robot |
+| :class:`HasEndEffector[T] <semantic_digital_twin.robots.robot_part_mixins.HasEndEffector>` | `end_effector: T` | Already provided by :class:`Arm[T] <semantic_digital_twin.robots.robot_parts.Arm>` |
+| :class:`HasTwoFingers[L, R] <semantic_digital_twin.robots.robot_part_mixins.HasTwoFingers>` | `fingers: list` | On :class:`~semantic_digital_twin.robots.robot_parts.EndEffector` |
+| :class:`HasFingers[Thumb, ...] <semantic_digital_twin.robots.robot_part_mixins.HasFingers>` | `fingers: list` | On :class:`~semantic_digital_twin.robots.robot_parts.EndEffector` for three or more fingers |
+| :class:`HasSensors[...] <semantic_digital_twin.robots.robot_part_mixins.HasSensors>` | `sensors: list` | On :class:`~semantic_digital_twin.robots.robot_parts.Neck`, or directly on the robot if there is no neck |
 
 The rule is: **a mixin goes on the class that directly owns the sub-part**.
-If the torso owns both arms, `HasLeftRightArm` belongs on the torso class.
+If the torso owns both arms, :class:`~semantic_digital_twin.robots.robot_part_mixins.HasLeftRightArm` belongs on the torso class.
 If the arms hang directly off the robot root with no torso in between,
-`HasLeftRightArm` belongs on the robot class itself — as in `Tracy`,
+:class:`~semantic_digital_twin.robots.robot_part_mixins.HasLeftRightArm` belongs on the robot class itself — as in [Tracy](https://vib.ai.uni-bremen.de/page/comingsoon/the-tracebot-laboratory/),
 where `class Tracy(AbstractRobot, HasLeftRightArm[TracyLeftArm, TracyRightArm], HasSensors[TracyCamera])`.
 
-For bipedal humanoids such as iCub3 and UnitreeG1, `MobileBase` (representing the
-legs) and `Torso` are both direct children of the robot class, because the legs and
+For bipedal humanoids such as iCub3 and UnitreeG1, :class:`~semantic_digital_twin.robots.robot_parts.MobileBase` (representing the
+legs) and :class:`~semantic_digital_twin.robots.robot_parts.Torso` are both direct children of the robot class, because the legs and
 upper body are independent kinematic sub-systems rather than a nested chain.
 
 There is no single correct hierarchy; **the right structure is the one that faithfully
@@ -127,36 +127,34 @@ represents your robot**.
 
 ## Step 4: Implement the classes
 
-Create a new file `semantic_digital_twin/robots/my_robot.py`.
+Create a new module `semantic_digital_twin/robots/my_robot.py`.
 Classes that are referenced as generic type parameters must be defined before the
 classes that use them, so **write the file from leaves to root** even though you
 designed it from root to leaves.
 
 ### The three abstract methods on every robot part
 
-Every robot part class must implement exactly three abstract methods.
-Python's `ABC` mechanism will raise a `TypeError` at import time if any of them
-is missing.
+Generally, there are three abstract methods of interest:
 
-**`setup_default_configuration_in_world_below_robot_root(cls, robot_root)`**
+**:meth:`setup_default_configuration_in_world_below_robot_root(cls, robot_root) <semantic_digital_twin.robots.robot_parts.AbstractRobotPart.setup_default_configuration_in_world_below_robot_root>`**
 
 A classmethod that locates the relevant URDF links by name and constructs the part.
 Use `robot_root._world.get_body_in_branch_by_name(robot_root, "link_name")` to look
 up bodies by their URDF link name, searching only within the branch of the tree rooted
 at `robot_root`.
 
-**`setup_hardware_interfaces(self)`**
+**:meth:`setup_hardware_interfaces(self) <semantic_digital_twin.robots.robot_parts.AbstractRobotPart.setup_hardware_interfaces>`**
 
 Marks actuated joints as having a hardware interface. Call
 `self._world.get_connection_by_name("joint_name").has_hardware_interface = True`
 for each controlled joint, or use the convenience method
-`self._setup_hardware_interfaces_for_active_connections()` to mark every active
+:meth:`~semantic_digital_twin.robots.robot_parts.AbstractRobotPart._setup_hardware_interfaces_for_active_connections` to mark every active
 connection in the part's subtree at once. If the part has no hardware interface,
-implement this as `pass`.
+implement this as `None`.
 
-**`setup_joint_states(self) -> List[JointState]`**
+**:meth:`setup_joint_states(self) -> List[JointState] <semantic_digital_twin.robots.robot_parts.AbstractRobotPart.setup_joint_states>`**
 
-Returns a list of named `JointState` objects representing notable configurations
+Returns a list of named :class:`~semantic_digital_twin.datastructures.joint_state.JointState` objects representing notable configurations
 such as park poses or open/close states. Return `[]` if the part has no
 named states.
 
@@ -199,7 +197,7 @@ from semantic_digital_twin.spatial_types import Quaternion, Vector3
 from semantic_digital_twin.world_description.world_entity import KinematicStructureEntity
 
 
-# --- Fingers ---
+# %% Fingers 
 # A Finger is a KinematicChain: it needs a root body and a tip body.
 # Replace the link names with the actual names from your URDF.
 
@@ -220,7 +218,7 @@ class MyRobotLeftFinger(Finger):
         )
 
     def setup_hardware_interfaces(self):
-        pass
+        return None
 
     def setup_joint_states(self) -> List[JointState]:
         return []
@@ -243,18 +241,45 @@ class MyRobotRightFinger(Finger):
         )
 
     def setup_hardware_interfaces(self):
-        pass
+        return None
 
     def setup_joint_states(self) -> List[JointState]:
         return []
 
+```
 
-# --- Camera ---
-# A Camera only needs a root body plus optical parameters.
-# forward_facing_axis: the axis of the camera frame that points forward into the scene.
-# field_of_view: horizontal and vertical opening angles in radians.
-# default_camera=True marks this as the camera returned by robot.get_default_camera().
-# Exactly one camera across the entire robot must have default_camera=True.
+A Camera only needs a root body plus optical parameters.
+forward_facing_axis: the axis of the camera frame that points forward into the scene.
+field_of_view: horizontal and vertical opening angles in radians.
+default_camera=True marks this as the camera returned by robot.get_default_camera().
+Exactly one camera across the entire robot must have default_camera=True.
+
+```python
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Self, List
+
+from semantic_digital_twin.datastructures.field_of_view import FieldOfView
+from semantic_digital_twin.datastructures.joint_state import JointState
+from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
+from semantic_digital_twin.datastructures.definitions import (
+    GripperState,
+    StaticJointState,
+    TorsoState,
+)
+from semantic_digital_twin.robots.robot_part_mixins import (
+    HasMobileBase,
+    HasTorso,
+    HasOneArm,
+    HasNeck,
+    HasTwoFingers,
+)
+from semantic_digital_twin.robots.robot_parts import (
+    Camera,
+)
+from semantic_digital_twin.spatial_types import Vector3
+from semantic_digital_twin.world_description.world_entity import KinematicStructureEntity
 
 @dataclass(eq=False)
 class MyRobotCamera(Camera):
@@ -275,7 +300,7 @@ class MyRobotCamera(Camera):
         )
 
     def setup_hardware_interfaces(self):
-        pass
+        return None
 
     def setup_joint_states(self) -> List[JointState]:
         return []
@@ -283,7 +308,7 @@ class MyRobotCamera(Camera):
 
 ### End-effector
 
-An `EndEffector` needs a root body, a tool-frame body (the point the robot aligns
+An :class:`~semantic_digital_twin.robots.robot_parts.EndEffector` needs a root body, a tool-frame body (the point the robot aligns
 with objects), and a `front_facing_orientation` quaternion that describes the
 forward-facing direction of the tool frame.
 
@@ -347,9 +372,9 @@ class MyRobotGripper(
 
 ### Arm and Neck
 
-Both are `KinematicChain` subclasses: they need a root and a tip.
-`Arm[T]` already inherits `HasEndEffector[T]`, while `Neck[T]`
-inherits from `HasSensors[T]`, so don't inherit from those mixins seperately here.
+Both are :class:`~semantic_digital_twin.robots.robot_parts.KinematicChain` subclasses: they need a root and a tip.
+:class:`Arm[T] <semantic_digital_twin.robots.robot_parts.Arm>` already inherits :class:`HasEndEffector[T] <semantic_digital_twin.robots.robot_part_mixins.HasEndEffector>`, while :class:`Neck[T] <semantic_digital_twin.robots.robot_parts.Neck>`
+inherits from :class:`HasSensors[T] <semantic_digital_twin.robots.robot_part_mixins.HasSensors>`, so don't inherit from those mixins seperately here.
 
 Multiple chains can share a root body — this is normal for humanoids where both
 arms and the neck all originate from the same shoulder or chest link.
@@ -424,8 +449,8 @@ class MyRobotNeck(Neck[MyRobotCamera]):
 
 The torso is a kinematic chain that owns both the arm and the neck in this example.
 The mobile base owns the torso. If your robot has no torso (for example, the arm is
-mounted directly on the base), skip the `Torso` class and put `HasOneArm` directly
-on `MobileBase` or the robot class.
+mounted directly on the base), skip the :class:`~semantic_digital_twin.robots.robot_parts.Torso` class and put :class:`~semantic_digital_twin.robots.robot_part_mixins.HasOneArm` directly
+on :class:`~semantic_digital_twin.robots.robot_parts.MobileBase` or the robot class.
 
 ```python
 from __future__ import annotations
@@ -495,7 +520,7 @@ class MyRobotMobileBase(MobileBase, HasTorso[MyRobotTorso]):
         )
 
     def setup_hardware_interfaces(self):
-        pass
+        return None
 
     def setup_joint_states(self) -> List[JointState]:
         return []
@@ -508,29 +533,29 @@ class MyRobotMobileBase(MobileBase, HasTorso[MyRobotTorso]):
 The robot class ties everything together.
 It must also implement three abstract methods.
 
-**`get_ros_file_path(cls) -> str`**
+**:meth:`get_ros_file_path(cls) -> str <semantic_digital_twin.robots.robot_parts.AbstractRobot.get_ros_file_path>`**
 
 Returns the ROS package path to the robot's URDF or xacro file.
 Our parsers can automatically resolve ROS package paths.
 
-**`_get_root_body_name(cls) -> str`**
+**:meth:`_get_root_body_name(cls) -> str <semantic_digital_twin.robots.robot_parts.AbstractRobot._get_root_body_name>`**
 
 Returns the URDF link name of the robot root — the topmost node in your
 `visualize_world_structure` graph.
 
-**`_setup_collision_rules(self)`**
+**:meth:`_setup_collision_rules(self) <semantic_digital_twin.robots.robot_parts.AbstractRobot._setup_collision_rules>`**
 
 Configures collision checking for the robot.
-Load an SRDF file with `SelfCollisionMatrixRule.from_collision_srdf(srdf_path, world)`
+Load an SRDF file with :meth:`SelfCollisionMatrixRule.from_collision_srdf(srdf_path, world) <semantic_digital_twin.collision_checking.collision_rules.SelfCollisionMatrixRule.from_collision_srdf>`
 to define self-collision pairs to ignore, and extend the default rules with
-`AvoidExternalCollisions` and `AvoidSelfCollisions`.
-If you do not yet have a collision configuration, implement this as `pass`.
+:class:`~semantic_digital_twin.collision_checking.collision_rules.AvoidExternalCollisions` and :class:`~semantic_digital_twin.collision_checking.collision_rules.AvoidSelfCollisions`.
+If you do not yet have a collision configuration, implement this as `None`.
 
-The optional `_setup_velocity_limits` override lets you tighten joint velocity limits
+The optional :meth:`~semantic_digital_twin.robots.robot_parts.AbstractRobot._setup_velocity_limits` override lets you tighten joint velocity limits
 after the URDF values have been loaded.
-`tighten_dof_velocity_limits_proportionally(maximum_velocity)` scales all limits so
+:meth:`tighten_dof_velocity_limits_proportionally(maximum_velocity) <semantic_digital_twin.robots.robot_parts.AbstractRobot.tighten_dof_velocity_limits_proportionally>` scales all limits so
 that the fastest joint is capped at the given value.
-`tighten_dof_velocity_limits_of_1dof_connections(new_limits)` lets you set limits
+:meth:`tighten_dof_velocity_limits_of_1dof_connections(new_limits) <semantic_digital_twin.robots.robot_parts.AbstractRobot.tighten_dof_velocity_limits_of_1dof_connections>` lets you set limits
 per joint individually.
 
 ```python
@@ -559,7 +584,7 @@ class MyRobot(AbstractRobot, HasMobileBase[MyRobotMobileBase]):
     def _setup_collision_rules(self):
         # Minimal implementation. Add SelfCollisionMatrixRule and
         # AvoidExternalCollisions / AvoidSelfCollisions rules here when ready.
-        pass
+        return None
 
     def _setup_velocity_limits(self):
         # Optional. tighten_dof_velocity_limits_proportionally scales all joint
@@ -590,23 +615,23 @@ robot = MyRobot.from_world(world)
 robot.validate()
 ```
 
-If `validate()` returns `True`, the robot is ready to use.
+If :meth:`~semantic_digital_twin.robots.robot_parts.AbstractRobot.validate` returns `True`, the robot is ready to use.
 
 ---
 
 ## Common pitfalls
 
 **`@dataclass(eq=False)` is required on every class.**
-`SemanticAnnotation` defines a custom hash function. Without `eq=False`, Python
+:class:`~semantic_digital_twin.world_description.world_entity.SemanticAnnotation` defines a custom hash function. Without `eq=False`, Python
 replaces it with the dataclass-generated one, which breaks identity tracking inside
 the world.
 
 **`default_camera=True` must be set on exactly one camera.**
-`get_default_camera()` raises `MissingDefaultCameraError` if no camera has the flag,
-and returns the first match if several do. Check each `Camera` subclass.
+:meth:`~semantic_digital_twin.robots.robot_parts.AbstractRobot.get_default_camera` raises :class:`~semantic_digital_twin.exceptions.MissingDefaultCameraError` if no camera has the flag,
+and returns the first match if several do. Check each :class:`~semantic_digital_twin.robots.robot_parts.Camera` subclass.
 
 **Multiple kinematic chains may share a root body.**
-A `Torso` whose tip is `shoulder_link` and an `Arm` whose root is also `shoulder_link`
+A :class:`~semantic_digital_twin.robots.robot_parts.Torso` whose tip is `shoulder_link` and an :class:`~semantic_digital_twin.robots.robot_parts.Arm` whose root is also `shoulder_link`
 is valid. Similarly, two arms on a humanoid may both declare `pelvis` as their root
 while the torso also starts there. This is intentional — chains are defined by their
 start and end, not by exclusive body ownership.
@@ -616,13 +641,13 @@ Because Python evaluates class bodies at import time, any class used as a generi
 type parameter (e.g. `Arm[MyRobotGripper]`) must already be defined earlier in the
 file. Design top-down, write bottom-up.
 
-**`pass` and `return []` are always valid.**
+**`None` and `return []` are always valid.**
 If a part has no hardware interfaces or no named joint states, the abstract methods
-still need to be present — `pass` and `return []` are the correct implementations,
+still need to be present — `None` and `return []` are the correct implementations,
 not omissions.
 
-**`_setup_hardware_interfaces_for_active_connections` marks the entire subtree.**
+**:meth:`~semantic_digital_twin.robots.robot_parts.AbstractRobotPart._setup_hardware_interfaces_for_active_connections` marks the entire subtree.**
 This convenience method iterates over all robot parts nested below the calling part
-and marks every `ActiveConnection` as having a hardware interface. Use it when all
+and marks every :class:`~semantic_digital_twin.world_description.connections.ActiveConnection` as having a hardware interface. Use it when all
 joints in the subtree are actuated. If only specific joints are controlled, mark them
 individually with `self._world.get_connection_by_name("joint_name").has_hardware_interface = True`.
