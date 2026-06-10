@@ -1,7 +1,6 @@
-from dataclasses import dataclass, Field
-from typing import List, assert_never
+from dataclasses import dataclass
+from typing import List
 
-from krrood.adapters.json_serializer import leaf_types
 from krrood.class_diagrams.attribute_introspector import (
     DataclassOnlyIntrospector,
     AttributeIntrospector,
@@ -31,10 +30,8 @@ class ExperimentResult:
         for field_ in cls.introspector().discover(cls):
             if issubclass(field_.field.type, ExperimentResult):
                 result.extend(field_.field.type.recursive_fields())
-            elif issubclass(field_.field.type, leaf_types):
-                result.append(field_)
             else:
-                assert_never()
+                result.append(field_)
         return result
 
     @classmethod
@@ -72,7 +69,14 @@ class ExperimentsTable:
 
 @dataclass
 class TypstRenderer:
-    table_data: ExperimentsTable
+    """
+    Represents a renderer for converting an ExperimentsTable into Typst markup.
+    """
+
+    experiments_table: ExperimentsTable
+    """
+    The experiments to render.
+    """
 
     def render_row(self, row: ExperimentResult) -> str:
         """Renders the cells of a single row in Typst format."""
@@ -80,7 +84,7 @@ class TypstRenderer:
 
     def render_table(self) -> str:
         """Renders the entire ExperimentsTable into a valid Typst #table markup string."""
-        row_class = self.table_data.row_class
+        row_class = self.experiments_table.row_class
 
         # Handle empty table edge-case gracefully
         if not row_class:
@@ -92,12 +96,12 @@ class TypstRenderer:
 
         # 2. Build the Typst header block
         header_cells = ",\n  ".join(
-            [f"[*#{name.replace('_', ' ').title()}*]" for name in headers]
+            [f"[*{name.replace('_', ' ').title()}*]" for name in headers]
         )
 
         # 3. Build the rows content
         rows_content = []
-        for row in self.table_data.experiments:
+        for row in self.experiments_table.experiments:
             rows_content.append(self.render_row(row))
 
         all_cells = header_cells

@@ -115,7 +115,7 @@ def ormatic_scalability_experiment(
 def main():
     results = []
     for class_drop_probability in tqdm.tqdm(
-        [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        [0.0, 0.1]  # , 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     ):
         results.append(ormatic_scalability_experiment(classes, class_drop_probability))
 
