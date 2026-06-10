@@ -227,6 +227,8 @@ def run_scalability_experiment(
                 filtered_classes, alternative_mappings, type_mappings
             )
         )
+        if class_drop_probability == 0:
+            break
 
     return ORMaticScalabilityAggregateResult(
         class_drop_probability=class_drop_probability,
