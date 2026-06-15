@@ -35,7 +35,6 @@ static std::string EMPTY_SET_SYMBOL = "∅";
 union ElementaryVariant {
     float f;
     int i;
-    std::string s;
 };
 
 template <typename T>

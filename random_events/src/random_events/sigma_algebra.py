@@ -264,7 +264,7 @@ class AbstractCompositeSet(CPPWrapper, SubclassJSONSerializer, ABC):
         return self.cpp_object == other.cpp_object
 
     def __hash__(self) -> int:
-        return hash(tuple(self.simple_sets))
+        return hash(self.cpp_object)
 
     def __iter__(self) -> Iterable[AbstractSimpleSet]:
         return iter(self.simple_sets)

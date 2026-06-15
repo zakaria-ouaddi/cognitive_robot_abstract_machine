@@ -161,14 +161,19 @@ SimpleSetSetPtr_t SimpleEvent::complement() {
 
     auto result = make_shared_simple_set_set();
 
-    // 1) Get all keys in variable_map once, sorted
+    // 1) Get all keys and values in variable_map once, sorted (O(v) total)
     auto all_keys = map_keys_to_vector(variable_map);
     size_t vcount = all_keys.size();
 
+    // Pre-extract values so inner loops use O(1) indexed access instead of O(log v) map lookups
+    std::vector<AbstractCompositeSetPtr_t> all_values;
+    all_values.reserve(vcount);
+    for (auto const &k : all_keys) all_values.push_back(variable_map->at(k));
+
     // 2) For each index i = 0..vcount−1, build a complement event
     for (size_t idx = 0; idx < vcount; ++idx) {
-        auto const &var_i = all_keys[idx];
-        auto const &assign_i = variable_map->at(var_i);
+        auto const &var_i    = all_keys[idx];
+        auto const &assign_i = all_values[idx];
 
         // 2a) Build current_complement event
         auto current_complement = make_shared_simple_event();
@@ -178,9 +183,9 @@ SimpleSetSetPtr_t SimpleEvent::complement() {
         auto compl_i = assign_i->complement();
         cur_map->insert({var_i, compl_i});
 
-        // 2c) For every variable before var_i (0..idx−1), assign original
+        // 2c) For every variable before var_i (0..idx−1), assign original (O(1) per lookup)
         for (size_t k = 0; k < idx; ++k) {
-            cur_map->insert({ all_keys[k], variable_map->at(all_keys[k]) });
+            cur_map->insert({ all_keys[k], all_values[k] });
         }
         // 2d) For every variable after var_i (idx+1..vcount−1), assign full domain
         for (size_t k = idx + 1; k < vcount; ++k) {
@@ -237,9 +242,10 @@ std::string *SimpleEvent::non_empty_to_string() {
     for (auto const &kv : *variable_map) {
         // format "<var_name>: <assignment_string>"
         //   - var_name is a std::string*, so *kv.first->name is variable name
-        std::string varpart = *kv.first->name;        // copy var name
-        std::string assignstr = *kv.second->to_string(); // ask composite for its string (heap‐alloc)
-        delete kv.second->to_string(); // avoid leaking the returned pointer
+        std::string varpart = *kv.first->name;
+        std::string *raw_assign = kv.second->to_string();
+        std::string assignstr = std::move(*raw_assign);
+        delete raw_assign;
 
         // Build "var: assign" local
         std::string combined;
@@ -402,7 +408,7 @@ void Event::fill_missing_variables() const {
     }
 
     // 2) Now call the overload for every SimpleEvent
-    auto shared_vars = std::make_shared<VariableSet>(all_vars.begin(), all_vars.end());
+    auto shared_vars = std::make_shared<VariableSet>(std::move(all_vars));
     for (auto const &simple_event_ptr : *simple_sets) {
         auto casted = static_cast<SimpleEvent *>(simple_event_ptr.get());
         casted->fill_missing_variables(shared_vars);

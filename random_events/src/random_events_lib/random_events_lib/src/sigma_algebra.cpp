@@ -474,67 +474,21 @@ AbstractCompositeSetPtr_t AbstractCompositeSet::union_with(
 
 AbstractCompositeSetPtr_t AbstractCompositeSet::union_with(
     const AbstractCompositeSetPtr_t &other) {
-    // Early exit for empty sets
-    if (simple_sets->empty()) {
-        // If other is empty or contains only empty sets, return empty
-        if (other->is_empty()) {
-            return make_new_empty();
-        }
-
-        // Filter out empty sets from other
-        auto result = make_new_empty();
-        for (auto const &p : *other->simple_sets) {
-            if (!p->is_empty()) {
-                result->simple_sets->insert(p);
-            }
-        }
-
-        // If result is empty after filtering, return empty set
-        if (result->simple_sets->empty()) {
-            return result;
-        }
-
-        return result;
-    }
-
-    if (other->is_empty()) {
-        // Filter out empty sets from this
-        auto result = make_new_empty();
-        for (auto const &p : *simple_sets) {
-            if (!p->is_empty()) {
-                result->simple_sets->insert(p);
-            }
-        }
-
-        // If result is empty after filtering, return empty set
-        if (result->simple_sets->empty()) {
-            return result;
-        }
-
-        return result;
-    }
-
+    // Single pass over each source, counting non-empty contributions.
+    // If only one source contributes, it was already disjoint → skip make_disjoint().
     auto result = make_new_empty();
-    // 1) Insert all non-empty sets from "this"
+    size_t from_this = 0, from_other = 0;
+
     for (auto const &p : *simple_sets) {
-        if (!p->is_empty()) {
-            result->simple_sets->insert(p);
-        }
+        if (!p->is_empty()) { result->simple_sets->insert(p); ++from_this; }
     }
-
-    // 2) Insert all non-empty sets from "other"
     for (auto const &p : *other->simple_sets) {
-        if (!p->is_empty()) {
-            result->simple_sets->insert(p);
-        }
+        if (!p->is_empty()) { result->simple_sets->insert(p); ++from_other; }
     }
 
-    // If result is empty after filtering, return empty set
-    if (result->simple_sets->empty()) {
-        return result;
-    }
+    if (result->simple_sets->empty()) return result;
+    if (from_this == 0 || from_other == 0) return result;
 
-    // 3) Re‐coalesce any overlaps
     return result->make_disjoint();
 }
 
@@ -622,7 +576,7 @@ bool AbstractCompositeSet::contains(const AbstractCompositeSetPtr_t &other) {
 
     // A ⊇ B  iff  A ∩ B == B
     auto I = intersection_with(other);  // expensive
-    return (I == other) || (*I == *other);
+    return *I == *other;
 }
 
 void AbstractCompositeSet::add_new_simple_set(
