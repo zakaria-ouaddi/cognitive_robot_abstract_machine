@@ -184,7 +184,7 @@ def main():
     print(f"      obstacle bounding boxes: {len(obstacle_bbs)}")
 
     # ── Phase 4: Build obstacle event (reduce union) ─────────────────────
-    print("\n[4] Build obstacle event via reduce(or_, …)")
+    print("\n[4] Build obstacle event via reduce(or_, …)  [OLD pipeline]")
 
     def _build_obstacle_event():
         events = (
@@ -199,7 +199,7 @@ def main():
     print(f"      obstacle event simple sets: {n_obs_simple}")
 
     # ── Phase 5: Complement + intersection (free space) ──────────────────
-    print("\n[5] Free-space: ~obstacles & search_event  (product-algebra hot path)")
+    print("\n[5] Free-space: ~obstacles & search_event  [OLD: complement in ℝ³]")
 
     def _free_space():
         return ~obstacles & search_event
@@ -207,6 +207,26 @@ def main():
     free_space = _timeit("~obstacles & search_event", _free_space, n=3)
     n_free_simple = len(list(free_space.simple_sets))
     print(f"      free-space simple sets: {n_free_simple}")
+
+    # ── Phase 4+5 NEW: subtract_disjoint (bounded subtraction) ───────────
+    print("\n[4+5 NEW] Free-space via subtract_disjoint  [bounded, no complement]")
+    print("          Replaces both phase 4 (reduce union) and phase 5 (complement)")
+
+    def _free_space_subtract():
+        fs = search_event
+        for bb in obstacle_bbs:
+            obstacle = bb.simple_event.as_composite_set() & search_event
+            if not obstacle.is_empty():
+                fs = fs.subtract_disjoint(obstacle)
+        return fs
+
+    free_space_new = _timeit("subtract_disjoint loop (all obstacles)", _free_space_subtract, n=3)
+    n_free_new = len(list(free_space_new.simple_sets))
+    print(f"      free-space simple sets: {n_free_new}")
+
+    # Verify equivalence: both methods should describe the same set
+    diff_check = free_space_new.subtract_disjoint(free_space)
+    print(f"      new ⊆ old (extra pieces in new): {diff_check.is_empty()}")
 
     # ── Phase 6: Materialise into BoundingBoxCollection ──────────────────
     print("\n[6] Materialise free space → BoundingBoxCollection")

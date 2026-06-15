@@ -37,6 +37,9 @@ PYBIND11_MODULE(random_events_lib, handle) {
         .def("union_with", pybind11::overload_cast<const AbstractSimpleSetPtr_t&>(&AbstractCompositeSet::union_with), "Union this with a simple set.")
         .def("difference_with", pybind11::overload_cast<const AbstractCompositeSetPtr_t&>(&AbstractCompositeSet::difference_with), "Difference this with another composite set.")
         .def("difference_with", pybind11::overload_cast<const AbstractSimpleSetPtr_t&>(&AbstractCompositeSet::difference_with), "Difference this with a simple set.")
+        .def("subtract_disjoint", &AbstractCompositeSet::subtract_disjoint,
+             "Subtract other from this via incremental bounded subtraction (assumes this is disjoint). "
+             "Equivalent to (this & ~other) but avoids complement() in unbounded space and make_disjoint() overhead.")
         .def("add_new_simple_set", &AbstractCompositeSet::add_new_simple_set)
         .def("__eq__", &AbstractCompositeSet::operator==)
         .def("__lt__", &AbstractCompositeSet::operator<);

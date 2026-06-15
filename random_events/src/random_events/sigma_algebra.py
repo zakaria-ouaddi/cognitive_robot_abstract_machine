@@ -183,6 +183,23 @@ class AbstractCompositeSet(CPPWrapper, SubclassJSONSerializer, ABC):
         """
         return self._from_cpp(self.cpp_object.difference_with(other.cpp_object))
 
+    def subtract_disjoint(self, other: Self) -> Self:
+        """
+        Subtract other from this via incremental bounded subtraction.
+
+        Equivalent to ``(self & ~other)`` but avoids computing the complement
+        in unbounded ambient space and never calls make_disjoint(), so it is
+        dramatically faster when self is a small bounded set (e.g. a search box)
+        and other has many pieces.
+
+        Precondition: self must be a disjoint union (the invariant is maintained
+        throughout the subtraction).
+
+        :param other: The set to subtract.
+        :return: The difference as a disjoint composite set.
+        """
+        return self._from_cpp(self.cpp_object.subtract_disjoint(other.cpp_object))
+
     def __sub__(self, other) -> Self:
         return self.difference_with(other)
 
