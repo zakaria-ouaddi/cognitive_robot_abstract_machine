@@ -316,6 +316,14 @@ class LeafUnit(Unit):
     The distribution contained in this leaf unit.
     """
 
+    supports_vectorized_truncation = False
+    """
+    Whether this leaf implements the vectorized truncation methods
+    (:meth:`truncation_log_probabilities` and :meth:`build_truncated_branch`). Leaf
+    types opt in by setting this to ``True``; the circuit only takes the vectorized
+    truncation path when every leaf does (see :meth:`ProbabilisticCircuit.log_truncated_in_place`).
+    """
+
     def __repr__(self):
         return f"leaf({repr(self.distribution)}"
 
@@ -1063,7 +1071,9 @@ class ProbabilisticCircuit(ProbabilisticModel, SubclassJSONSerializer):
 
         This must be called whenever nodes or edges are added to or removed from
         the graph. Pure edge-weight updates (which do not change the topology) do
-        not require invalidation.
+        not require invalidation. The :func:`invalidates_topology_cache` decorator
+        calls this automatically after a mutator; call it directly only from
+        mutators whose invalidation is conditional (:meth:`add_node`, :meth:`add_edge`).
         """
         self._root_cache = None
         self._layers_cache = None
@@ -1398,11 +1408,12 @@ class ProbabilisticCircuit(ProbabilisticModel, SubclassJSONSerializer):
             )
             return result
 
-        # fast path: if every leaf is continuous we can compute the probability of
-        # all simple sets in a single vectorized pass and build the mixture in one
-        # structural sweep instead of deep-copying and re-truncating per simple set.
+        # fast path: if every leaf supports vectorized truncation we can compute the
+        # probability of all simple sets in a single vectorized pass and build the
+        # mixture in one structural sweep instead of deep-copying and re-truncating
+        # per simple set.
         if all(
-            isinstance(node, UnivariateContinuousLeaf)
+            node.supports_vectorized_truncation
             for node in self.graph.nodes()
             if isinstance(node, LeafUnit)
         ):
@@ -1417,8 +1428,8 @@ class ProbabilisticCircuit(ProbabilisticModel, SubclassJSONSerializer):
         Reference implementation of truncation over a composite event: deep-copy and
         truncate the circuit once per simple set, then combine the results.
 
-        This is the fallback used when the circuit contains non-continuous leaves,
-        for which the vectorized path is not applicable.
+        This is the fallback used when the circuit contains leaves that do not
+        support vectorized truncation, for which the vectorized path is not applicable.
 
         :param event: The event to truncate the circuit to.
         :param singleton_allowed: Whether singleton intervals are allowed.
@@ -1531,8 +1542,8 @@ class ProbabilisticCircuit(ProbabilisticModel, SubclassJSONSerializer):
         self, event: Event, singleton_allowed: bool = False
     ) -> Tuple[Optional[Self], float]:
         """
-        Truncate the circuit to a composite event, for circuits with continuous
-        leaves only.
+        Truncate the circuit to a composite event, for circuits whose leaves all
+        support vectorized truncation.
 
         The probability of every simple set is computed in one vectorized pass and the
         resulting mixture is built in a single structural sweep, avoiding the
@@ -1560,7 +1571,7 @@ class ProbabilisticCircuit(ProbabilisticModel, SubclassJSONSerializer):
         # build each viable branch in its own circuit (this reads self read-only)
         branches: List[Tuple[ProbabilisticCircuit, Unit, float]] = []
         for index in viable_indices:
-            branch_circuit = ProbabilisticCircuit()
+            branch_circuit = self.__class__()
             branch_root = self._build_conditional_branch(
                 simple_events[index],
                 index,
@@ -2272,6 +2283,8 @@ class UnivariateContinuousLeaf(UnivariateLeaf):
 
     __hash__ = Unit.__hash__
 
+    supports_vectorized_truncation = True
+
     def truncation_log_probabilities(
         self,
         simple_events: List[SimpleEvent],
@@ -2444,6 +2457,40 @@ class UnivariateDiscreteLeaf(UnivariateLeaf):
 
     distribution: Optional[DiscreteDistribution]
     __hash__ = Unit.__hash__
+
+    supports_vectorized_truncation = True
+
+    def truncation_log_probabilities(
+        self,
+        simple_events: List[SimpleEvent],
+        log_probabilities: Dict[int, npt.NDArray],
+    ) -> npt.NDArray:
+        # a discrete leaf has no ordered CDF over interval bounds; the probability of
+        # a simple set is the total mass of the elements it admits
+        probabilities = np.array(
+            [
+                self.distribution.probability_of_simple_event(simple_event)
+                for simple_event in simple_events
+            ]
+        )
+        with np.errstate(divide="ignore"):
+            return np.log(probabilities)
+
+    def build_truncated_branch(
+        self,
+        simple_event: SimpleEvent,
+        simple_event_index: int,
+        log_probabilities: Dict[int, npt.NDArray],
+        built_nodes: Dict[int, Optional[Unit]],
+        target: ProbabilisticCircuit,
+        singleton_allowed: bool,
+    ) -> Optional[Unit]:
+        conditional, log_probability = self.distribution.log_truncated(
+            simple_event.as_composite_set(), singleton_allowed
+        )
+        if conditional is None or log_probability == -np.inf:
+            return None
+        return leaf(conditional, target)
 
     def as_deterministic_sum(self) -> SumUnit:
         """
