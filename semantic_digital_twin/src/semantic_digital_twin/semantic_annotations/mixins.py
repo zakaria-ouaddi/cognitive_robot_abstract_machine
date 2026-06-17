@@ -352,15 +352,8 @@ def _wrapped_part_whole_relationship_fields(
     cls: Type[PartWholeRelationship],
 ) -> list[WrappedField]:
     """
-    Resolve the part-whole relationship fields of ``cls`` as ``(field_name, element_type,
-    is_plural)`` tuples.
-
-    Part-whole relationship fields are the dataclass fields declared with
-    :func:`part_whole_relationship_field` (whose metadata carries
-    ``"part_whole_relationship": True``), e.g. ``HasHandle.handle``; a field a concrete annotation
-    merely adds on top with a plain :func:`dataclasses.field` (e.g. ``Door.entry_way``) is not a
-    part-whole relationship field. Memoized per class because the field set is immutable and
-    resolving it re-introspects the whole dataclass.
+    Filters the fields of cls for all fields that are of type PartWholeRelationshipField, and returns them as a Wrapped Class.
+    ..note:: Should be safely lru cacheable without world memory leak as we only work on types and wrapped fields.
     """
     return [
         wrapped_part_whole_relationship_field
@@ -382,7 +375,9 @@ class PartWholeRelationship(HasRootKinematicStructureEntity, ABC):
     """
 
     @synchronized_attribute_modification
-    def add(self, part: HasRootKinematicStructureEntity, field_name: str = "") -> None:
+    def add(
+        self, part: HasRootKinematicStructureEntity, *, field_name: str = ""
+    ) -> None:
         """
         Add ``part`` as a structural part, routing it to the matching part-whole relationship field
         by type.

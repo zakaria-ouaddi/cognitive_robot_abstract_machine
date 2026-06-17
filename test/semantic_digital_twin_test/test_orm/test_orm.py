@@ -1,7 +1,7 @@
 import dataclasses
 import os
 import time
-from copy import deepcopy
+from copy import deepcopy, copy
 
 import numpy as np
 from krrood.ormatic.utils import create_engine
@@ -173,6 +173,56 @@ def test_pr2_semantic_annotation_and_safe_to_db(
 def _field(annotation_type, field_name):
     """Return the dataclass ``Field`` object for ``field_name`` on ``annotation_type``."""
     return {f.name: f for f in dataclasses.fields(annotation_type)}[field_name]
+
+
+def test_part_whole_relationship_field_survives_deepcopy():
+    copy_functions = [copy, deepcopy]
+    for copy_function in copy_functions:
+        world = World()
+        root = Body(name=PrefixedName("root"))
+        with world.modify_world():
+            world.add_body(root)
+        with world.modify_world():
+            drawer = Drawer.create_with_new_body_in_world(
+                name=PrefixedName("drawer"), scale=Scale(0.2, 0.3, 0.2), world=world
+            )
+            handle = Handle.create_with_new_body_in_world(
+                name=PrefixedName("handle"), world=world
+            )
+            slider = Slider.create_with_new_body_in_world(
+                name=PrefixedName("slider"), world=world, active_axis=Vector3.X()
+            )
+            drawer.add(handle)
+            drawer.add(slider)
+
+        # The marker is present on the source class before persisting.
+        assert isinstance(_field(Drawer, "handle"), PartWholeRelationshipField)
+        assert isinstance(
+            _field(Drawer, "mechanical_joint"), PartWholeRelationshipField
+        )
+
+        copied_drawer = copy_function(drawer)
+
+        # The reconstructed object is a real Drawer, so its fields still carry the marker.
+        assert isinstance(copied_drawer, Drawer)
+        assert isinstance(
+            _field(type(copied_drawer), "handle"), PartWholeRelationshipField
+        )
+        assert isinstance(
+            _field(type(copied_drawer), "mechanical_joint"),
+            PartWholeRelationshipField,
+        )
+
+        # The marked-field discovery still resolves the same part-whole relationship fields.
+        discovered = {
+            spec.field.name
+            for spec in _wrapped_part_whole_relationship_fields(type(copied_drawer))
+        }
+        assert {"handle", "mechanical_joint"} <= discovered
+
+        # The field values themselves survived the round trip.
+        assert isinstance(copied_drawer.handle, Handle)
+        assert isinstance(copied_drawer.mechanical_joint, Slider)
 
 
 def test_part_whole_relationship_field_metadata_survives_orm_round_trip(session):
