@@ -54,6 +54,7 @@
 
 ## Documentation
 - Classes and methods should always have meaningful, non-trivial documentation
+- Every field/attribute must be documented with its own docstring placed directly below the field, not described in the class docstring
 - Write docstrings in ReStructuredText format
 - Write docstrings that explain what the function does and not how it does it
 - Keep docstrings short and concise
