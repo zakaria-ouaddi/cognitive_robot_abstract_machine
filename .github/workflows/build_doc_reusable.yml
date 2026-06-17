@@ -26,7 +26,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: ${{ inputs.use_container && env.IMAGE_NAME || '' }}
+      image: ${{ inputs.use_container && format('ghcr.io/{0}:jazzy', github.repository) || '' }}
     defaults:
       run:
         shell: ${{ inputs.use_container && 'bash -ieo pipefail {0}' || 'bash' }}
