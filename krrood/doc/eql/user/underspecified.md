@@ -249,13 +249,16 @@ via a {py:class}`~krrood.parametrization.model_registries.DictRegistry`, which m
 class to its own model:
 
 ```python
+import json
+from krrood.adapters.json_serializer import from_json
 from krrood.entity_query_language.backends import ProbabilisticBackend
 from krrood.entity_query_language.factories import underspecified
 from krrood.parametrization.model_registries import DictRegistry
 from probabilistic_model.probabilistic_circuit.rx.probabilistic_circuit import ProbabilisticCircuit
 
 # Load a pre-trained circuit (e.g. a JPT saved to disk)
-learned_model: ProbabilisticCircuit = ProbabilisticCircuit.from_json("nested_action_model.json")
+with open("nested_action_model.json", "r") as f:
+    learned_model: ProbabilisticCircuit = from_json(json.load(f))
 
 # Register the model for the target class
 registry = DictRegistry({NestedAction: learned_model})
