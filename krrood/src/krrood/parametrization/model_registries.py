@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing_extensions import Type, Dict
 
-from krrood.entity_query_language.query.match import Match, MatchVariable
 from krrood.parametrization.parameterizer import UnderspecifiedParameters
 from probabilistic_model.probabilistic_circuit.relational.rspn import (
     RelationalProbabilisticCircuit,
@@ -53,18 +52,13 @@ class DictRegistry(ModelRegistry):
 @dataclass
 class RelationalCircuitRegistry(ModelRegistry):
     """
-    A registry that grounds a RelationalProbabilisticCircuit for a given query and aligns
-    its variable names to the UnderspecifiedParameters convention before returning.
+    A registry that grounds a RelationalProbabilisticCircuit for the queried statement and
+    aligns its variable names to the UnderspecifiedParameters convention before returning.
     """
 
     relational_probabilistic_circuit: RelationalProbabilisticCircuit
     """
     The trained relational probabilistic circuit to ground.
-    """
-
-    query: Match
-    """
-    The query that is used to do the grounding of the model.
     """
 
     def get_model(self, parameters: UnderspecifiedParameters) -> ProbabilisticModel:

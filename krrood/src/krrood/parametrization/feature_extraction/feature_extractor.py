@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 import pandas as pd
 import sqlalchemy
 from sqlalchemy.orm import MANYTOONE, ONETOMANY
-from typing_extensions import TYPE_CHECKING, Any, Optional, Type
+from typing_extensions import TYPE_CHECKING, Any, Type
 from krrood.entity_query_language.core.mapped_variable import MappedVariable
 from krrood.entity_query_language.core.variable import Variable
 from krrood.entity_query_language.factories import variable
@@ -21,6 +21,23 @@ from random_events.variable import compatible_types
 
 if TYPE_CHECKING:
     from krrood.ormatic.data_access_objects.dao import DataAccessObject
+
+
+@dataclass
+class ExtractedFeatures:
+    """
+    The result of traversing a DAO object graph for features.
+    """
+
+    features: list[MappedVariable]
+    """
+    Symbolic variables for every extractable feature, in traversal order.
+    """
+
+    exchangeable_features: dict[str, list[MappedVariable]]
+    """
+    Mapping from each exchangeable-part field name to its aggregation variables.
+    """
 
 
 @dataclass
@@ -46,23 +63,22 @@ class FeatureExtractor:
     """
 
     def __post_init__(self):
-        if not self.features:
+        if self.features is None:
             raise ValueError(
                 "No features provided. If list of instances available, use `FeatureExtractor.from_instances` for instantiation."
             )
 
     @classmethod
-    def from_instances(
-        cls, instances: list[DataAccessObject]
-    ) -> Optional[FeatureExtractor]:
+    def from_instances(cls, instances: list[DataAccessObject]) -> FeatureExtractor:
         """
         Create a new feature extractor from the given instances.
 
-        Returns ``None`` when the root domain class has exchangeable parts but does
-        not inherit from :class:`HasExchangeablePartAggregations`.
+        Exchangeable parts whose domain class does not inherit from
+        :class:`HasExchangeablePartAggregations` are silently skipped; the
+        remaining scalar and unique-part features are still extracted.
 
         :param instances: The instances to create the feature extractor from.
-        :return: A new feature extractor, or ``None`` if the class is not compatible.
+        :return: A new feature extractor.
         """
         if not instances:
             raise ValueError("No instances provided")
@@ -70,28 +86,23 @@ class FeatureExtractor:
         dao_state = FromDataAccessObjectState()
         first_instance = instances[0]
         domain_object = first_instance.from_dao(dao_state)
-        composition = EntityCompositionDescriptor(type(first_instance))
-
-        if composition.exchangeable_parts and not isinstance(
-            domain_object, HasExchangeablePartAggregations
-        ):
-            return None
 
         root = variable(type(domain_object), [])
-        extractor = cls.__new__(cls)
-        extractor.exchangeable_features = defaultdict(list)
-        extractor.features = extractor._extract_features(first_instance, root)
+        extracted = cls._extract_features(first_instance, root)
+        extractor = cls(features=extracted.features)
+        extractor.exchangeable_features = extracted.exchangeable_features
         return extractor
 
+    @staticmethod
     def _extract_features(
-        self, example_instance: DataAccessObject, symbolic_root: Variable
-    ) -> list[MappedVariable]:
+        example_instance: DataAccessObject, symbolic_root: Variable
+    ) -> ExtractedFeatures:
         """
         Traverses the DAO object graph breadth-first and collects all features.
 
         :param example_instance: A representative DAO instance that defines the schema.
         :param symbolic_root: The root symbolic variable for the traversal.
-        :return: All discovered feature variables in traversal order.
+        :return: The discovered scalar features and per-relation aggregation features.
         """
         result = []
         seen = set()
@@ -109,18 +120,18 @@ class FeatureExtractor:
             instance_composition = EntityCompositionDescriptor(type(current_instance))
 
             result.extend(
-                self._process_attributes(
+                FeatureExtractor._process_attributes(
                     current_instance, current_symbolic, instance_composition.attributes
                 )
             )
 
             exchangeable_features.update(
-                self._process_exchangeable_parts(
+                FeatureExtractor._process_exchangeable_parts(
                     current_instance, instance_composition.exchangeable_parts
                 )
             )
             queue.extend(
-                self._process_unique_parts(
+                FeatureExtractor._process_unique_parts(
                     current_instance,
                     current_symbolic,
                     instance_composition.unique_parts,
@@ -128,8 +139,7 @@ class FeatureExtractor:
             )
 
         result.extend(itertools.chain.from_iterable(exchangeable_features.values()))
-        self.exchangeable_features = exchangeable_features
-        return result
+        return ExtractedFeatures(result, exchangeable_features)
 
     @staticmethod
     def _process_attributes(
@@ -143,7 +153,7 @@ class FeatureExtractor:
         Columns whose value is not a compatible primitive type are skipped.
         :param instance: The DAO instance to inspect.
         :param symbolic_root: The symbolic variable rooted at ``instance``.
-        :param attributes: The RSPN specification describing the instance's schema.
+        :param attributes: The scalar data columns of the instance's schema.
         :return: One typed ``MappedVariable`` per compatible scalar attribute.
         """
         result = []
@@ -171,7 +181,7 @@ class FeatureExtractor:
 
         :param instance: The DAO instance to inspect.
         :param symbolic_root: The symbolic variable rooted at ``instance``.
-        :param unique_parts: The RSPN specification describing the instance's schema.
+        :param unique_parts: Field names of the instance's many-to-one relations.
         :return: ``(child_instance, child_symbolic)`` pairs ready for BFS expansion.
         """
         queue = deque()
@@ -185,13 +195,16 @@ class FeatureExtractor:
         return queue
 
     @staticmethod
-    def _process_exchangeable_parts(current_instance, exchangeable_parts):
+    def _process_exchangeable_parts(
+        current_instance: DataAccessObject,
+        exchangeable_parts: list[str],
+    ) -> dict[str, list[MappedVariable]]:
         """
         Collects aggregation statistic variables for all one-to-many relations of ``current_instance``.
 
         :param current_instance: The DAO instance to inspect.
-        :param exchangeable_parts: The RSPN specification describing the instance's schema.
-        :return: A mapping from each discovered aggregation variable to the exchangeable-part field name it
+        :param exchangeable_parts: Field names of the instance's one-to-many relations.
+        :return: A mapping from each exchangeable-part field name to its aggregation variables.
         """
         result = defaultdict(list)
         dao_state = FromDataAccessObjectState()

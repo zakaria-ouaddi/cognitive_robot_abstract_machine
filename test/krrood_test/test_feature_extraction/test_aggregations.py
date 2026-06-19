@@ -1,6 +1,14 @@
-import pytest
+from dataclasses import dataclass
 
+import pytest
+from typing_extensions import List
+
+from krrood.entity_query_language.factories import variable
 from krrood.ormatic.data_access_objects.helper import to_dao
+from krrood.parametrization.feature_extraction.aggregations import (
+    AggregationStatistic,
+    statistic,
+)
 from krrood.parametrization.feature_extraction.feature_extractor import (
     FeatureExtractor,
 )
@@ -86,3 +94,44 @@ def test_aggregation_count_values(example_scenario):
     aggregation_instance = room.get_aggregation_class_by_part_name("objects")
     values = aggregation_instance.apply_mapping()
     assert values[0] == SimpleInterval.from_data(1, 4, Bound.CLOSED, Bound.CLOSED)
+
+
+def test_only_marked_methods_are_statistics():
+    @dataclass
+    class PartiallyMarkedAggregations(AggregationStatistic):
+        objects_to_aggregate_on: List[SceneObject]
+
+        @property
+        def _eql_variable(self):
+            return variable(SceneObject, self.objects_to_aggregate_on)
+
+        @statistic
+        def marked_statistic(self) -> int:
+            return 1
+
+        def unmarked_helper(self) -> int:
+            return 2
+
+    instance = PartiallyMarkedAggregations([SceneObject(type=SceneObjectType.TABLE)])
+    statistic_names = {function.__name__ for function in instance.aggregation_features}
+    assert statistic_names == {"marked_statistic"}
+
+
+def test_empty_exchangeable_part_yields_no_aggregation_class():
+    room = SceneRoom(
+        position=KRROODPosition(0, 0, 0),
+        orientation=KRROODOrientation(0, 0, 0, 1),
+        objects=[],
+    )
+    assert room.get_aggregation_class_by_part_name("objects") is None
+
+
+def test_feature_extraction_over_empty_exchangeable_part_does_not_raise():
+    room = SceneRoom(
+        position=KRROODPosition(0, 0, 0),
+        orientation=KRROODOrientation(0, 0, 0, 1),
+        objects=[],
+    )
+    extractor = FeatureExtractor.from_instances([to_dao(room)])
+    assert extractor is not None
+    assert all(not isinstance(feature, Call) for feature in extractor.features)

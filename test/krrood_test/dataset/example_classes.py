@@ -35,9 +35,10 @@ from krrood.parametrization.feature_extraction.aggregations import (
     aggregation_for,
     AggregationStatistic,
     HasExchangeablePartAggregations,
+    statistic,
 )
 from krrood.symbol_graph.symbol_graph import Symbol
-from ..dataset.semantic_world_like_classes import Body
+from ..dataset.semantic_world_like_classes import Body, Cabinet
 
 
 # check that custom enums works
@@ -775,6 +776,7 @@ class SceneObjectAggregations(AggregationStatistic):
     def _eql_variable(self):
         return variable(SceneObject, self.objects_to_aggregate_on)
 
+    @statistic
     def table_count(self) -> int:
         type_var = self._eql_variable.type
         [cou] = (
@@ -784,6 +786,7 @@ class SceneObjectAggregations(AggregationStatistic):
         )
         return cou
 
+    @statistic
     def chair_count(self) -> int:
         type_var = self._eql_variable.type
         [cou] = (
@@ -793,6 +796,7 @@ class SceneObjectAggregations(AggregationStatistic):
         )
         return cou
 
+    @statistic
     def total_count(self) -> int:
         [cou] = count(self._eql_variable).tolist()
         return cou
@@ -807,6 +811,7 @@ class RoomAggregations(AggregationStatistic):
     def _eql_variable(self):
         return variable(SceneRoom, self.objects_to_aggregate_on)
 
+    @statistic
     def room_count(self) -> int:
         [cou] = count(self._eql_variable).tolist()
         return cou
@@ -825,3 +830,10 @@ class ExampleString:
 @dataclass
 class MissingBaseClass:
     objects: List[ExampleInt] = field(default_factory=list)
+
+
+@dataclass
+class ActionWithMissingAggregationsMixin:
+    """Action with a field whose domain type has exchangeable parts but no aggregation mixin."""
+
+    domain_object: Cabinet

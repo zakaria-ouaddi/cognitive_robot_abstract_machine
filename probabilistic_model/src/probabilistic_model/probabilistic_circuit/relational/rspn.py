@@ -1,10 +1,20 @@
+"""
+Relational probabilistic circuits ("RSPNs").
+
+.. note::
+    This module deliberately bridges ``probabilistic_model`` and ``krrood``: it
+    imports krrood feature extraction here, while ``krrood.parametrization.model_registries``
+    imports :class:`RelationalProbabilisticCircuit` back. This bidirectional coupling
+    predates the relational refactor and is kept intentionally; it is the seam where
+    krrood's symbolic feature extraction meets probabilistic_model's circuits.
+"""
+
 from __future__ import annotations
 
 import itertools
 from dataclasses import dataclass, field
 
 import pandas as pd
-import rustworkx
 from sortedcontainers import SortedSet
 from typing_extensions import TYPE_CHECKING, Any, Optional, Type
 
@@ -21,6 +31,9 @@ if TYPE_CHECKING:
     from krrood.entity_query_language.query.match import Match
 from probabilistic_model.learning.jpt.jpt import JointProbabilityTree
 from probabilistic_model.learning.jpt.variables import infer_variables_from_dataframe
+from probabilistic_model.probabilistic_circuit.relational.exceptions import (
+    CircuitNotFittedError,
+)
 from probabilistic_model.probabilistic_circuit.relational.helper import (
     find_lowest_product_nodes_that_model_variables,
 )
@@ -215,7 +228,6 @@ class RelationalProbabilisticCircuit:
         :param aggregation_names: Column names for the aggregation portion of each row.
         :param child_feature_extractor: Feature extractor built from the child instances.
         :param child_class_prefix: Class name prefix to strip from child feature names
-            (e.g. ``"EGObject."``).
         :return: A dataframe with one row per child object across all instances.
         """
         rows = []
@@ -380,6 +392,10 @@ class RelationalProbabilisticCircuit:
                 aggregation_instance
             )
             latent_variable = latent_variable_by_name[feature_name]
+            # ``make_value`` is the random_events API that validates domain membership;
+            # it signals an out-of-domain value by raising. There is no non-throwing
+            # membership predicate for a raw value against a symbolic domain, so this
+            # boundary adapts that exception into a skip.
             try:
                 latent_variable.make_value(value)
                 aggregation_statistics[latent_variable] = value
@@ -433,7 +449,10 @@ class RelationalProbabilisticCircuit:
             exchangeable relation contains.
         :return: A concrete ``ProbabilisticCircuit`` over all variables implied
             by the query.
+        :raises CircuitNotFittedError: If ``ground`` is called before ``fit``.
         """
+        if self.class_probabilistic_circuit is None:
+            raise CircuitNotFittedError(self.class_)
         circuit = self.class_probabilistic_circuit.__deepcopy__()
         instance = query.construct_instance()
         queryable_object = to_dao(instance)

@@ -4,9 +4,8 @@ import inspect
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from functools import cached_property
 
-from typing_extensions import Any, Optional, Type
+from typing_extensions import Any, Callable, Optional, Type
 
 from krrood.entity_query_language.core.base_expressions import SymbolicExpression
 from krrood.entity_query_language.core.mapped_variable import MappedVariable
@@ -71,7 +70,9 @@ class AggregationRegistry:
         return [attr for (owner_cls, attr) in cls._registry if owner_cls is owner]
 
 
-def aggregation_for(*owner_attribute_pairs: tuple[Type, str]):
+def aggregation_for(
+    *owner_attribute_pairs: tuple[Type, str],
+) -> Callable[[Type[AggregationStatistic]], Type[AggregationStatistic]]:
     """
     Class decorator that registers an ``AggregationStatistic`` subclass in the
     ``AggregationRegistry`` for one or more ``(owner, attribute_name)`` pairs.
@@ -87,6 +88,20 @@ def aggregation_for(*owner_attribute_pairs: tuple[Type, str]):
         return aggregation_cls
 
     return wrapper
+
+
+def statistic(function: Callable[..., Any]) -> Callable[..., Any]:
+    """
+    Marks a method as an aggregation statistic.
+
+    Only methods marked with this decorator are collected by
+    :meth:`AggregationStatistic.aggregation_features`, so adding ordinary helper
+    methods to a subclass does not accidentally turn them into statistics.
+
+    :param function: The statistic method to mark.
+    """
+    function.is_aggregation_statistic = True
+    return function
 
 
 @dataclass
@@ -108,8 +123,8 @@ class AggregationStatistic(ABC):
         if not self.objects_to_aggregate_on:
             raise ValueError("Aggregation object must not be empty")
 
+    @property
     @abstractmethod
-    @cached_property
     def _eql_variable(self) -> SymbolicExpression:
         """
         The symbolic variable that is used to compute aggregations on.
@@ -120,8 +135,7 @@ class AggregationStatistic(ABC):
         """
         Symbolic variables corresponding to each aggregation statistic method.
 
-        Dict-returning methods are expanded into one variable per key.
-        :return: One ``MappedVariable`` per scalar statistic, typed as ``float``.
+        :return: One ``MappedVariable`` per statistic method.
         """
         symbolic_aggregations = []
         aggregation_variable = variable(type(self), [])
@@ -133,28 +147,26 @@ class AggregationStatistic(ABC):
     @property
     def aggregation_features(self) -> list[Any]:
         """
-        All public, non-base statistic methods defined on the concrete subclass.
+        The statistic methods defined on the concrete subclass.
 
-        Dict-returning methods are flattened into per-key entries and recorded
-        in ``_internal_aggregation_mapping`` so symbolic lookup can recover
-        the original method name.
-        :return: A list of bound or flattened statistic callables.
+        Only methods explicitly marked with :func:`statistic` are returned, so
+        adding ordinary helper methods to a subclass does not accidentally turn
+        them into statistics.
+        :return: One callable per marked statistic method.
         """
-        cls_functions = inspect.getmembers(self.__class__, predicate=inspect.isfunction)
-        aggregations = []
-        for name, function in cls_functions:
-            if (
-                name.startswith("__")
-                or name.startswith("_")
-                or function is AggregationStatistic.apply_mapping
-            ):
-                continue
-            else:
-                aggregations.append(function)
-
+        class_functions = inspect.getmembers(
+            self.__class__, predicate=inspect.isfunction
+        )
+        aggregations = [
+            function
+            for _, function in class_functions
+            if "is_aggregation_statistic" in function.__dict__
+        ]
         if not aggregations:
             warnings.warn(
-                f"No aggregation features found for exchangeable part {self.objects_to_aggregate_on} of type {type(self.objects_to_aggregate_on)}"
+                f"No aggregation features found for exchangeable part "
+                f"{self.objects_to_aggregate_on} of type "
+                f"{type(self.objects_to_aggregate_on)}"
             )
         return aggregations
 
@@ -202,10 +214,13 @@ class HasExchangeablePartAggregations(ABC):
         Instantiates and returns the aggregation class registered for the named field.
 
         :param part_name: The name of the exchangeable-part field.
-        :return: An ``AggregationStatistic`` initialised with the field's current value.
-        :raises KeyError: If no aggregation class is registered for ``part_name``.
+        :return: An ``AggregationStatistic`` initialised with the field's current value,
+            or ``None`` if no class is registered or the field holds an empty relation.
         """
         aggregation_cls = AggregationRegistry.get(type(self), part_name)
         if aggregation_cls is None:
             return None
-        return aggregation_cls(getattr(self, part_name))
+        objects_to_aggregate_on = getattr(self, part_name)
+        if not objects_to_aggregate_on:
+            return None
+        return aggregation_cls(objects_to_aggregate_on)

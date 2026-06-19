@@ -13,7 +13,9 @@ from ..dataset.example_classes import (
     KRROODPosition,
     TestEnum,
     EnumAction,
+    ActionWithMissingAggregationsMixin,
 )
+from ..dataset.semantic_world_like_classes import Cabinet, Container, Body, Handle
 
 
 def test_enum_domain():
@@ -84,3 +86,18 @@ def test_union_types():
     parameters = UnderspecifiedParameters(prob_q)
     variables = parameters.variables
     assert variables["KRROODPosition.x"].domain == reals()
+
+
+def test_domain_object_with_exchangeable_parts_but_no_aggregation_mixin_is_skipped():
+    """
+    Prove that a domain object whose class has exchangeable parts but does not inherit
+    from HasExchangeablePartAggregations produces no variables for those parts and
+    raises no exception.
+    """
+    container = Container(name="container")
+    cabinet = Cabinet(container=container)
+    prob_q = underspecified(ActionWithMissingAggregationsMixin)(
+        domain_object=variable(Cabinet, [cabinet])
+    )
+    parameters = UnderspecifiedParameters(prob_q)
+    assert not any("drawers" in name for name in parameters.variables)

@@ -195,7 +195,8 @@ class UnderspecifiedParameters:
         indexed name prefix (e.g. ``walls[0].height``, ``walls[1].start_point.x``).
 
         Primitive elements become a single conditioning variable; non-primitive elements
-        are decomposed via :py:class:`~krrood.parametrization.feature_extractor.FeatureExtractor`.
+        are decomposed via
+        :py:class:`~krrood.parametrization.feature_extraction.feature_extractor.FeatureExtractor`.
 
         :param name: Base variable name derived from the attribute access path.
         :param value: The iterable assigned value.
@@ -228,8 +229,8 @@ class UnderspecifiedParameters:
                 )
                 for feature in extractor.features:
                     feature_name = f"{indexed_name}.{feature.get_clean_name_from_mapped_variable()}"
-                    random_events_variable = random_events.variable.Continuous(
-                        name=feature_name
+                    random_events_variable = variable_from_name_and_type(
+                        name=feature_name, type_=feature._type_
                     )
                     result[feature_name] = random_events_variable
                     mapping = feature.apply_mapping_on_external_root(element)

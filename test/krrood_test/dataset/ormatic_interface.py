@@ -551,6 +551,29 @@ class CabinetDAO_drawers_association(Base, AssociationDataAccessObject):
     )
 
 
+class ActionWithMissingAggregationsMixinDAO(
+    Base,
+    DataAccessObject[
+        test.krrood_test.dataset.example_classes.ActionWithMissingAggregationsMixin
+    ],
+):
+    __tablename__ = "ActionWithMissingAggregationsMixinDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    domain_object_id: Mapped[int] = mapped_column(
+        ForeignKey("CabinetDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+
+    domain_object: Mapped[CabinetDAO] = relationship(
+        "CabinetDAO", uselist=False, foreign_keys=[domain_object_id], post_update=True
+    )
+
+
 class BuildFirstMappingDAO(
     Base,
     DataAccessObject[

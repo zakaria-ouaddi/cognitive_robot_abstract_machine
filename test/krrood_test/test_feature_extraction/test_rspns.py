@@ -2,6 +2,9 @@ import pytest
 
 from krrood.entity_query_language.factories import underspecified
 from krrood.ormatic.data_access_objects.helper import to_dao
+from probabilistic_model.probabilistic_circuit.relational.exceptions import (
+    CircuitNotFittedError,
+)
 from probabilistic_model.probabilistic_circuit.relational.rspn import (
     RelationalProbabilisticCircuit,
 )
@@ -53,6 +56,12 @@ def room_query_4():
     )
     query.resolve()
     return query
+
+
+def test_ground_before_fit_raises(room_query_4):
+    model = RelationalProbabilisticCircuit(SceneRoom)
+    with pytest.raises(CircuitNotFittedError):
+        model.ground(room_query_4)
 
 
 def test_fit_class_circuit_is_valid(rpc):
