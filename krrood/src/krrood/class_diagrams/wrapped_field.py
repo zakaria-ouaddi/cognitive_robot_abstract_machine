@@ -194,7 +194,14 @@ class WrappedField:
                     lca = common_base_class(list(args))
                     if lca is not None:
                         return lca
-                return args[0]
+                arg = args[0]
+                # Explicit Union contained type e.g. list[Union[A, B]] — resolve to LCA
+                if get_origin(arg) is Union:
+                    non_none = [t for t in get_args(arg) if t is not NoneType]
+                    lca = common_base_class(non_none)
+                    if lca is not None:
+                        return lca
+                return arg
             except IndexError:
                 if self.resolved_type is Type:
                     return self.resolved_type

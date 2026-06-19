@@ -271,23 +271,24 @@ def run_reliability_experiment(
     iterations: int = 10,
 ) -> tuple[ORMaticReliabilityAggregateResult, List[ORMaticReliabilityExperimentResult]]:
     """
-    Build the world once, then run *iterations* reliability experiment cycles
-    for plans of *plan_size* actions and aggregate the results.
+    Run *iterations* reliability experiment cycles for plans of *plan_size*
+    actions and aggregate the results.
+
+    The world is rebuilt from scratch on every iteration so that
+    ``world_building_duration`` is measured repeatedly and yields a meaningful
+    mean and standard deviation.
 
     :param plan_size: Number of actions per plan.
     :param iterations: Number of independent iterations to aggregate.
     :return: Tuple of (aggregate result, raw per-iteration results).
     """
-    t0 = time.perf_counter()
-    world, pr2, ctx = build_cram_world()
-    world_building_duration = time.perf_counter() - t0
-
     raw = []
     for _ in range(iterations):
-        state = deepcopy(world.state._data)
+        t0 = time.perf_counter()
+        world, _, ctx = build_cram_world()
+        world_building_duration = time.perf_counter() - t0
+
         result = reliability_experiment(plan_size, world, ctx, world_building_duration)
-        world.state._data[:] = state
-        world.notify_state_change()
         raw.append(result)
 
     aggregate = ORMaticReliabilityAggregateResult(
