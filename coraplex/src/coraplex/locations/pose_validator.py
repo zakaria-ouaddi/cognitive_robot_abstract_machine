@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
 
@@ -14,6 +16,7 @@ from coraplex.alternative_motion_mapping import AlternativeMotion
 from coraplex.datastructures.dataclasses import Context
 from coraplex.datastructures.enums import Arms, ApproachDirection, VerticalAlignment
 from coraplex.datastructures.grasp import GraspDescription
+from coraplex.exceptions import TipLinkDoesNotMatchAnyArm
 from coraplex.locations.base import PoseValidator
 from coraplex.plans.plan import Plan
 from coraplex.plans.plan_node import PlanNode
@@ -180,6 +183,8 @@ class AreReachableBy(PoseValidator):
                     == ViewManager.get_end_effector_view(arm, self.robot).tool_frame
                 ):
                     correct_arm = arm
+            if correct_arm is None:
+                raise TipLinkDoesNotMatchAnyArm(self.tip_link, self.robot)
             sequence = []
             for pose in self.pose_sequence:
 
@@ -255,6 +260,8 @@ class AreReachableBy(PoseValidator):
             executor.compile(msc)
 
             try:
+                # TimeoutError from tick_until_end is an expected outcome (planner
+                # cannot find a path), not an illegal state — no non-raising API exists.
                 executor.tick_until_end()
             except TimeoutError:
                 logger.debug(

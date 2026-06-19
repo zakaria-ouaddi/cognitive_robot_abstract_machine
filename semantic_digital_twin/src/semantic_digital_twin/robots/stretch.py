@@ -6,7 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from importlib.resources import files
 from pathlib import Path
-from typing import Self, Union, List
+from typing_extensions import Self, Union, List
 
 from semantic_digital_twin.collision_checking.collision_rules import (
     AvoidExternalCollisions,

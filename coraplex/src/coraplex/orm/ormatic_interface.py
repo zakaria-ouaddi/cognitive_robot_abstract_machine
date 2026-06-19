@@ -23,6 +23,7 @@ import coraplex.alternative_motion_mappings.tiago_motion_mapping
 import coraplex.datastructures.dataclasses
 import coraplex.datastructures.execution_data
 import coraplex.datastructures.grasp
+import coraplex.datastructures.grasp_scoring
 import coraplex.datastructures.trajectory
 import coraplex.exceptions
 import coraplex.language
@@ -4745,6 +4746,30 @@ class GraspDescriptionDAO(
         foreign_keys=[end_effector_id],
         post_update=True,
     )
+
+
+class GraspScorerDAO(
+    Base, DataAccessObject[coraplex.datastructures.grasp_scoring.GraspScorer]
+):
+    __tablename__ = "GraspScorerDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    weight_normal: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+    weight_distance: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+    weight_clearance: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+    penalty_collision: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+    collision_tolerance: Mapped[builtins.float] = mapped_column(
+        use_existing_column=True
+    )
+    penalty_clearance: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+    penalty_unstable: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+    score_partial_contact: Mapped[builtins.float] = mapped_column(
+        use_existing_column=True
+    )
+    ground_plane_z: Mapped[builtins.float] = mapped_column(use_existing_column=True)
 
 
 class GraspingActionDAO(
@@ -10598,22 +10623,14 @@ class PoseValidatorDAO(Base, DataAccessObject[coraplex.locations.base.PoseValida
         String(255), nullable=False, use_existing_column=True
     )
 
-    world_id: Mapped[int] = mapped_column(
-        ForeignKey("WorldMappingDAO.database_id", use_alter=True),
-        nullable=True,
-        use_existing_column=True,
-    )
-    robot_id: Mapped[int] = mapped_column(
-        ForeignKey("AbstractRobotDAO.database_id", use_alter=True),
+    context_id: Mapped[int] = mapped_column(
+        ForeignKey("ContextDAO.database_id", use_alter=True),
         nullable=True,
         use_existing_column=True,
     )
 
-    world: Mapped[WorldMappingDAO] = relationship(
-        "WorldMappingDAO", uselist=False, foreign_keys=[world_id], post_update=True
-    )
-    robot: Mapped[AbstractRobotDAO] = relationship(
-        "AbstractRobotDAO", uselist=False, foreign_keys=[robot_id], post_update=True
+    context: Mapped[ContextDAO] = relationship(
+        "ContextDAO", uselist=False, foreign_keys=[context_id], post_update=True
     )
 
     __mapper_args__ = {
@@ -13035,6 +13052,31 @@ class ScaleDAO(
     z: Mapped[builtins.float] = mapped_column(use_existing_column=True)
 
 
+class ScoredGraspDAO(
+    Base, DataAccessObject[coraplex.datastructures.grasp_scoring.ScoredGrasp]
+):
+    __tablename__ = "ScoredGraspDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    score: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+    id: Mapped[builtins.str] = mapped_column(
+        sqlalchemy.sql.sqltypes.Text, use_existing_column=True
+    )
+
+    pose_id: Mapped[int] = mapped_column(
+        ForeignKey("PoseMappingDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+
+    pose: Mapped[PoseMappingDAO] = relationship(
+        "PoseMappingDAO", uselist=False, foreign_keys=[pose_id], post_update=True
+    )
+
+
 class SelfCollisionAvoidanceDAO(
     GoalDAO,
     DataAccessObject[
@@ -13399,6 +13441,7 @@ class DifferentialDriveBaseGoalDAO(
     )
 
     weight: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+    threshold: Mapped[builtins.float] = mapped_column(use_existing_column=True)
 
     goal_pose_id: Mapped[int] = mapped_column(
         ForeignKey("PoseMappingDAO.database_id", use_alter=True),
@@ -15108,6 +15151,27 @@ class StretchCloseDAO(
     }
 
 
+class StretchMoveRealDAO(
+    MoveMotionDAO,
+    DataAccessObject[
+        coraplex.alternative_motion_mappings.stretch_motion_mapping.StretchMoveReal
+    ],
+):
+    __tablename__ = "StretchMoveRealDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(MoveMotionDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "StretchMoveRealDAO",
+        "inherit_condition": database_id == MoveMotionDAO.database_id,
+        "polymorphic_load": "selectin",
+    }
+
+
 class StretchMoveSimDAO(
     MoveMotionDAO,
     DataAccessObject[
@@ -16409,6 +16473,37 @@ class TiagoMoveSimDAO(
         "inherit_condition": database_id == MoveMotionDAO.database_id,
         "polymorphic_load": "selectin",
     }
+
+
+class TipLinkDoesNotMatchAnyArmDAO(
+    Base, DataAccessObject[coraplex.exceptions.TipLinkDoesNotMatchAnyArm]
+):
+    __tablename__ = "TipLinkDoesNotMatchAnyArmDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    tip_link_id: Mapped[int] = mapped_column(
+        ForeignKey("KinematicStructureEntityDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+    robot_id: Mapped[int] = mapped_column(
+        ForeignKey("AbstractRobotDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+
+    tip_link: Mapped[KinematicStructureEntityDAO] = relationship(
+        "KinematicStructureEntityDAO",
+        uselist=False,
+        foreign_keys=[tip_link_id],
+        post_update=True,
+    )
+    robot: Mapped[AbstractRobotDAO] = relationship(
+        "AbstractRobotDAO", uselist=False, foreign_keys=[robot_id], post_update=True
+    )
 
 
 class TopicNodeDAO(
