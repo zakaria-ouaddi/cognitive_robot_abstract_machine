@@ -4,7 +4,7 @@ import numpy as np
 
 import pytest
 
-from giskardpy.qp.dof_limits import DirectLimits, DofLimits
+from giskardpy.qp.dof_limits import DirectLimits, QuadraticProgramDegreeOfFreedomLimits
 from giskardpy.qp.enforcement_strategy import (
     SystemDynamicsStrategy,
     IntegralStrategy,
@@ -71,7 +71,7 @@ def test_DofLimits(prismatic_bot):
     target_frequency = 20
     prediction_horizon = 10
     expected_jerk_limit = 1 / target_frequency
-    limits = DofLimits.create(
+    limits = QuadraticProgramDegreeOfFreedomLimits.create(
         prismatic_bot.active_degrees_of_freedom,
         qp_controller_config=QPControllerConfig(
             target_frequency=target_frequency, prediction_horizon=prediction_horizon
@@ -110,7 +110,7 @@ def test_DofLimits_two_joints(prismatic_bot2):
     prediction_horizon = 10
     expected_jerk_limit1 = 1 / target_frequency
     expected_jerk_limit2 = 1 / (target_frequency * 2)
-    limits = DofLimits.create(
+    limits = QuadraticProgramDegreeOfFreedomLimits.create(
         prismatic_bot2.active_degrees_of_freedom,
         qp_controller_config=QPControllerConfig(
             target_frequency=target_frequency, prediction_horizon=prediction_horizon

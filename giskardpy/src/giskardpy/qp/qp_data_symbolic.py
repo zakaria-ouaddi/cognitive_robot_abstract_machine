@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import krrood.symbolic_math.symbolic_math as sm
-from giskardpy.qp.dof_limits import DofLimits
+from giskardpy.qp.dof_limits import QuadraticProgramDegreeOfFreedomLimits
 from giskardpy.qp.enforcement_strategy import (
     EnforcementStrategy,
     SystemDynamicsStrategy,
@@ -154,7 +154,7 @@ class QPDataSymbolic:
         return strategy.create_matrix(), strategy.create_slack_matrix()
 
     def __post_init__(self):
-        direct_limits = DofLimits.create(
+        direct_limits = QuadraticProgramDegreeOfFreedomLimits.create(
             self.degrees_of_freedom, self.qp_controller_config
         )
         accumulator = QPVariableAccumulator(

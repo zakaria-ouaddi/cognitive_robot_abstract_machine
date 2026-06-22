@@ -6,7 +6,7 @@ from giskardpy.motion_statechart.context import MotionStatechartContext
 from giskardpy.motion_statechart.graph_node import EndMotion
 from giskardpy.motion_statechart.motion_statechart import MotionStatechart
 from giskardpy.motion_statechart.tasks.joint_tasks import JointPositionList, JointState
-from giskardpy.qp.dof_limits import DofLimits
+from giskardpy.qp.dof_limits import QuadraticProgramDegreeOfFreedomLimits
 from giskardpy.qp.qp_controller_config import QPControllerConfig
 from semantic_digital_twin.world import World
 from semantic_digital_twin.world_description.connections import ActiveConnection
@@ -183,8 +183,8 @@ def _default_config() -> QPControllerConfig:
     )
 
 
-def _compute_limits(world: World) -> DofLimits:
-    return DofLimits.create(
+def _compute_limits(world: World) -> QuadraticProgramDegreeOfFreedomLimits:
+    return QuadraticProgramDegreeOfFreedomLimits.create(
         world.active_degrees_of_freedom, qp_controller_config=_default_config()
     )
 

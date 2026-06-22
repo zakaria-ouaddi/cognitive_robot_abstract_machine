@@ -136,7 +136,7 @@ class DirectLimits:
 
 
 @dataclass
-class DofLimitProfiler:
+class DegreeOfFreedomLimitProfiler:
     """
     Computes the per-degree-of-freedom velocity, acceleration, and jerk bounds across the
     prediction horizon, including the MPC-based position-aware slowdown profiles.
@@ -461,7 +461,7 @@ class DofLimitProfiler:
 
 
 @dataclass
-class DofLimits:
+class QuadraticProgramDegreeOfFreedomLimits:
     """
     Builds a :class:`DirectLimits` holding the bounds and weights of the robot's free variables
     (velocity and jerk decision variables across the prediction horizon).
@@ -538,7 +538,7 @@ class DofLimits:
         """
         lower_bounds = []
         upper_bounds = []
-        profiler = DofLimitProfiler(qp_controller_config)
+        profiler = DegreeOfFreedomLimitProfiler(qp_controller_config)
         cache: dict[UUID, DegreeOfFreedomLimits[sm.Vector]] = {}
         for degree_of_freedom in degrees_of_freedom:
             cache[degree_of_freedom.id] = profiler.compute(
