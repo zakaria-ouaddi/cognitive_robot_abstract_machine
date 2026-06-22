@@ -969,6 +969,7 @@ class Connection(WorldEntity, HasSimulatorProperties, SubclassJSONSerializer, AB
         parent_T_connection_expression: Optional[
             HomogeneousTransformationMatrix
         ] = None,
+        connection_T_child_expression: Optional[HomogeneousTransformationMatrix] = None,
     ) -> Self:
         """
         Generates the degrees of freedom for this connection into the given world and initializes the
@@ -979,6 +980,7 @@ class Connection(WorldEntity, HasSimulatorProperties, SubclassJSONSerializer, AB
         :param child: Child of the connection.
         :param name: Name of the connection. If ``None``, a default is generated from parent and child.
         :param parent_T_connection_expression: Constant pose of the connection relative to its parent.
+        :param connection_T_child_expression: Constant pose of the child relative to the connection.
         """
 
     def _find_references_in_world(self, world: World) -> Tuple[

@@ -70,12 +70,14 @@ class FixedConnection(Connection):
         parent_T_connection_expression: Optional[
             HomogeneousTransformationMatrix
         ] = None,
+        connection_T_child_expression: Optional[HomogeneousTransformationMatrix] = None,
     ) -> Self:
         return cls(
             parent=parent,
             child=child,
             name=name,
             parent_T_connection_expression=parent_T_connection_expression,
+            connection_T_child_expression=connection_T_child_expression,
         )
 
 
@@ -162,6 +164,9 @@ class ActiveConnection1DOF(ActiveConnection, ABC):
             parent_T_connection_expression=from_json(
                 data["parent_T_connection_expression"], **kwargs
             ),
+            connection_T_child_expression=from_json(
+                data["connection_T_child_expression"], **kwargs
+            ),
             axis=Vector3.from_iterable(data["axis"]),
             multiplier=data["multiplier"],
             offset=data["offset"],
@@ -175,14 +180,15 @@ class ActiveConnection1DOF(ActiveConnection, ABC):
         parent: KinematicStructureEntity,
         child: KinematicStructureEntity,
         *,
-        axis: Vector3,
         name: Optional[PrefixedName] = None,
         parent_T_connection_expression: Optional[
             HomogeneousTransformationMatrix
         ] = None,
+        connection_T_child_expression: Optional[HomogeneousTransformationMatrix] = None,
         multiplier: float = 1.0,
         offset: float = 0.0,
         dof_limits: Optional[DegreeOfFreedomLimits] = None,
+        axis: Vector3 | None = None,
     ) -> Self:
         """
         Creates and returns an instance of the class with its single degree of freedom, initializing a
@@ -191,13 +197,14 @@ class ActiveConnection1DOF(ActiveConnection, ABC):
         :param world: The motion world in which to add the degree of freedom.
         :param parent: The parent kinematic structure entity.
         :param child: The child kinematic structure entity.
-        :param axis: The axis vector defining the joint relation.
         :param name: Optional specific name for the connection. If not provided, a
                      default name is generated based on the parent and child.
         :param parent_T_connection_expression: Constant pose of the connection relative to its parent.
+        :param connection_T_child_expression: Constant pose of the connection relative to its child.
         :param multiplier: A scaling factor applied to the DOF's motion. Defaults to 1.0.
         :param offset: A constant offset value applied to the DOF's motion. Defaults to 0.0.
         :param dof_limits: Optional limits for the generated degree of freedom.
+        :param axis: The axis vector defining the joint relation.
         :return: An instance of the class representing the defined relationship with
                  its DOF added to the world.
         """
@@ -209,6 +216,7 @@ class ActiveConnection1DOF(ActiveConnection, ABC):
             parent=parent,
             child=child,
             parent_T_connection_expression=parent_T_connection_expression,
+            connection_T_child_expression=connection_T_child_expression,
             axis=axis,
             multiplier=multiplier,
             offset=offset,
@@ -408,6 +416,9 @@ class Connection6DoF(Connection):
             parent_T_connection_expression=from_json(
                 data["parent_T_connection_expression"], **kwargs
             ),
+            connection_T_child_expression=from_json(
+                data["connection_T_child_expression"], **kwargs
+            ),
             x=tracker.get_world_entity_with_id(id=from_json(data["x_id"])),
             y=tracker.get_world_entity_with_id(id=from_json(data["y_id"])),
             z=tracker.get_world_entity_with_id(id=from_json(data["z_id"])),
@@ -447,6 +458,7 @@ class Connection6DoF(Connection):
         parent_T_connection_expression: Optional[
             HomogeneousTransformationMatrix
         ] = None,
+        connection_T_child_expression: Optional[HomogeneousTransformationMatrix] = None,
     ) -> Self:
         """
         Creates an instance of the class with automatically generated degrees of freedom (DoFs)
@@ -463,7 +475,10 @@ class Connection6DoF(Connection):
                      auto-generated based on the parent and child names.
         :param parent_T_connection_expression: Optional transformation matrix specifying
                                                the connection relationship between parent
-                                               and child entities.
+                                               and the connection.
+        :param connection_T_child_expression: Optional transformation matrix specifying
+                                              the connection relationship between the connection
+                                              and its child entities
         :return: A new instance of the class representing the parent-child connection with
                  automatically defined degrees of freedom.
         """
@@ -490,6 +505,7 @@ class Connection6DoF(Connection):
             parent=parent,
             child=child,
             parent_T_connection_expression=parent_T_connection_expression,
+            connection_T_child_expression=connection_T_child_expression,
             name=name,
             x=x,
             y=y,
@@ -612,6 +628,9 @@ class OmniDrive(WheeledDrive):
             parent_T_connection_expression=from_json(
                 data["parent_T_connection_expression"], **kwargs
             ),
+            connection_T_child_expression=from_json(
+                data["connection_T_child_expression"], **kwargs
+            ),
             x=tracker.get_world_entity_with_id(from_json(data["x_id"])),
             y=tracker.get_world_entity_with_id(from_json(data["y_id"])),
             roll=tracker.get_world_entity_with_id(from_json(data["roll_id"])),
@@ -657,6 +676,7 @@ class OmniDrive(WheeledDrive):
         parent_T_connection_expression: Optional[
             HomogeneousTransformationMatrix
         ] = None,
+        connection_T_child_expression: Optional[HomogeneousTransformationMatrix] = None,
         translation_velocity_limits: float = 0.6,
         rotation_velocity_limits: float = 0.5,
     ) -> Self:
@@ -676,6 +696,8 @@ class OmniDrive(WheeledDrive):
         :param name: Name of the connection. If None, it will be auto-generated.
         :param parent_T_connection_expression: Transformation matrix representing the
             relative position/orientation of the child to the parent. Default is Identity.
+        :param connection_T_child_expression: Transformation matrix representing the
+            relative position/orientation of the child to the connection. Default is Identity.
         :param translation_velocity_limits: The velocity limit applied to the
             translation degrees of freedom (default is 0.6).
         :param rotation_velocity_limits: The velocity limit applied to the rotation
@@ -731,6 +753,7 @@ class OmniDrive(WheeledDrive):
             parent=parent,
             child=child,
             parent_T_connection_expression=parent_T_connection_expression,
+            connection_T_child_expression=connection_T_child_expression,
             name=name,
             x=x,
             y=y,
@@ -871,6 +894,9 @@ class DifferentialDrive(WheeledDrive):
             parent_T_connection_expression=HomogeneousTransformationMatrix.from_json(
                 data["parent_T_connection_expression"], **kwargs
             ),
+            connection_T_child_expression=from_json(
+                data["connection_T_child_expression"], **kwargs
+            ),
             x=tracker.get_world_entity_with_id(from_json(data["x_id"])),
             y=tracker.get_world_entity_with_id(from_json(data["y_id"])),
             roll=tracker.get_world_entity_with_id(from_json(data["roll_id"])),
@@ -913,6 +939,7 @@ class DifferentialDrive(WheeledDrive):
         parent_T_connection_expression: Optional[
             HomogeneousTransformationMatrix
         ] = None,
+        connection_T_child_expression: Optional[HomogeneousTransformationMatrix] = None,
         translation_velocity_limits: float = 0.6,
         rotation_velocity_limits: float = 0.5,
     ) -> Self:
@@ -926,6 +953,8 @@ class DifferentialDrive(WheeledDrive):
         :param name: Name of the connection. If None, it will be auto-generated.
         :param parent_T_connection_expression: Transformation matrix representing the
             relative position/orientation of the child to the parent. Default is Identity.
+        :param connection_T_child_expression: Transformation matrix representing the
+            relative position/orientation of the child to the connection. Default is Identity.
         :param translation_velocity_limits: The velocity limit applied to the
             translation degrees of freedom (default is 0.6).
         :param rotation_velocity_limits: The velocity limit applied to the rotation
@@ -973,6 +1002,7 @@ class DifferentialDrive(WheeledDrive):
             parent=parent,
             child=child,
             parent_T_connection_expression=parent_T_connection_expression,
+            connection_T_child_expression=connection_T_child_expression,
             name=name,
             x=x,
             y=y,
