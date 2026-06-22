@@ -60,15 +60,23 @@ import enum
 import experiments.eql_experiments.monitoring_profile
 import experiments.experiment_definitions
 import experiments.graph_of_convex_sets_experiments
+import experiments.ormatic_experiments.maintainability
 import experiments.ormatic_experiments.reliability
 import experiments.ormatic_experiments.scalability
 import experiments.querying
 import experiments.sage_10k.demos
 import experiments.sage_10k.sage10k_actions
 import giskardpy.executor
+import giskardpy.middleware.ros2.behavior_tree_config
 import giskardpy.middleware.ros2.exceptions
+import giskardpy.middleware.ros2.giskard
 import giskardpy.middleware.ros2.python_interface
+import giskardpy.middleware.ros2.scripts.iai_robots.hsr.configs
+import giskardpy.middleware.ros2.scripts.iai_robots.pr2.configs
+import giskardpy.middleware.ros2.scripts.iai_robots.stretch.configs
+import giskardpy.middleware.ros2.scripts.iai_robots.tracy.configs
 import giskardpy.middleware.ros2.scripts.tools.interactive_marker
+import giskardpy.middleware.ros2.utils.utils_for_tests
 import giskardpy.model.world_config
 import giskardpy.motion_statechart.binding_policy
 import giskardpy.motion_statechart.context
@@ -481,6 +489,23 @@ class ExperimentsTableDAO_experiments_association(Base, AssociationDataAccessObj
         "ExperimentResultDAO",
         foreign_keys=[target_experimentresultdao_id],
         lazy="selectin",
+    )
+
+
+class GiskardTesterDAO_robot_names_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_18552742813313585395849894661168412239528432174761485585780336"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_giskardtesterdao_id: Mapped[int] = mapped_column(
+        ForeignKey("GiskardTesterDAO.database_id")
+    )
+    target_prefixednamedao_id: Mapped[int] = mapped_column(
+        ForeignKey("PrefixedNameDAO.database_id")
+    )
+
+    target: Mapped[PrefixedNameDAO] = relationship(
+        "PrefixedNameDAO", foreign_keys=[target_prefixednamedao_id], lazy="selectin"
     )
 
 
@@ -1388,6 +1413,363 @@ class AbstractRobotPartDAO_joint_states_association(Base, AssociationDataAccessO
     )
 
 
+class Armar7LeftGripperDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_52473966297479325763407014001165013087841955876175365245695237"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_armar7leftgripperdao_id: Mapped[int] = mapped_column(
+        ForeignKey("Armar7LeftGripperDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class Armar7RightGripperDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_10285707631068282692187861247009275348645489432888281947832576"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_armar7rightgripperdao_id: Mapped[int] = mapped_column(
+        ForeignKey("Armar7RightGripperDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class GarmiLeftGripperDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_60273310262056030170197537535079826917610702041333849083230620"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_garmileftgripperdao_id: Mapped[int] = mapped_column(
+        ForeignKey("GarmiLeftGripperDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class GarmiRightGripperDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_31188833934041222650209439616030832105591396393483454421363939"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_garmirightgripperdao_id: Mapped[int] = mapped_column(
+        ForeignKey("GarmiRightGripperDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class HSRBGripperDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_40948258298253748060723648236793311764121155004486566260647204"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_hsrbgripperdao_id: Mapped[int] = mapped_column(
+        ForeignKey("HSRBGripperDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class ICub3LeftHandDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_92239235097681740706994565825288547926978050580398228880088737"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_icub3lefthanddao_id: Mapped[int] = mapped_column(
+        ForeignKey("ICub3LeftHandDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class ICub3RightHandDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_44652165086738508628782860413423811591632364829443277485305392"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_icub3righthanddao_id: Mapped[int] = mapped_column(
+        ForeignKey("ICub3RightHandDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class JustinLeftHandDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_65498363856148483578547323323298548619530952195424834327155852"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_justinlefthanddao_id: Mapped[int] = mapped_column(
+        ForeignKey("JustinLeftHandDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class JustinRightHandDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_63553046836864733801431327457360911486130752429197454755382061"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_justinrighthanddao_id: Mapped[int] = mapped_column(
+        ForeignKey("JustinRightHandDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class MMPDresdenGripperDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_89659675888862552619450018333045396361890695285425867392409672"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_mmpdresdengripperdao_id: Mapped[int] = mapped_column(
+        ForeignKey("MMPDresdenGripperDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class PR2LeftGripperDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_10398578253360896993499132466961252933216411982887429087948168"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_pr2leftgripperdao_id: Mapped[int] = mapped_column(
+        ForeignKey("PR2LeftGripperDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class PR2RightGripperDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_37655531818175219819775380022090028106834607796607740352627029"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_pr2rightgripperdao_id: Mapped[int] = mapped_column(
+        ForeignKey("PR2RightGripperDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class StretchGripperDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_69267826047943369584766356427845094747572414792111583809447344"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_stretchgripperdao_id: Mapped[int] = mapped_column(
+        ForeignKey("StretchGripperDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class TiagoLeftGripperDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_78396057981955114231060347945723890890682592084727935816897915"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_tiagoleftgripperdao_id: Mapped[int] = mapped_column(
+        ForeignKey("TiagoLeftGripperDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class TiagoMujocoLeftGripperDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_81541934876965480147029072709897597406186488469568932037508876"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_tiagomujocoleftgripperdao_id: Mapped[int] = mapped_column(
+        ForeignKey("TiagoMujocoLeftGripperDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class TiagoMujocoRightGripperDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_18304470680888332622776995231661144259809161088295128125020024"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_tiagomujocorightgripperdao_id: Mapped[int] = mapped_column(
+        ForeignKey("TiagoMujocoRightGripperDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class TiagoRightGripperDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_81243023342224156566771603067915166328743694290677762199727460"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_tiagorightgripperdao_id: Mapped[int] = mapped_column(
+        ForeignKey("TiagoRightGripperDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class TracyLeftGripperDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_65935248387538272585596740432486072357943366440861659385122277"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_tracyleftgripperdao_id: Mapped[int] = mapped_column(
+        ForeignKey("TracyLeftGripperDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class TracyRightGripperDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_66228990724298814869278109228793177784458897859021539716640396"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_tracyrightgripperdao_id: Mapped[int] = mapped_column(
+        ForeignKey("TracyRightGripperDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class UnitreeG1LeftHandDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_47216410794461023644879319161103358115850748342394115668298395"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_unitreeg1lefthanddao_id: Mapped[int] = mapped_column(
+        ForeignKey("UnitreeG1LeftHandDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
+class UnitreeG1RightHandDAO_fingers_association(Base, AssociationDataAccessObject):
+    __tablename__ = "_58965550076332192005523479395053678784252181162391413957768613"
+
+    database_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    source_unitreeg1righthanddao_id: Mapped[int] = mapped_column(
+        ForeignKey("UnitreeG1RightHandDAO.database_id")
+    )
+    target_fingerdao_id: Mapped[int] = mapped_column(
+        ForeignKey("FingerDAO.database_id")
+    )
+
+    target: Mapped[FingerDAO] = relationship(
+        "FingerDAO", foreign_keys=[target_fingerdao_id], lazy="selectin"
+    )
+
+
 class HSRBArmDAO_sensors_association(Base, AssociationDataAccessObject):
     __tablename__ = "_10496932630927257261783792073339671637701412416029376491417600"
 
@@ -2248,6 +2630,63 @@ class BaseConstraintDAO(Base, DataAccessObject[giskardpy.qp.constraint.BaseConst
     }
 
 
+class BehaviorTreeConfigDAO(
+    Base,
+    DataAccessObject[giskardpy.middleware.ros2.behavior_tree_config.BehaviorTreeConfig],
+):
+    __tablename__ = "BehaviorTreeConfigDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    tree_tick_rate: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+    debug_mode: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
+    add_gantt_chart_plotter: Mapped[builtins.bool] = mapped_column(
+        use_existing_column=True
+    )
+    add_goal_graph_plotter: Mapped[builtins.bool] = mapped_column(
+        use_existing_column=True
+    )
+    add_trajectory_plotter: Mapped[builtins.bool] = mapped_column(
+        use_existing_column=True
+    )
+    add_debug_trajectory_plotter: Mapped[builtins.bool] = mapped_column(
+        use_existing_column=True
+    )
+    add_debug_marker_publisher: Mapped[builtins.bool] = mapped_column(
+        use_existing_column=True
+    )
+    add_trajectory_visualizer: Mapped[builtins.bool] = mapped_column(
+        use_existing_column=True
+    )
+    add_debug_trajectory_visualizer: Mapped[builtins.bool] = mapped_column(
+        use_existing_column=True
+    )
+
+    polymorphic_type: Mapped[str] = mapped_column(
+        String(255), nullable=False, use_existing_column=True
+    )
+
+    add_qp_data_publisher_id: Mapped[int] = mapped_column(
+        ForeignKey("QPDataPublisherConfigDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+
+    add_qp_data_publisher: Mapped[QPDataPublisherConfigDAO] = relationship(
+        "QPDataPublisherConfigDAO",
+        uselist=False,
+        foreign_keys=[add_qp_data_publisher_id],
+        post_update=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_on": "polymorphic_type",
+        "polymorphic_identity": "BehaviorTreeConfigDAO",
+    }
+
+
 class BehaviourQueryDAO(Base, DataAccessObject[experiments.querying.BehaviourQuery]):
     __tablename__ = "BehaviourQueryDAO"
 
@@ -2304,6 +2743,25 @@ class CaseReasonerDAO(
     model_directory: Mapped[builtins.str] = mapped_column(
         sqlalchemy.sql.sqltypes.Text, use_existing_column=True
     )
+
+
+class ClosedLoopBTConfigDAO(
+    BehaviorTreeConfigDAO,
+    DataAccessObject[giskardpy.middleware.ros2.behavior_tree_config.ClosedLoopBTConfig],
+):
+    __tablename__ = "ClosedLoopBTConfigDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(BehaviorTreeConfigDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "ClosedLoopBTConfigDAO",
+        "inherit_condition": database_id == BehaviorTreeConfigDAO.database_id,
+        "polymorphic_load": "selectin",
+    }
 
 
 class ClosestPointsDAO(
@@ -4625,6 +5083,80 @@ class GadgetDAO(
     )
 
 
+class GiskardDAO(Base, DataAccessObject[giskardpy.middleware.ros2.giskard.Giskard]):
+    __tablename__ = "GiskardDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    world_config_id: Mapped[int] = mapped_column(
+        ForeignKey("WorldConfigDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+    behavior_tree_config_id: Mapped[int] = mapped_column(
+        ForeignKey("BehaviorTreeConfigDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+    qp_controller_config_id: Mapped[int] = mapped_column(
+        ForeignKey("QPControllerConfigDAO.database_id", use_alter=True),
+        nullable=True,
+        use_existing_column=True,
+    )
+
+    world_config: Mapped[WorldConfigDAO] = relationship(
+        "WorldConfigDAO",
+        uselist=False,
+        foreign_keys=[world_config_id],
+        post_update=True,
+    )
+    behavior_tree_config: Mapped[BehaviorTreeConfigDAO] = relationship(
+        "BehaviorTreeConfigDAO",
+        uselist=False,
+        foreign_keys=[behavior_tree_config_id],
+        post_update=True,
+    )
+    qp_controller_config: Mapped[QPControllerConfigDAO] = relationship(
+        "QPControllerConfigDAO",
+        uselist=False,
+        foreign_keys=[qp_controller_config_id],
+        post_update=True,
+    )
+
+
+class GiskardTesterDAO(
+    Base,
+    DataAccessObject[giskardpy.middleware.ros2.utils.utils_for_tests.GiskardTester],
+):
+    __tablename__ = "GiskardTesterDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    total_time_spend_giskarding: Mapped[builtins.int] = mapped_column(
+        use_existing_column=True
+    )
+    total_time_spend_moving: Mapped[builtins.int] = mapped_column(
+        use_existing_column=True
+    )
+    default_env_name: Mapped[typing.Optional[builtins.str]] = mapped_column(
+        sqlalchemy.sql.sqltypes.Text, use_existing_column=True
+    )
+
+    robot_names: Mapped[builtins.list[GiskardTesterDAO_robot_names_association]] = (
+        relationship(
+            "GiskardTesterDAO_robot_names_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[GiskardTesterDAO_robot_names_association.source_giskardtesterdao_id]",
+            lazy="selectin",
+        )
+    )
+
+
 class GiskardWrapperDAO(
     Base, DataAccessObject[giskardpy.middleware.ros2.python_interface.GiskardWrapper]
 ):
@@ -5751,6 +6283,43 @@ class MJCFParserDAO(
     prefix: Mapped[typing.Optional[builtins.str]] = mapped_column(
         sqlalchemy.sql.sqltypes.Text, use_existing_column=True
     )
+
+
+class MaintainabilityResultDAO(
+    ExperimentResultDAO,
+    DataAccessObject[
+        experiments.ormatic_experiments.maintainability.MaintainabilityResult
+    ],
+):
+    __tablename__ = "MaintainabilityResultDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(ExperimentResultDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    maintainability_index: Mapped[builtins.float] = mapped_column(
+        use_existing_column=True
+    )
+    maintainability_rank: Mapped[builtins.str] = mapped_column(
+        sqlalchemy.sql.sqltypes.Text, use_existing_column=True
+    )
+    mapped_classes: Mapped[builtins.int] = mapped_column(use_existing_column=True)
+    alternative_mappings: Mapped[builtins.int] = mapped_column(use_existing_column=True)
+    maintained_lines_of_code: Mapped[builtins.int] = mapped_column(
+        use_existing_column=True
+    )
+    generated_lines_of_code: Mapped[builtins.int] = mapped_column(
+        use_existing_column=True
+    )
+    ratio: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+
+    __mapper_args__ = {
+        "polymorphic_identity": "MaintainabilityResultDAO",
+        "inherit_condition": database_id == ExperimentResultDAO.database_id,
+        "polymorphic_load": "selectin",
+    }
 
 
 class MaxAvoidedCollisionsRuleDAO(
@@ -9349,6 +9918,25 @@ class OpenActionDAO(
     __mapper_args__ = {
         "polymorphic_identity": "OpenActionDAO",
         "inherit_condition": database_id == ActionDescriptionDAO.database_id,
+        "polymorphic_load": "selectin",
+    }
+
+
+class OpenLoopBTConfigDAO(
+    BehaviorTreeConfigDAO,
+    DataAccessObject[giskardpy.middleware.ros2.behavior_tree_config.OpenLoopBTConfig],
+):
+    __tablename__ = "OpenLoopBTConfigDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(BehaviorTreeConfigDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "OpenLoopBTConfigDAO",
+        "inherit_condition": database_id == BehaviorTreeConfigDAO.database_id,
         "polymorphic_load": "selectin",
     }
 
@@ -15359,6 +15947,27 @@ class SphereToRos2ConverterDAO(
     }
 
 
+class StandAloneBTConfigDAO(
+    BehaviorTreeConfigDAO,
+    DataAccessObject[giskardpy.middleware.ros2.behavior_tree_config.StandAloneBTConfig],
+):
+    __tablename__ = "StandAloneBTConfigDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(BehaviorTreeConfigDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    publish_world_state: Mapped[builtins.bool] = mapped_column(use_existing_column=True)
+
+    __mapper_args__ = {
+        "polymorphic_identity": "StandAloneBTConfigDAO",
+        "inherit_condition": database_id == BehaviorTreeConfigDAO.database_id,
+        "polymorphic_load": "selectin",
+    }
+
+
 class StateDAO(
     Base, DataAccessObject[giskardpy.motion_statechart.motion_statechart.State]
 ):
@@ -20428,6 +21037,16 @@ class Armar7LeftGripperDAO(
         use_existing_column=True,
     )
 
+    fingers: Mapped[builtins.list[Armar7LeftGripperDAO_fingers_association]] = (
+        relationship(
+            "Armar7LeftGripperDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[Armar7LeftGripperDAO_fingers_association.source_armar7leftgripperdao_id]",
+            lazy="selectin",
+        )
+    )
+
     __mapper_args__ = {
         "polymorphic_identity": "Armar7LeftGripperDAO",
         "inherit_condition": database_id == EndEffectorDAO.database_id,
@@ -20445,6 +21064,16 @@ class Armar7RightGripperDAO(
         ForeignKey(EndEffectorDAO.database_id),
         primary_key=True,
         use_existing_column=True,
+    )
+
+    fingers: Mapped[builtins.list[Armar7RightGripperDAO_fingers_association]] = (
+        relationship(
+            "Armar7RightGripperDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[Armar7RightGripperDAO_fingers_association.source_armar7rightgripperdao_id]",
+            lazy="selectin",
+        )
     )
 
     __mapper_args__ = {
@@ -20466,6 +21095,16 @@ class GarmiLeftGripperDAO(
         use_existing_column=True,
     )
 
+    fingers: Mapped[builtins.list[GarmiLeftGripperDAO_fingers_association]] = (
+        relationship(
+            "GarmiLeftGripperDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[GarmiLeftGripperDAO_fingers_association.source_garmileftgripperdao_id]",
+            lazy="selectin",
+        )
+    )
+
     __mapper_args__ = {
         "polymorphic_identity": "GarmiLeftGripperDAO",
         "inherit_condition": database_id == EndEffectorDAO.database_id,
@@ -20483,6 +21122,16 @@ class GarmiRightGripperDAO(
         ForeignKey(EndEffectorDAO.database_id),
         primary_key=True,
         use_existing_column=True,
+    )
+
+    fingers: Mapped[builtins.list[GarmiRightGripperDAO_fingers_association]] = (
+        relationship(
+            "GarmiRightGripperDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[GarmiRightGripperDAO_fingers_association.source_garmirightgripperdao_id]",
+            lazy="selectin",
+        )
     )
 
     __mapper_args__ = {
@@ -20503,6 +21152,14 @@ class HSRBGripperDAO(
         use_existing_column=True,
     )
 
+    fingers: Mapped[builtins.list[HSRBGripperDAO_fingers_association]] = relationship(
+        "HSRBGripperDAO_fingers_association",
+        collection_class=builtins.list,
+        cascade="all, delete-orphan",
+        foreign_keys="[HSRBGripperDAO_fingers_association.source_hsrbgripperdao_id]",
+        lazy="selectin",
+    )
+
     __mapper_args__ = {
         "polymorphic_identity": "HSRBGripperDAO",
         "inherit_condition": database_id == EndEffectorDAO.database_id,
@@ -20519,6 +21176,14 @@ class ICub3LeftHandDAO(
         ForeignKey(EndEffectorDAO.database_id),
         primary_key=True,
         use_existing_column=True,
+    )
+
+    fingers: Mapped[builtins.list[ICub3LeftHandDAO_fingers_association]] = relationship(
+        "ICub3LeftHandDAO_fingers_association",
+        collection_class=builtins.list,
+        cascade="all, delete-orphan",
+        foreign_keys="[ICub3LeftHandDAO_fingers_association.source_icub3lefthanddao_id]",
+        lazy="selectin",
     )
 
     __mapper_args__ = {
@@ -20539,6 +21204,16 @@ class ICub3RightHandDAO(
         use_existing_column=True,
     )
 
+    fingers: Mapped[builtins.list[ICub3RightHandDAO_fingers_association]] = (
+        relationship(
+            "ICub3RightHandDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[ICub3RightHandDAO_fingers_association.source_icub3righthanddao_id]",
+            lazy="selectin",
+        )
+    )
+
     __mapper_args__ = {
         "polymorphic_identity": "ICub3RightHandDAO",
         "inherit_condition": database_id == EndEffectorDAO.database_id,
@@ -20555,6 +21230,16 @@ class JustinLeftHandDAO(
         ForeignKey(EndEffectorDAO.database_id),
         primary_key=True,
         use_existing_column=True,
+    )
+
+    fingers: Mapped[builtins.list[JustinLeftHandDAO_fingers_association]] = (
+        relationship(
+            "JustinLeftHandDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[JustinLeftHandDAO_fingers_association.source_justinlefthanddao_id]",
+            lazy="selectin",
+        )
     )
 
     __mapper_args__ = {
@@ -20576,6 +21261,16 @@ class JustinRightHandDAO(
         use_existing_column=True,
     )
 
+    fingers: Mapped[builtins.list[JustinRightHandDAO_fingers_association]] = (
+        relationship(
+            "JustinRightHandDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[JustinRightHandDAO_fingers_association.source_justinrighthanddao_id]",
+            lazy="selectin",
+        )
+    )
+
     __mapper_args__ = {
         "polymorphic_identity": "JustinRightHandDAO",
         "inherit_condition": database_id == EndEffectorDAO.database_id,
@@ -20593,6 +21288,16 @@ class MMPDresdenGripperDAO(
         ForeignKey(EndEffectorDAO.database_id),
         primary_key=True,
         use_existing_column=True,
+    )
+
+    fingers: Mapped[builtins.list[MMPDresdenGripperDAO_fingers_association]] = (
+        relationship(
+            "MMPDresdenGripperDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[MMPDresdenGripperDAO_fingers_association.source_mmpdresdengripperdao_id]",
+            lazy="selectin",
+        )
     )
 
     __mapper_args__ = {
@@ -20613,6 +21318,16 @@ class PR2LeftGripperDAO(
         use_existing_column=True,
     )
 
+    fingers: Mapped[builtins.list[PR2LeftGripperDAO_fingers_association]] = (
+        relationship(
+            "PR2LeftGripperDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[PR2LeftGripperDAO_fingers_association.source_pr2leftgripperdao_id]",
+            lazy="selectin",
+        )
+    )
+
     __mapper_args__ = {
         "polymorphic_identity": "PR2LeftGripperDAO",
         "inherit_condition": database_id == EndEffectorDAO.database_id,
@@ -20629,6 +21344,16 @@ class PR2RightGripperDAO(
         ForeignKey(EndEffectorDAO.database_id),
         primary_key=True,
         use_existing_column=True,
+    )
+
+    fingers: Mapped[builtins.list[PR2RightGripperDAO_fingers_association]] = (
+        relationship(
+            "PR2RightGripperDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[PR2RightGripperDAO_fingers_association.source_pr2rightgripperdao_id]",
+            lazy="selectin",
+        )
     )
 
     __mapper_args__ = {
@@ -20650,6 +21375,16 @@ class StretchGripperDAO(
         use_existing_column=True,
     )
 
+    fingers: Mapped[builtins.list[StretchGripperDAO_fingers_association]] = (
+        relationship(
+            "StretchGripperDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[StretchGripperDAO_fingers_association.source_stretchgripperdao_id]",
+            lazy="selectin",
+        )
+    )
+
     __mapper_args__ = {
         "polymorphic_identity": "StretchGripperDAO",
         "inherit_condition": database_id == EndEffectorDAO.database_id,
@@ -20667,6 +21402,16 @@ class TiagoLeftGripperDAO(
         ForeignKey(EndEffectorDAO.database_id),
         primary_key=True,
         use_existing_column=True,
+    )
+
+    fingers: Mapped[builtins.list[TiagoLeftGripperDAO_fingers_association]] = (
+        relationship(
+            "TiagoLeftGripperDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[TiagoLeftGripperDAO_fingers_association.source_tiagoleftgripperdao_id]",
+            lazy="selectin",
+        )
     )
 
     __mapper_args__ = {
@@ -20688,6 +21433,16 @@ class TiagoMujocoLeftGripperDAO(
         use_existing_column=True,
     )
 
+    fingers: Mapped[builtins.list[TiagoMujocoLeftGripperDAO_fingers_association]] = (
+        relationship(
+            "TiagoMujocoLeftGripperDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[TiagoMujocoLeftGripperDAO_fingers_association.source_tiagomujocoleftgripperdao_id]",
+            lazy="selectin",
+        )
+    )
+
     __mapper_args__ = {
         "polymorphic_identity": "TiagoMujocoLeftGripperDAO",
         "inherit_condition": database_id == EndEffectorDAO.database_id,
@@ -20705,6 +21460,16 @@ class TiagoMujocoRightGripperDAO(
         ForeignKey(EndEffectorDAO.database_id),
         primary_key=True,
         use_existing_column=True,
+    )
+
+    fingers: Mapped[builtins.list[TiagoMujocoRightGripperDAO_fingers_association]] = (
+        relationship(
+            "TiagoMujocoRightGripperDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[TiagoMujocoRightGripperDAO_fingers_association.source_tiagomujocorightgripperdao_id]",
+            lazy="selectin",
+        )
     )
 
     __mapper_args__ = {
@@ -20726,6 +21491,16 @@ class TiagoRightGripperDAO(
         use_existing_column=True,
     )
 
+    fingers: Mapped[builtins.list[TiagoRightGripperDAO_fingers_association]] = (
+        relationship(
+            "TiagoRightGripperDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[TiagoRightGripperDAO_fingers_association.source_tiagorightgripperdao_id]",
+            lazy="selectin",
+        )
+    )
+
     __mapper_args__ = {
         "polymorphic_identity": "TiagoRightGripperDAO",
         "inherit_condition": database_id == EndEffectorDAO.database_id,
@@ -20743,6 +21518,16 @@ class TracyLeftGripperDAO(
         ForeignKey(EndEffectorDAO.database_id),
         primary_key=True,
         use_existing_column=True,
+    )
+
+    fingers: Mapped[builtins.list[TracyLeftGripperDAO_fingers_association]] = (
+        relationship(
+            "TracyLeftGripperDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[TracyLeftGripperDAO_fingers_association.source_tracyleftgripperdao_id]",
+            lazy="selectin",
+        )
     )
 
     __mapper_args__ = {
@@ -20764,6 +21549,16 @@ class TracyRightGripperDAO(
         use_existing_column=True,
     )
 
+    fingers: Mapped[builtins.list[TracyRightGripperDAO_fingers_association]] = (
+        relationship(
+            "TracyRightGripperDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[TracyRightGripperDAO_fingers_association.source_tracyrightgripperdao_id]",
+            lazy="selectin",
+        )
+    )
+
     __mapper_args__ = {
         "polymorphic_identity": "TracyRightGripperDAO",
         "inherit_condition": database_id == EndEffectorDAO.database_id,
@@ -20783,6 +21578,16 @@ class UnitreeG1LeftHandDAO(
         use_existing_column=True,
     )
 
+    fingers: Mapped[builtins.list[UnitreeG1LeftHandDAO_fingers_association]] = (
+        relationship(
+            "UnitreeG1LeftHandDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[UnitreeG1LeftHandDAO_fingers_association.source_unitreeg1lefthanddao_id]",
+            lazy="selectin",
+        )
+    )
+
     __mapper_args__ = {
         "polymorphic_identity": "UnitreeG1LeftHandDAO",
         "inherit_condition": database_id == EndEffectorDAO.database_id,
@@ -20800,6 +21605,16 @@ class UnitreeG1RightHandDAO(
         ForeignKey(EndEffectorDAO.database_id),
         primary_key=True,
         use_existing_column=True,
+    )
+
+    fingers: Mapped[builtins.list[UnitreeG1RightHandDAO_fingers_association]] = (
+        relationship(
+            "UnitreeG1RightHandDAO_fingers_association",
+            collection_class=builtins.list,
+            cascade="all, delete-orphan",
+            foreign_keys="[UnitreeG1RightHandDAO_fingers_association.source_unitreeg1righthanddao_id]",
+            lazy="selectin",
+        )
     )
 
     __mapper_args__ = {
@@ -30071,6 +30886,111 @@ class WorldWithOmniDriveRobotDAO(
     __mapper_args__ = {
         "polymorphic_identity": "WorldWithOmniDriveRobotDAO",
         "inherit_condition": database_id == WorldConfigDAO.database_id,
+        "polymorphic_load": "selectin",
+    }
+
+
+class WorldWithHSRConfigDAO(
+    WorldWithOmniDriveRobotDAO,
+    DataAccessObject[
+        giskardpy.middleware.ros2.scripts.iai_robots.hsr.configs.WorldWithHSRConfig
+    ],
+):
+    __tablename__ = "WorldWithHSRConfigDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(WorldWithOmniDriveRobotDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "WorldWithHSRConfigDAO",
+        "inherit_condition": database_id == WorldWithOmniDriveRobotDAO.database_id,
+        "polymorphic_load": "selectin",
+    }
+
+
+class WorldWithPR2ConfigDAO(
+    WorldWithOmniDriveRobotDAO,
+    DataAccessObject[
+        giskardpy.middleware.ros2.scripts.iai_robots.pr2.configs.WorldWithPR2Config
+    ],
+):
+    __tablename__ = "WorldWithPR2ConfigDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(WorldWithOmniDriveRobotDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "WorldWithPR2ConfigDAO",
+        "inherit_condition": database_id == WorldWithOmniDriveRobotDAO.database_id,
+        "polymorphic_load": "selectin",
+    }
+
+
+class WorldWithStretchConfigDAO(
+    WorldWithOmniDriveRobotDAO,
+    DataAccessObject[
+        giskardpy.middleware.ros2.scripts.iai_robots.stretch.configs.WorldWithStretchConfig
+    ],
+):
+    __tablename__ = "WorldWithStretchConfigDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(WorldWithOmniDriveRobotDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "WorldWithStretchConfigDAO",
+        "inherit_condition": database_id == WorldWithOmniDriveRobotDAO.database_id,
+        "polymorphic_load": "selectin",
+    }
+
+
+class WorldWithStretchConfigDiffDriveDAO(
+    WorldWithDiffDriveRobotDAO,
+    DataAccessObject[
+        giskardpy.middleware.ros2.scripts.iai_robots.stretch.configs.WorldWithStretchConfigDiffDrive
+    ],
+):
+    __tablename__ = "WorldWithStretchConfigDiffDriveDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(WorldWithDiffDriveRobotDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "WorldWithStretchConfigDiffDriveDAO",
+        "inherit_condition": database_id == WorldWithDiffDriveRobotDAO.database_id,
+        "polymorphic_load": "selectin",
+    }
+
+
+class WorldWithTracyConfigDAO(
+    WorldWithFixedRobotDAO,
+    DataAccessObject[
+        giskardpy.middleware.ros2.scripts.iai_robots.tracy.configs.WorldWithTracyConfig
+    ],
+):
+    __tablename__ = "WorldWithTracyConfigDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(WorldWithFixedRobotDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "WorldWithTracyConfigDAO",
+        "inherit_condition": database_id == WorldWithFixedRobotDAO.database_id,
         "polymorphic_load": "selectin",
     }
 
