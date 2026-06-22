@@ -23,7 +23,7 @@ class MaxManipulability(Task):
     """
     The tip of the kinematic chain whose manipulability is maximized.
     """
-    m_threshold: float = field(default=0.5, kw_only=True)
+    manipulability_threshold: float = field(default=0.5, kw_only=True)
     """
     Manipulability value the goal drives the measure towards; also defines the observation threshold.
     """
@@ -42,11 +42,13 @@ class MaxManipulability(Task):
 
         artifacts.geometry.add_position_constraint(
             reference_velocity=1,
-            expr_goal=self.m_threshold,
+            expr_goal=self.manipulability_threshold,
             quadratic_weight=1,
             expr_current=manipulability,
             name=self.name,
         )
 
-        artifacts.observation = sm.abs(self.m_threshold - manipulability) <= 0.01
+        artifacts.observation = (
+            sm.abs(self.manipulability_threshold - manipulability) <= 0.01
+        )
         return artifacts
