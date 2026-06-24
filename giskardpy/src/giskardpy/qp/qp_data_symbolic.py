@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import krrood.symbolic_math.symbolic_math as sm
+from giskardpy.qp import qp_controller_config
 from giskardpy.qp.dof_limits import QuadraticProgramDegreeOfFreedomLimits
 from giskardpy.qp.enforcement_strategy import (
     EnforcementStrategy,
@@ -178,7 +179,7 @@ class QPDataSymbolic:
 
         system_dynamics_strategy = SystemDynamicsStrategy(
             degrees_of_freedom=self.degrees_of_freedom,
-            config=self.qp_controller_config,
+            qp_controller_config=self.qp_controller_config,
             constraints=[],
         )
         equality_matrix_degrees_of_freedom.append(
@@ -194,7 +195,7 @@ class QPDataSymbolic:
         ) in self.constraint_collection.get_equality_constraint_blocks().items():
             strategy = enforcement_strategy(
                 degrees_of_freedom=self.degrees_of_freedom,
-                config=self.qp_controller_config,
+                qp_controller_config=self.qp_controller_config,
                 constraints=constraints,
             )
             matrix, slack_matrix = self._append_slack_block(
@@ -210,7 +211,7 @@ class QPDataSymbolic:
         ) in self.constraint_collection.get_inequality_constraint_blocks().items():
             strategy = enforcement_strategy(
                 degrees_of_freedom=self.degrees_of_freedom,
-                config=self.qp_controller_config,
+                qp_controller_config=self.qp_controller_config,
                 constraints=constraints,
             )
             matrix, slack_matrix = self._append_slack_block(

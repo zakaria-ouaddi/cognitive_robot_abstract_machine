@@ -58,7 +58,7 @@ class EnforcementStrategy(ABC):
     Constraints enforced by this strategy.
     """
 
-    config: QPControllerConfig
+    qp_controller_config: QPControllerConfig
     """
     Controller configuration providing horizon length and time step.
     """
@@ -99,14 +99,18 @@ class EnforcementStrategy(ABC):
         """
         Number of velocity decision variable columns across the horizon.
         """
-        return self.number_of_free_variables * (self.config.prediction_horizon - 2)
+        return self.number_of_free_variables * (
+            self.qp_controller_config.prediction_horizon - 2
+        )
 
     @property
     def number_of_jerk_columns(self) -> int:
         """
         Number of jerk decision variable columns across the horizon.
         """
-        return self.number_of_free_variables * self.config.prediction_horizon
+        return (
+            self.number_of_free_variables * self.qp_controller_config.prediction_horizon
+        )
 
     @property
     def position_variables(self) -> Vector:
@@ -217,10 +221,10 @@ class IntegralStrategy(ExpressionEnforcementStrategy):
             sm.Vector([c.expression for c in self.constraints]).jacobian(
                 variables=self.position_variables
             )
-            * self.config.mpc_dt
+            * self.qp_controller_config.mpc_dt
         )
         return sm.hstack(
-            [jacobian for _ in range(self.config.control_horizon)]
+            [jacobian for _ in range(self.qp_controller_config.control_horizon)]
             + [sm.Matrix.zeros(jacobian.shape[0], self.number_of_jerk_columns)]
         )
 
@@ -230,7 +234,9 @@ class IntegralStrategy(ExpressionEnforcementStrategy):
         """
         if len(self.constraints) == 0:
             return sm.Matrix()
-        return sm.Matrix.diag([self.config.mpc_dt for _ in self.constraints])
+        return sm.Matrix.diag(
+            [self.qp_controller_config.mpc_dt for _ in self.constraints]
+        )
 
     def create_slack_variables(self) -> DirectLimits:
         """
@@ -245,7 +251,7 @@ class IntegralStrategy(ExpressionEnforcementStrategy):
                     normalize_slack_weight(
                         c.quadratic_weight,
                         c.normalization_factor,
-                        self.config.control_horizon,
+                        self.qp_controller_config.control_horizon,
                     )
                     for c in self.constraints
                 ]
@@ -255,7 +261,7 @@ class IntegralStrategy(ExpressionEnforcementStrategy):
                     normalize_slack_weight(
                         c.linear_weight,
                         c.normalization_factor,
-                        self.config.control_horizon,
+                        self.qp_controller_config.control_horizon,
                     )
                     for c in self.constraints
                 ]
@@ -303,9 +309,9 @@ class IntegralStrategy(ExpressionEnforcementStrategy):
             [
                 self.capped_bound(
                     bounds_getter(c),
-                    self.config.mpc_dt,
+                    self.qp_controller_config.mpc_dt,
                     c.normalization_factor,
-                    self.config.control_horizon,
+                    self.qp_controller_config.control_horizon,
                 )
                 for c in self.constraints
             ]
@@ -355,7 +361,7 @@ class VelocityStrategy(ExpressionEnforcementStrategy):
         horizon, padding the jerk columns with zeros.
         """
         number_of_vel_rows = len(self.constraints) * (
-            self.config.prediction_horizon - 2
+            self.qp_controller_config.prediction_horizon - 2
         )
         if number_of_vel_rows == 0:
             return sm.Matrix()
@@ -363,11 +369,11 @@ class VelocityStrategy(ExpressionEnforcementStrategy):
             sm.Vector([c.expression for c in self.constraints]).jacobian(
                 variables=self.position_variables
             )
-            * self.config.mpc_dt
+            * self.qp_controller_config.mpc_dt
         )
-        missing_variables = self.config.max_derivative - 1
-        eye = sm.Matrix.eye(self.config.prediction_horizon)[
-            :-2, : self.config.prediction_horizon - missing_variables
+        missing_variables = self.qp_controller_config.max_derivative - 1
+        eye = sm.Matrix.eye(self.qp_controller_config.prediction_horizon)[
+            :-2, : self.qp_controller_config.prediction_horizon - missing_variables
         ]
         J_vel_limit_block = eye.kron(jacobian)
 
@@ -387,9 +393,9 @@ class VelocityStrategy(ExpressionEnforcementStrategy):
         if len(self.constraints) == 0:
             return sm.Matrix()
         num_slack_variables = sum(
-            self.config.prediction_horizon - 2 for c in self.constraints
+            self.qp_controller_config.prediction_horizon - 2 for c in self.constraints
         )
-        return sm.Matrix.eye(num_slack_variables) * self.config.mpc_dt
+        return sm.Matrix.eye(num_slack_variables) * self.qp_controller_config.mpc_dt
 
     def create_slack_variables(self) -> DirectLimits:
         """
@@ -400,7 +406,7 @@ class VelocityStrategy(ExpressionEnforcementStrategy):
         quadratic_weights = []
         linear_weights = []
         names = []
-        for t in range(self.config.control_horizon):
+        for t in range(self.qp_controller_config.control_horizon):
             for c in self.constraints:
                 lower_slack.append(c.lower_slack_limit)
                 upper_slack.append(c.upper_slack_limit)
@@ -424,9 +430,9 @@ class VelocityStrategy(ExpressionEnforcementStrategy):
         Builds the bounds, one per constraint and control step.
         """
         bounds = []
-        for _ in range(self.config.control_horizon):
+        for _ in range(self.qp_controller_config.control_horizon):
             for c in self.constraints:
-                bounds.append(bounds_getter(c) * self.config.mpc_dt)
+                bounds.append(bounds_getter(c) * self.qp_controller_config.mpc_dt)
         return Vector(bounds)
 
     def create_names(self) -> list[str]:
@@ -434,7 +440,7 @@ class VelocityStrategy(ExpressionEnforcementStrategy):
         Creates a name per constraint and control step, prefixed with the time step.
         """
         names = []
-        for t in range(self.config.control_horizon):
+        for t in range(self.qp_controller_config.control_horizon):
             for c in self.constraints:
                 names.append(f"t{t:03}/{c.name}")
         return names
@@ -504,12 +510,12 @@ class SystemDynamicsStrategy(EnforcementStrategy):
                 self.number_of_velocity_columns + self.number_of_jerk_columns,
             )
         )
-        for horizon_index in range(self.config.prediction_horizon):
+        for horizon_index in range(self.qp_controller_config.prediction_horizon):
             row_start = horizon_index * self.number_of_free_variables
             row_end = (horizon_index + 1) * self.number_of_free_variables
 
             # velocity at k
-            if horizon_index < self.config.prediction_horizon - 2:
+            if horizon_index < self.qp_controller_config.prediction_horizon - 2:
                 col_start = horizon_index * self.number_of_free_variables
                 col_end = (horizon_index + 1) * self.number_of_free_variables
                 matrix[row_start:row_end, col_start:col_end] -= np.eye(
@@ -517,7 +523,7 @@ class SystemDynamicsStrategy(EnforcementStrategy):
                 )
 
             # velocity at k-1
-            if 0 < horizon_index < self.config.prediction_horizon - 1:
+            if 0 < horizon_index < self.qp_controller_config.prediction_horizon - 1:
                 col_start = (horizon_index - 1) * self.number_of_free_variables
                 col_end = horizon_index * self.number_of_free_variables
                 matrix[row_start:row_end, col_start:col_end] += 2 * np.eye(
@@ -558,7 +564,7 @@ class SystemDynamicsStrategy(EnforcementStrategy):
         Creates a name for every velocity/jerk integration row.
         """
         names = []
-        for k in range(self.config.prediction_horizon):
+        for k in range(self.qp_controller_config.prediction_horizon):
             for dof in self.degrees_of_freedom:
                 names.append(f"{dof.name} k_{k} vel/jerk link")
         return names
@@ -569,7 +575,8 @@ class SystemDynamicsStrategy(EnforcementStrategy):
         """
         res = sm.Vector.zeros(self.number_of_jerk_columns)
         res[: self.number_of_free_variables] = (
-            -self.velocity_variables - self.acceleration_variables * self.config.mpc_dt
+            -self.velocity_variables
+            - self.acceleration_variables * self.qp_controller_config.mpc_dt
         )
         res[self.number_of_free_variables : self.number_of_free_variables * 2] = (
             self.velocity_variables

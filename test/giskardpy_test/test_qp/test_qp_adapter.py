@@ -158,7 +158,7 @@ def test_mpc_model(prismatic_bot2):
     mpc_model = SystemDynamicsStrategy(
         degrees_of_freedom=prismatic_bot2.active_degrees_of_freedom,
         constraints=[],
-        config=QPControllerConfig(
+        qp_controller_config=QPControllerConfig(
             target_frequency=target_frequency, prediction_horizon=prediction_horizon
         ),
     )
@@ -247,7 +247,7 @@ def test_integral_strategy_with_equality_constraints(prismatic_bot2):
     eq_constraint_model = IntegralStrategy(
         degrees_of_freedom=prismatic_bot2.active_degrees_of_freedom,
         constraints=constraints.equality_constraints,
-        config=QPControllerConfig(
+        qp_controller_config=QPControllerConfig(
             target_frequency=target_frequency, prediction_horizon=prediction_horizon
         ),
     )
@@ -280,7 +280,7 @@ def test_integral_strategy_with_inequality_constraints(prismatic_bot2):
     ineq_constraint_model = IntegralStrategy(
         degrees_of_freedom=prismatic_bot2.active_degrees_of_freedom,
         constraints=constraints.inequality_constraints,
-        config=QPControllerConfig(
+        qp_controller_config=QPControllerConfig(
             target_frequency=target_frequency, prediction_horizon=prediction_horizon
         ),
     )
@@ -321,7 +321,7 @@ def test_velocity_strategy_builds_inequality_blocks(prismatic_bot2):
     velocity_strategy = VelocityStrategy(
         degrees_of_freedom=prismatic_bot2.active_degrees_of_freedom,
         constraints=constraints.inequality_constraints,
-        config=QPControllerConfig(
+        qp_controller_config=QPControllerConfig(
             target_frequency=target_frequency, prediction_horizon=prediction_horizon
         ),
     )
@@ -347,7 +347,9 @@ def test_inequality_bounds_on_equality_strategy_raise(prismatic_bot2):
     strategy = IntegralStrategy(
         degrees_of_freedom=prismatic_bot2.active_degrees_of_freedom,
         constraints=constraints.equality_constraints,
-        config=QPControllerConfig(target_frequency=20, prediction_horizon=10),
+        qp_controller_config=QPControllerConfig(
+            target_frequency=20, prediction_horizon=10
+        ),
     )
     with pytest.raises(ConstraintTypeMismatchError):
         strategy.create_lower_bounds()
@@ -359,14 +361,18 @@ def test_system_dynamics_strategy_is_not_an_expression_strategy(prismatic_bot2):
     strategy = SystemDynamicsStrategy(
         degrees_of_freedom=prismatic_bot2.active_degrees_of_freedom,
         constraints=[],
-        config=QPControllerConfig(target_frequency=20, prediction_horizon=10),
+        qp_controller_config=QPControllerConfig(
+            target_frequency=20, prediction_horizon=10
+        ),
     )
     assert not isinstance(strategy, ExpressionEnforcementStrategy)
     assert isinstance(
         IntegralStrategy(
             degrees_of_freedom=prismatic_bot2.active_degrees_of_freedom,
             constraints=[],
-            config=QPControllerConfig(target_frequency=20, prediction_horizon=10),
+            qp_controller_config=QPControllerConfig(
+                target_frequency=20, prediction_horizon=10
+            ),
         ),
         ExpressionEnforcementStrategy,
     )
