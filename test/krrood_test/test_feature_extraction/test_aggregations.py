@@ -101,7 +101,9 @@ def test_aggregation_count_values(example_scenario):
     aggregation_cls = get_aggregation_class(type(room))
     aggregation_instance = aggregation_cls(instance=room, field_name="objects")
     values = aggregation_instance.apply_mapping()
-    assert values["chair_count"] == SimpleInterval.from_data(1, 4, Bound.CLOSED, Bound.CLOSED)
+    assert values["chair_count"] == SimpleInterval.from_data(
+        1, 4, Bound.CLOSED, Bound.CLOSED
+    )
 
 
 def test_only_marked_methods_are_statistics():
@@ -191,10 +193,7 @@ def test_own_registry_contains_only_directly_defined_methods():
         def derived_stat(self) -> int:
             return 0
 
-    own_names = {
-        f.__name__
-        for f in DerivedAggregations.__dict__["aggregation_registry"].get("items", [])
-    }
+    own_names = {f.__name__ for f in DerivedAggregations.aggregation_registry["items"]}
     assert own_names == {"derived_stat"}
 
     instance = DerivedAggregations(instance=Owner(items=[]), field_name="items")
