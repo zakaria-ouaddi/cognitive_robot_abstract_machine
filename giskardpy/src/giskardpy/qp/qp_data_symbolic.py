@@ -18,6 +18,7 @@ from semantic_digital_twin.world_description.degree_of_freedom import DegreeOfFr
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from giskardpy.qp.constraint import GiskardConstraint
     from giskardpy.qp.qp_controller_config import QPControllerConfig
 
 
@@ -155,10 +156,20 @@ class QPDataSymbolic:
         return strategy.create_matrix(), strategy.create_slack_matrix()
 
     def __post_init__(self):
+        accumulator = self._collect_degree_of_freedom_limits()
+        self._assemble_equality_constraints(accumulator)
+        self._assemble_inequality_constraints(accumulator)
+        self._store_box_constraints(accumulator)
+
+    def _collect_degree_of_freedom_limits(self) -> QPVariableAccumulator:
+        """
+        Creates the variable accumulator seeded with the box bounds, weights, and names of the
+        degree-of-freedom decision variables.
+        """
         direct_limits = QuadraticProgramDegreeOfFreedomLimits.create(
             self.degrees_of_freedom, self.qp_controller_config
         )
-        accumulator = QPVariableAccumulator(
+        return QPVariableAccumulator(
             quadratic_weights=[direct_limits.quadratic_weights],
             linear_weights=[direct_limits.linear_weights],
             box_lower_constraints=[direct_limits.lower_bounds],
@@ -166,94 +177,118 @@ class QPDataSymbolic:
             free_variable_names=list(direct_limits.names),
         )
 
-        inequality_matrix_degrees_of_freedom = []
-        inequality_matrix_slack = []
-        inequality_lower_bounds = []
-        inequality_upper_bounds = []
-        self.inequality_constraint_names = []
-
-        equality_matrix_degrees_of_freedom = []
-        equality_matrix_slack = []
-        equality_bounds = []
-        self.equality_constraint_names = []
-
-        system_dynamics_strategy = SystemDynamicsStrategy(
+    def _instantiate_strategy(
+        self,
+        enforcement_strategy: type[EnforcementStrategy],
+        constraints: list[GiskardConstraint],
+    ) -> EnforcementStrategy:
+        """
+        Instantiates an enforcement strategy for a constraint block with this QP's degrees of
+        freedom and controller configuration.
+        """
+        return enforcement_strategy(
             degrees_of_freedom=self.degrees_of_freedom,
             qp_controller_config=self.qp_controller_config,
-            constraints=[],
+            constraints=constraints,
         )
-        equality_matrix_degrees_of_freedom.append(
-            system_dynamics_strategy.create_matrix()
+
+    def _assemble_equality_constraints(
+        self, accumulator: QPVariableAccumulator
+    ) -> None:
+        """
+        Builds and stores the equality constraint matrices, slack blocks, bounds, and row names,
+        starting with the system dynamics block and followed by the per-strategy equality blocks.
+        """
+        system_dynamics_strategy = self._instantiate_strategy(
+            SystemDynamicsStrategy, []
         )
-        equality_matrix_slack.append(system_dynamics_strategy.create_slack_matrix())
-        equality_bounds.append(system_dynamics_strategy.create_equality_bounds())
-        self.equality_constraint_names.extend(system_dynamics_strategy.create_names())
+        degree_of_freedom_matrices = [system_dynamics_strategy.create_matrix()]
+        slack_matrices = [system_dynamics_strategy.create_slack_matrix()]
+        bounds = [system_dynamics_strategy.create_equality_bounds()]
+        self.equality_constraint_names = list(system_dynamics_strategy.create_names())
 
         for (
             enforcement_strategy,
             constraints,
         ) in self.constraint_collection.get_equality_constraint_blocks().items():
-            strategy = enforcement_strategy(
-                degrees_of_freedom=self.degrees_of_freedom,
-                qp_controller_config=self.qp_controller_config,
-                constraints=constraints,
-            )
+            strategy = self._instantiate_strategy(enforcement_strategy, constraints)
             matrix, slack_matrix = self._append_slack_block(
                 strategy, self.equality_constraint_names, accumulator
             )
-            equality_matrix_degrees_of_freedom.append(matrix)
-            equality_matrix_slack.append(slack_matrix)
-            equality_bounds.append(strategy.create_equality_bounds())
+            degree_of_freedom_matrices.append(matrix)
+            slack_matrices.append(slack_matrix)
+            bounds.append(strategy.create_equality_bounds())
+
+        self.equality_matrix_degrees_of_freedom = sm.vstack(degree_of_freedom_matrices)
+        self.equality_matrix_slack = sm.diag_stack(slack_matrices)
+        self.equality_bounds = sm.concatenate(*bounds)
+
+    def _assemble_inequality_constraints(
+        self, accumulator: QPVariableAccumulator
+    ) -> None:
+        """
+        Builds and stores the inequality constraint matrices, slack blocks, lower/upper bounds,
+        and row names from the per-strategy inequality blocks.
+        """
+        degree_of_freedom_matrices = []
+        slack_matrices = []
+        lower_bounds = []
+        upper_bounds = []
+        self.inequality_constraint_names = []
 
         for (
             enforcement_strategy,
             constraints,
         ) in self.constraint_collection.get_inequality_constraint_blocks().items():
-            strategy = enforcement_strategy(
-                degrees_of_freedom=self.degrees_of_freedom,
-                qp_controller_config=self.qp_controller_config,
-                constraints=constraints,
-            )
+            strategy = self._instantiate_strategy(enforcement_strategy, constraints)
             matrix, slack_matrix = self._append_slack_block(
                 strategy, self.inequality_constraint_names, accumulator
             )
-            inequality_matrix_degrees_of_freedom.append(matrix)
-            inequality_matrix_slack.append(slack_matrix)
-            inequality_lower_bounds.append(strategy.create_lower_bounds())
-            inequality_upper_bounds.append(strategy.create_upper_bounds())
+            degree_of_freedom_matrices.append(matrix)
+            slack_matrices.append(slack_matrix)
+            lower_bounds.append(strategy.create_lower_bounds())
+            upper_bounds.append(strategy.create_upper_bounds())
 
+        self.inequality_matrix_degrees_of_freedom = self._stack_rows(
+            degree_of_freedom_matrices
+        )
+        self.inequality_matrix_slack = self._diagonally_stack(slack_matrices)
+        self.inequality_lower_bounds = self._concatenate_blocks(lower_bounds)
+        self.inequality_upper_bounds = self._concatenate_blocks(upper_bounds)
+
+    def _store_box_constraints(self, accumulator: QPVariableAccumulator) -> None:
+        """
+        Concatenates the accumulated box bounds, weights, and names into the QP's box constraint
+        fields.
+        """
         self.free_variable_names = accumulator.free_variable_names
         self.quadratic_weights = sm.concatenate(*accumulator.quadratic_weights)
         self.linear_weights = sm.concatenate(*accumulator.linear_weights)
         self.box_lower_constraints = sm.concatenate(*accumulator.box_lower_constraints)
         self.box_upper_constraints = sm.concatenate(*accumulator.box_upper_constraints)
-        self.equality_matrix_degrees_of_freedom = sm.vstack(
-            equality_matrix_degrees_of_freedom
-        )
-        self.equality_matrix_slack = sm.diag_stack(equality_matrix_slack)
-        self.equality_bounds = sm.concatenate(*equality_bounds)
 
-        if inequality_matrix_degrees_of_freedom:
-            self.inequality_matrix_degrees_of_freedom = sm.vstack(
-                inequality_matrix_degrees_of_freedom
-            )
-        else:
-            self.inequality_matrix_degrees_of_freedom = sm.Matrix()
+    @staticmethod
+    def _stack_rows(blocks: list[Matrix]) -> Matrix:
+        """
+        Vertically stacks the constraint matrix blocks, returning an empty matrix when there are
+        no blocks.
+        """
+        return sm.vstack(blocks) if blocks else sm.Matrix()
 
-        if inequality_matrix_slack:
-            self.inequality_matrix_slack = sm.diag_stack(inequality_matrix_slack)
-        else:
-            self.inequality_matrix_slack = sm.Matrix()
+    @staticmethod
+    def _diagonally_stack(blocks: list[Matrix]) -> Matrix:
+        """
+        Diagonally stacks the slack matrix blocks, returning an empty matrix when there are no
+        blocks.
+        """
+        return sm.diag_stack(blocks) if blocks else sm.Matrix()
 
-        if inequality_lower_bounds:
-            self.inequality_lower_bounds = sm.concatenate(*inequality_lower_bounds)
-        else:
-            self.inequality_lower_bounds = sm.Vector()
-
-        if inequality_upper_bounds:
-            self.inequality_upper_bounds = sm.concatenate(*inequality_upper_bounds)
-        else:
-            self.inequality_upper_bounds = sm.Vector()
+    @staticmethod
+    def _concatenate_blocks(blocks: list[Vector]) -> Vector:
+        """
+        Concatenates the bound blocks, returning an empty vector when there are no blocks.
+        """
+        return sm.concatenate(*blocks) if blocks else sm.Vector()
 
     def __hash__(self):
         return hash(id(self))
