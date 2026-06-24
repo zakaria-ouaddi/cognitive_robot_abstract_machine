@@ -38,6 +38,7 @@ import semantic_digital_twin.adapters.ros.ros_msg_serializer
 import semantic_digital_twin.adapters.ros.semdt_to_ros2_converters
 import semantic_digital_twin.adapters.ros.tf_publisher
 import semantic_digital_twin.adapters.ros.tfwrapper
+import semantic_digital_twin.adapters.ros.visualization.collision_viz_marker
 import semantic_digital_twin.adapters.ros.visualization.pose_publisher
 import semantic_digital_twin.adapters.ros.visualization.viz_marker
 import semantic_digital_twin.adapters.ros.world_fetcher
@@ -5101,6 +5102,36 @@ class CollisionConsumerDAO(
     __mapper_args__ = {
         "polymorphic_on": "polymorphic_type",
         "polymorphic_identity": "CollisionConsumerDAO",
+    }
+
+
+class CollisionVizMarkerPublisherDAO(
+    CollisionConsumerDAO,
+    DataAccessObject[
+        semantic_digital_twin.adapters.ros.visualization.collision_viz_marker.CollisionVizMarkerPublisher
+    ],
+):
+    __tablename__ = "CollisionVizMarkerPublisherDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(CollisionConsumerDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    topic_name: Mapped[builtins.str] = mapped_column(
+        sqlalchemy.sql.sqltypes.Text, use_existing_column=True
+    )
+    collision_distance_threshold: Mapped[builtins.float] = mapped_column(
+        use_existing_column=True
+    )
+    throttle: Mapped[builtins.int] = mapped_column(use_existing_column=True)
+    line_width: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+
+    __mapper_args__ = {
+        "polymorphic_identity": "CollisionVizMarkerPublisherDAO",
+        "inherit_condition": database_id == CollisionConsumerDAO.database_id,
+        "polymorphic_load": "selectin",
     }
 
 

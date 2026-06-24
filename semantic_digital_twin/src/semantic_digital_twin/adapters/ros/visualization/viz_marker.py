@@ -12,6 +12,9 @@ from visualization_msgs.msg import MarkerArray
 
 from semantic_digital_twin.adapters.ros.msg_converter import SemDTToRos2Converter
 from semantic_digital_twin.adapters.ros.tf_publisher import TFPublisher
+from semantic_digital_twin.adapters.ros.visualization.collision_viz_marker import (
+    CollisionVizMarkerPublisher,
+)
 from semantic_digital_twin.callbacks.callback import ModelChangeCallback
 
 from typing import TYPE_CHECKING
@@ -102,6 +105,18 @@ class VizMarkerPublisher(ModelChangeCallback):
         Launches a tf publisher in conjunction with the VizMarkerPublisher.
         """
         self._tf_publisher = TFPublisher(_world=self._world, node=self.node)
+
+    def with_collision_visualization(self, **kwargs) -> CollisionVizMarkerPublisher:
+        """
+        Launches a publisher for closest-points collision results alongside the
+        VizMarkerPublisher and registers it with the world's collision manager.
+
+        :param kwargs: Forwarded to :class:`CollisionVizMarkerPublisher`.
+        :return: The registered collision visualization publisher.
+        """
+        publisher = CollisionVizMarkerPublisher(node=self.node, **kwargs)
+        self._world.collision_manager.add_collision_consumer(publisher)
+        return publisher
 
     def _select_shapes(self, body):
         if self.shape_source is ShapeSource.VISUAL_ONLY:
