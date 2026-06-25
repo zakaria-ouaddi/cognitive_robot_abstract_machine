@@ -4,7 +4,6 @@ import time
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
-from typing import TYPE_CHECKING
 
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -16,9 +15,6 @@ from semantic_digital_twin.adapters.ros.visualization.collision_viz_marker impor
 )
 from semantic_digital_twin.callbacks.callback import ModelChangeCallback
 from visualization_msgs.msg import MarkerArray
-
-if TYPE_CHECKING:
-    pass
 
 
 class ShapeSource(Enum):
