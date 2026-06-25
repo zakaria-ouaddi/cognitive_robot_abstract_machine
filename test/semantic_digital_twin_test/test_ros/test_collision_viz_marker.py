@@ -4,7 +4,7 @@ from time import sleep
 from visualization_msgs.msg import Marker, MarkerArray
 
 from semantic_digital_twin.adapters.ros.visualization.collision_viz_marker import (
-    CollisionVizMarkerPublisher,
+    CollisionVisualizationMarkerPublisher,
 )
 from semantic_digital_twin.adapters.ros.visualization.viz_marker import (
     VizMarkerPublisher,
@@ -65,7 +65,7 @@ def _subscribe(node, publisher):
 
 def test_publishes_line_list_on_collision_check(rclpy_node, cylinder_bot_world):
     collision_manager = _avoid_robot_environment_collisions(cylinder_bot_world)
-    publisher = CollisionVizMarkerPublisher(node=rclpy_node)
+    publisher = CollisionVisualizationMarkerPublisher(node=rclpy_node)
     collision_manager.add_collision_consumer(publisher)
     recorder = _subscribe(rclpy_node, publisher)
 
@@ -84,7 +84,7 @@ def test_publishes_line_list_on_collision_check(rclpy_node, cylinder_bot_world):
 def test_color_depends_on_distance(rclpy_node, cylinder_bot_world):
     collision_manager = _avoid_robot_environment_collisions(cylinder_bot_world)
     # Threshold above every contact distance, so all contacts must be red.
-    publisher = CollisionVizMarkerPublisher(
+    publisher = CollisionVisualizationMarkerPublisher(
         node=rclpy_node, collision_distance_threshold=100.0
     )
     collision_manager.add_collision_consumer(publisher)
@@ -103,7 +103,7 @@ def test_color_depends_on_distance(rclpy_node, cylinder_bot_world):
 def test_color_green_when_above_threshold(rclpy_node, cylinder_bot_world):
     collision_manager = _avoid_robot_environment_collisions(cylinder_bot_world)
     # Threshold below every contact distance, so all contacts must be green.
-    publisher = CollisionVizMarkerPublisher(
+    publisher = CollisionVisualizationMarkerPublisher(
         node=rclpy_node, collision_distance_threshold=-100.0
     )
     collision_manager.add_collision_consumer(publisher)
@@ -121,7 +121,7 @@ def test_color_green_when_above_threshold(rclpy_node, cylinder_bot_world):
 
 def test_throttle_publishes_every_nth_check(rclpy_node, cylinder_bot_world):
     collision_manager = _avoid_robot_environment_collisions(cylinder_bot_world)
-    publisher = CollisionVizMarkerPublisher(node=rclpy_node, throttle=2)
+    publisher = CollisionVisualizationMarkerPublisher(node=rclpy_node, throttle=2)
     collision_manager.add_collision_consumer(publisher)
     recorder = _subscribe(rclpy_node, publisher)
 

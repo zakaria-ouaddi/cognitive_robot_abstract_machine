@@ -13,7 +13,7 @@ from visualization_msgs.msg import MarkerArray
 from semantic_digital_twin.adapters.ros.msg_converter import SemDTToRos2Converter
 from semantic_digital_twin.adapters.ros.tf_publisher import TFPublisher
 from semantic_digital_twin.adapters.ros.visualization.collision_viz_marker import (
-    CollisionVizMarkerPublisher,
+    CollisionVisualizationMarkerPublisher,
 )
 from semantic_digital_twin.callbacks.callback import ModelChangeCallback
 
@@ -93,7 +93,7 @@ class VizMarkerPublisher(ModelChangeCallback):
     Reference to a tf publisher created by this class.
     """
 
-    _collision_publisher: Optional[CollisionVizMarkerPublisher] = field(
+    _collision_publisher: Optional[CollisionVisualizationMarkerPublisher] = field(
         init=False, default=None
     )
     """
@@ -123,7 +123,7 @@ class VizMarkerPublisher(ModelChangeCallback):
 
         :param kwargs: Forwarded to :class:`CollisionVizMarkerPublisher`.
         """
-        self._collision_publisher = CollisionVizMarkerPublisher(
+        self._collision_publisher = CollisionVisualizationMarkerPublisher(
             node=self.node, world=self._world, **kwargs
         )
 

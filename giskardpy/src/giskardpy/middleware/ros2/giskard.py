@@ -8,7 +8,7 @@ from typing import List
 
 import rclpy
 from semantic_digital_twin.adapters.ros.visualization.collision_viz_marker import (
-    CollisionVizMarkerPublisher,
+    CollisionVisualizationMarkerPublisher,
 )
 from sqlalchemy.orm import sessionmaker
 
@@ -68,7 +68,9 @@ class Giskard:
     world_synchronizer: WorldSynchronizer = field(init=False)
     tf_publisher: TFPublisher = field(init=False)
     viz_marker_publisher: VizMarkerPublisher = field(init=False)
-    collision_marker_publisher: CollisionVizMarkerPublisher = field(init=False)
+    collision_marker_publisher: CollisionVisualizationMarkerPublisher = field(
+        init=False
+    )
     model_reload_synchronizer: ModelReloadSynchronizer = field(init=False)
     world_fetcher: FetchWorldServer = field(init=False)
 
@@ -140,7 +142,7 @@ class Giskard:
         self.viz_marker_publisher = VizMarkerPublisher(
             node=rospy.node, _world=self.world_config.world
         )
-        self.collision_marker_publisher = CollisionVizMarkerPublisher(
+        self.collision_marker_publisher = CollisionVisualizationMarkerPublisher(
             node=rospy.node, throttle=5, world=self.world_config.world
         )
 

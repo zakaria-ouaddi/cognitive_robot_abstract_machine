@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class CollisionVizMarkerPublisher(CollisionConsumer):
+class CollisionVisualizationMarkerPublisher(CollisionConsumer):
     """
     Publishes the closest-points results of collision checks as an RViz marker.
 
