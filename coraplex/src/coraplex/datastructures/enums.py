@@ -58,6 +58,12 @@ class ExecutionType(Enum):
     SIMULATED = auto()
     SEMI_REAL = auto()
     NO_EXECUTION = auto()
+    BRIDGE = auto()
+    """
+    Used by PR2 AlternativeMotion handlers that route commands to the real
+    robot via docker exec into the ROS 1/2 bridge container, instead of
+    sending them through Giskard's motion planning pipeline.
+    """
 
 
 class Arms(IntEnum):
