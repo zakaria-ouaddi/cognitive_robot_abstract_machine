@@ -105,9 +105,23 @@ manipulator = ViewManager.get_end_effector_view(Arms.RIGHT, pr2)
 grasp_desc  = GraspDescription(ApproachDirection.FRONT, VerticalAlignment.NoAlignment, manipulator)
 pre_pose, grasp_pose, lift_pose = grasp_desc.grasp_pose_sequence(cereal)
 
+LIFT_HEIGHT = 0.10  # metres to raise before sweeping to place location
+
 # Place: 0.3 m to the left (y +) of original cereal position
 place_pose = Pose.from_xyz_quaternion(
-    cereal_xyz[0], cereal_xyz[1] + 0.3, cereal_xyz[2] + 0.1,
+    cereal_xyz[0], cereal_xyz[1] + 0.3, cereal_xyz[2] ,
+    quat_x=grasp_pose.orientation.x,
+    quat_y=grasp_pose.orientation.y,
+    quat_z=grasp_pose.orientation.z,
+    quat_w=grasp_pose.orientation.w,
+    reference_frame=world.root
+)
+
+# Intermediate lift pose: straight up from grasp, before sweeping to place
+# We use lift_pose from the grasp sequence (already computed above)
+# and also define a pose directly above the place location for a clean descent.
+place_approach_pose = Pose.from_xyz_quaternion(
+    cereal_xyz[0], cereal_xyz[1] + 0.3, cereal_xyz[2] + 0.1 + LIFT_HEIGHT,
     quat_x=grasp_pose.orientation.x,
     quat_y=grasp_pose.orientation.y,
     quat_z=grasp_pose.orientation.z,
@@ -116,7 +130,8 @@ place_pose = Pose.from_xyz_quaternion(
 )
 
 print(f'[demo] Pick  location: {cereal_xyz}')
-print(f'[demo] Place location: [{cereal_xyz[0]:.2f}, {cereal_xyz[1]+0.3:.2f}, {cereal_xyz[2]:.2f}]\n')
+print(f'[demo] Place location: [{cereal_xyz[0]:.2f}, {cereal_xyz[1]+0.3:.2f}, {cereal_xyz[2]:.2f}]')
+print(f'[demo] Lift height:    {LIFT_HEIGHT} m\n')
 
 # ============================================================
 #  Mode selection
@@ -243,7 +258,15 @@ if mode == '1':
             world.move_branch_with_fixed_connection(cereal, end_eff.tool_frame)
 
         # Step 5 ── Lift & carry to place location
-        print('\n[demo] == Step 5: Lift & Move to Place Location ==')
+        print('\n[demo] == Step 5a: Lift Up ==')
+        sim_tcp(lift_pose, Arms.RIGHT, allow_gripper_collision=True)
+        time.sleep(1.0)
+
+        print('\n[demo] == Step 5b: Sweep to Above Place Location ==')
+        sim_tcp(place_approach_pose, Arms.RIGHT, allow_gripper_collision=True)
+        time.sleep(1.0)
+
+        print('\n[demo] == Step 5c: Lower to Place Pose ==')
         sim_tcp(place_pose, Arms.RIGHT, allow_gripper_collision=True)
         time.sleep(1.5)
 
@@ -256,12 +279,12 @@ if mode == '1':
         with world.modify_world():
             world.move_branch_with_fixed_connection(cereal, world.root)
 
-        # Step 6.5 ── Move base back
+        # Step 6.5 ── Move base straight back along X only
         if delta:
-            print('\n[demo] == Step 6.5: Move Base Back ==')
+            print('\n[demo] == Step 6.5: Move Base Back (X only) ==')
             b_pos = pr2.root.global_pose.to_position()
-            nx = float(b_pos[0]) - delta[0]
-            ny = float(b_pos[1]) - delta[1]
+            nx = float(b_pos[0]) - delta[0]   # reverse X displacement only
+            ny = float(b_pos[1])               # keep Y unchanged — straight back
             back_target = Pose.from_xyz_rpy(nx, ny, 0.0, 0, 0, 0, reference_frame=world.root)
             with world.modify_world():
                 pr2.root.parent_connection.origin = back_target.to_homogeneous_matrix()
@@ -410,8 +433,8 @@ elif mode in ('2', '3'):
 
     # ── Step 4: Close gripper (grasp) ─────────────────────────────────────────
     print('\n[demo] == Step 4: Close Gripper (Grasp to 4 cm) ==')
-    sim_gripper(GripperState.CLOSE, Arms.RIGHT, gap=0.04)
-    bridge_gripper('r', False, 'close right gripper', gap=0.04)
+    sim_gripper(GripperState.CLOSE, Arms.RIGHT, gap=0.05)
+    bridge_gripper('r', False, 'close right gripper', gap=0.05)
     time.sleep(WAIT_SEC)
 
     # Attach cereal to gripper in simulation
@@ -419,10 +442,20 @@ elif mode in ('2', '3'):
     with world.modify_world():
         world.move_branch_with_fixed_connection(cereal, end_eff.tool_frame)
 
-    # ── Step 5: Lift & carry to place ─────────────────────────────────────────
-    print('\n[demo] == Step 5: Lift & Move to Place Location ==')
+    # ── Step 5: Lift → Sweep → Lower to place ────────────────────────────────
+    print('\n[demo] == Step 5a: Lift Up ==')
+    sim_tcp(lift_pose, Arms.RIGHT, allow_gripper_collision=True)
+    bridge_send(R_ARM, extract(R_ARM), ARM_DUR, 'r_arm lift')
+    time.sleep(WAIT_SEC)
+
+    print('\n[demo] == Step 5b: Sweep to Above Place Location ==')
+    sim_tcp(place_approach_pose, Arms.RIGHT, allow_gripper_collision=True)
+    bridge_send(R_ARM, extract(R_ARM), ARM_DUR, 'r_arm sweep to place')
+    time.sleep(WAIT_SEC)
+
+    print('\n[demo] == Step 5c: Lower to Place Pose ==')
     sim_tcp(place_pose, Arms.RIGHT, allow_gripper_collision=True)
-    bridge_send(R_ARM, extract(R_ARM), ARM_DUR, 'r_arm place')
+    bridge_send(R_ARM, extract(R_ARM), ARM_DUR, 'r_arm lower to place')
     time.sleep(WAIT_SEC)
 
     # ── Step 6: Open gripper (release) ───────────────────────────────────────
@@ -435,15 +468,15 @@ elif mode in ('2', '3'):
     with world.modify_world():
         world.move_branch_with_fixed_connection(cereal, world.root)
 
-    # ── Step 6.5: Move base back ──────────────────────────────────────────────
+    # ── Step 6.5: Move base straight back along X only ────────────────────────
     if delta:
-        print('\n[demo] == Step 6.5: Move Base Back ==')
+        print('\n[demo] == Step 6.5: Move Base Back (X only) ==')
         dx_move, dy_move = delta
-        bridge_base(-dx_move, -dy_move, speed=0.15, label='move back')
+        bridge_base(-dx_move, 0.0, speed=0.15, label='move back (X only)')
         b_pos = pr2.root.global_pose.to_position()
         with world.modify_world():
             new_x = float(b_pos[0]) - dx_move
-            new_y = float(b_pos[1]) - dy_move
+            new_y = float(b_pos[1])            # keep Y unchanged
             pr2.root.parent_connection.origin = HomogeneousTransformationMatrix.from_xyz_rpy(
                 new_x, new_y, 0, reference_frame=world.root
             )
@@ -451,9 +484,9 @@ elif mode in ('2', '3'):
 
     # ── Step 7: Close gripper + Park arms ─────────────────────────────────────
     print('\n[demo] == Step 7: Close Gripper (4 cm) + Park Arms ==')
-    sim_gripper(GripperState.CLOSE, Arms.RIGHT, gap=0.04)
+    sim_gripper(GripperState.CLOSE, Arms.RIGHT, gap=0.02)
     sim_action(ParkArmsAction(Arms.BOTH))
-    bridge_gripper('r', False, 'close right gripper', gap=0.04)
+    bridge_gripper('r', False, 'close right gripper', gap=0.02)
     bridge_arms_parallel(extract(R_ARM), extract(L_ARM), ARM_DUR, 'park')
 
     print('\n[demo] Pick-and-Place complete!')
