@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import timedelta
+from typing import Optional, Any, Dict
 
-from typing_extensions import Optional, Type
+from typing_extensions import Optional, Type, Any
 
 from coraplex.datastructures.enums import DetectionTechnique, DetectionState
 from coraplex.datastructures.grasp import GraspDescription
 from coraplex.perception import PerceptionQuery
-from coraplex.plans.factories import sequential, execute_single
-from coraplex.plans.plan_node import PlanNode
+from coraplex.plans.factories import sequential
 from coraplex.robot_plans.actions.base import ActionDescription
 from coraplex.robot_plans.actions.core.navigation import NavigateAction
 from coraplex.robot_plans.actions.core.robot_body import MoveManipulatorAction
-from coraplex.robot_plans.mixins import HasTcpGoalThresholds
-from coraplex.robot_plans.motions.misc import DetectingMotion
 from semantic_digital_twin.spatial_types import (
     HomogeneousTransformationMatrix,
     RotationMatrix,
@@ -24,7 +23,7 @@ from semantic_digital_twin.spatial_types.spatial_types import (
     Point3,
     Pose2D,
 )
-from semantic_digital_twin.world_description.geometry import VolumetricBoundingBox
+from semantic_digital_twin.world_description.geometry import BoundingBox
 from semantic_digital_twin.world_description.world_entity import (
     Region,
     SemanticAnnotation,
@@ -37,8 +36,7 @@ from semantic_digital_twin.semantic_annotations.semantic_annotations import (
 @dataclass
 class DetectAction(ActionDescription):
     """
-    Detects an object that fits the object description and returns an object
-    designator_description describing the object.
+    Detects an object that fits the object description and returns an object designator_description describing the object.
 
     If no object is found, an PerceptionObjectNotFound error is raised.
     """
@@ -49,56 +47,19 @@ class DetectAction(ActionDescription):
     """
     state: Optional[DetectionState] = None
     """
-    The state of the detection, e.g Start Stop for continues perception.
+    The state of the detection, e.g Start Stop for continues perception
     """
-
     object_sem_annotation: Type[SemanticAnnotation] = None
     """
-    The type of the object that should be detected, only considered if technique is
-    equal to Type.
-
-    .. note:: Defaults to ``None``; kept as ``Type[...]`` (not ``Optional``) because
-        ormatic cannot map ``Optional[Type]`` and would otherwise drop this column.
+    The type of the object that should be detected, only considered if technique is equal to Type
     """
-
     region: Optional[Region] = None
     """
-    The region in which the object should be detected.
+    The region in which the object should be detected
     """
 
-    trust_detected_orientation: bool = True
-    """
-    Whether to trust the perception source's detected orientation.
-
-    When False, only the detected position corrects the object's pose in the world; its
-    existing orientation is kept. See
-    :attr:`~coraplex.perception.PerceptionQuery.trust_detected_orientation`.
-    """
-
-    accept_first_if_multiple: bool = False
-    """
-    Whether several candidates may be resolved by taking the first one.
-
-    When False, several candidates raise
-    :class:`~coraplex.exceptions.UnidentifiedDetections` instead of being chosen between.
-    """
-
-    @property
-    def _action_plan(self) -> PlanNode:
-        return execute_single(
-            DetectingMotion(
-                query=self._build_query(),
-                accept_first_if_multiple=self.accept_first_if_multiple,
-            )
-        )
-
-    def _build_query(self) -> PerceptionQuery:
-        """
-        Build the perception query from this action's parameters.
-
-        :return: The perception query that the detection motion answers.
-        """
-        if not self.object_sem_annotation and not self.region:
+    def execute(self) -> None:
+        if not self.object_sem_annotation and self.region:
             raise AttributeError(
                 "Either a Semantic Annotation or a Region must be provided."
             )
@@ -107,7 +68,7 @@ class DetectAction(ActionDescription):
                 self.robot.root
             ).bounding_box
             if self.region
-            else VolumetricBoundingBox(
+            else BoundingBox(
                 origin=HomogeneousTransformationMatrix(reference_frame=self.robot.root),
                 min_x=-1,
                 min_y=-1,
@@ -117,29 +78,29 @@ class DetectAction(ActionDescription):
                 max_z=3,
             )
         )
-        object_sem_annotation = (
-            self.object_sem_annotation or SemanticEnvironmentAnnotation
+        if not self.object_sem_annotation:
+            self.object_sem_annotation = SemanticEnvironmentAnnotation
+        query = PerceptionQuery(
+            self.object_sem_annotation, region_bb, self.robot, self.world
         )
-        return PerceptionQuery(
-            object_sem_annotation,
-            region_bb,
-            self.robot,
-            self.world,
-            trust_detected_orientation=self.trust_detected_orientation,
-        )
+
+        return query.from_world()
+
+    def validate(
+        self, result: Optional[Any] = None, max_wait_time: Optional[timedelta] = None
+    ):
+        return
 
 
 @dataclass
-class MoveToReach(ActionDescription, HasTcpGoalThresholds):
+class MoveToReach(ActionDescription):
     """
     Let the robot move to a position facing the target and reach with a end_effector.
     """
 
     target_pose_offset_robot: Pose2D
     """
-    The pose where the robot should stand with regard to the end_effector target pose.
-
-    2D since z-axis is not relevant.
+    The pose where the robot should stand with regard to the end_effector target pose. 2D since z-axis is not relevant.
     """
 
     hip_rotation: float
@@ -157,9 +118,8 @@ class MoveToReach(ActionDescription, HasTcpGoalThresholds):
     The semantic description for the reaching.
     """
 
-    @property
-    def _action_plan(self) -> PlanNode:
-        grasp_orientation = self.grasp_description.grasp_orientation()
+    def execute(self):
+        grasp_orientation = self.grasp_description.grasp_orientation(self.target_pose_end_effector)
         target_pose = Pose(
             self.target_pose_end_effector.to_position(),
             (
@@ -168,25 +128,25 @@ class MoveToReach(ActionDescription, HasTcpGoalThresholds):
             ).to_quaternion(),
             self.target_pose_end_effector.reference_frame,
         )
-        return sequential(
-            [
-                NavigateAction(self.standing_pose),
-                MoveManipulatorAction(
-                    target_pose,
-                    self.grasp_description.end_effector,
-                    allow_gripper_collision=False,
-                    position_threshold=self.position_threshold,
-                    orientation_threshold=self.orientation_threshold,
-                ),
-            ]
-        )
+        self.add_subplan(
+            sequential(
+                [
+                    NavigateAction(self.standing_pose),
+                    MoveManipulatorAction(
+                        target_pose,
+                        self.grasp_description.end_effector,
+                        allow_gripper_collision=False,
+                    ),
+                ]
+            )
+        ).perform()
 
     @property
     def standing_pose(self) -> Pose:
         """
         Calculates the pose where the robot should stand to reach the target.
 
-        :return: The calculated standing pose on the floor.
+        :return: The calculated standing pose.
         """
         reference_T_target = self.target_pose_end_effector.to_homogeneous_matrix()
         target_V_robot = -Vector3(
@@ -202,17 +162,10 @@ class MoveToReach(ActionDescription, HasTcpGoalThresholds):
             point=Point3(
                 x=self.target_pose_offset_robot.x,
                 y=self.target_pose_offset_robot.y,
+                z=-self.target_pose_end_effector.z,
             ),
             rotation_matrix=target_R_robot_pointing_to_target,
             reference_frame=self.target_pose_end_effector.reference_frame,
         )
         reference_T_robot = reference_T_target @ target_T_robot
-        world_T_robot = self.world.transform(
-            reference_T_robot.to_pose(), self.world.root
-        )
-        return Pose.from_xyz_rpy(
-            x=world_T_robot.x,
-            y=world_T_robot.y,
-            yaw=world_T_robot.yaw,
-            reference_frame=self.world.root,
-        )
+        return reference_T_robot.to_pose()
