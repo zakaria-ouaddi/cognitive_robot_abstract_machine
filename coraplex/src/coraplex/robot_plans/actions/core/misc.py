@@ -119,7 +119,7 @@ class MoveToReach(ActionDescription):
     """
 
     def execute(self):
-        grasp_orientation = self.grasp_description.grasp_orientation()
+        grasp_orientation = self.grasp_description.grasp_orientation(self.target_pose_end_effector)
         target_pose = Pose(
             self.target_pose_end_effector.to_position(),
             (

@@ -18,6 +18,7 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column, DeclarativeBase
 import builtins
 import coraplex.alternative_motion_mapping
 import coraplex.alternative_motion_mappings.hsrb_motion_mapping
+import coraplex.alternative_motion_mappings.pr2_motion_mapping
 import coraplex.alternative_motion_mappings.stretch_motion_mapping
 import coraplex.alternative_motion_mappings.tiago_motion_mapping
 import coraplex.datastructures.dataclasses
@@ -2501,6 +2502,46 @@ class AlternativeMotionDAO(
         "polymorphic_on": "polymorphic_type",
         "polymorphic_identity": "AlternativeMotionDAO",
     }
+
+
+class PR2NavigateTaskDAO(
+    Base,
+    DataAccessObject[
+        coraplex.alternative_motion_mappings.pr2_motion_mapping.PR2NavigateTask
+    ],
+):
+    __tablename__ = "PR2NavigateTaskDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    target_x: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+    target_y: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+    speed: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+
+
+class PR2ROS1TrajectoryTaskDAO(
+    Base,
+    DataAccessObject[
+        coraplex.alternative_motion_mappings.pr2_motion_mapping.PR2ROS1TrajectoryTask
+    ],
+):
+    __tablename__ = "PR2ROS1TrajectoryTaskDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        Integer, primary_key=True, use_existing_column=True
+    )
+
+    duration_sec: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+    timeout_sec: Mapped[builtins.float] = mapped_column(use_existing_column=True)
+
+    joint_names: Mapped[typing.List[builtins.str]] = mapped_column(
+        JSON, nullable=False, use_existing_column=True
+    )
+    positions: Mapped[typing.List[builtins.float]] = mapped_column(
+        JSON, nullable=False, use_existing_column=True
+    )
 
 
 class ExecutionDataDAO(
@@ -5458,6 +5499,27 @@ class HSRBMoveMotionDAO(
     }
 
 
+class PR2NavigateMotionDAO(
+    MoveMotionDAO,
+    DataAccessObject[
+        coraplex.alternative_motion_mappings.pr2_motion_mapping.PR2NavigateMotion
+    ],
+):
+    __tablename__ = "PR2NavigateMotionDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(MoveMotionDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "PR2NavigateMotionDAO",
+        "inherit_condition": database_id == MoveMotionDAO.database_id,
+        "polymorphic_load": "selectin",
+    }
+
+
 class StretchMoveRealDAO(
     MoveMotionDAO,
     DataAccessObject[
@@ -5558,6 +5620,27 @@ class LookingMotionDAO(
     }
 
 
+class PR2LookingMotionDAO(
+    LookingMotionDAO,
+    DataAccessObject[
+        coraplex.alternative_motion_mappings.pr2_motion_mapping.PR2LookingMotion
+    ],
+):
+    __tablename__ = "PR2LookingMotionDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(LookingMotionDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "PR2LookingMotionDAO",
+        "inherit_condition": database_id == LookingMotionDAO.database_id,
+        "polymorphic_load": "selectin",
+    }
+
+
 class MoveJointsMotionDAO(
     BaseMotionDAO,
     DataAccessObject[coraplex.robot_plans.motions.robot_body.MoveJointsMotion],
@@ -5614,6 +5697,27 @@ class MoveJointsMotionDAO(
     __mapper_args__ = {
         "polymorphic_identity": "MoveJointsMotionDAO",
         "inherit_condition": database_id == BaseMotionDAO.database_id,
+        "polymorphic_load": "selectin",
+    }
+
+
+class PR2MoveJointsMotionDAO(
+    MoveJointsMotionDAO,
+    DataAccessObject[
+        coraplex.alternative_motion_mappings.pr2_motion_mapping.PR2MoveJointsMotion
+    ],
+):
+    __tablename__ = "PR2MoveJointsMotionDAO"
+
+    database_id: Mapped[builtins.int] = mapped_column(
+        ForeignKey(MoveJointsMotionDAO.database_id),
+        primary_key=True,
+        use_existing_column=True,
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "PR2MoveJointsMotionDAO",
+        "inherit_condition": database_id == MoveJointsMotionDAO.database_id,
         "polymorphic_load": "selectin",
     }
 

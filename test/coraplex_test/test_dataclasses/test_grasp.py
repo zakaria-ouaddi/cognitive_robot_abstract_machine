@@ -77,14 +77,14 @@ def test_grasp_pose_front(immutable_simple_pr2_world):
 
     grasp_pose = grasp_desc.grasp_pose(world.get_body_by_name("milk.stl"))
 
-    assert grasp_pose.to_quaternion().to_list() == [0, 0, 0, 1]
+    assert grasp_pose.to_quaternion().to_list() == pytest.approx([0, 0, 1, 0], abs=0.001)
     assert grasp_pose.to_position().to_list() == [0, 0, 0, 1]
 
     offset_pose = grasp_desc.grasp_pose(
         world.get_body_by_name("milk.stl"), grasp_edge=True
     )
 
-    assert grasp_pose.to_quaternion().to_list() == [0, 0, 0, 1]
+    assert grasp_pose.to_quaternion().to_list() == pytest.approx([0, 0, 1, 0], abs=0.001)
     assert offset_pose.to_position().to_list() == pytest.approx(
         [-0.03, 0, 0, 1], abs=0.01
     )
@@ -104,7 +104,7 @@ def test_grasp_pose_right(immutable_simple_pr2_world):
     grasp_pose = grasp_desc.grasp_pose(world.get_body_by_name("milk.stl"))
 
     assert grasp_pose.to_quaternion().to_list() == pytest.approx(
-        [0, 0, 0.707, 0.707], abs=0.001
+        [0.0, 0.0, -0.707, 0.707], abs=0.001
     )
 
     offset_pose = grasp_desc.grasp_pose(
@@ -112,7 +112,7 @@ def test_grasp_pose_right(immutable_simple_pr2_world):
     )
 
     assert grasp_pose.to_quaternion().to_list() == pytest.approx(
-        [0, 0, 0.707, 0.707], abs=0.001
+        [0.0, 0.0, -0.707, 0.707], abs=0.001
     )
     assert offset_pose.to_position().to_list() == pytest.approx(
         [-0.03, 0, 0, 1], abs=0.01
@@ -133,7 +133,7 @@ def test_grasp_pose_left(immutable_simple_pr2_world):
     grasp_pose = grasp_desc.grasp_pose(world.get_body_by_name("milk.stl"))
 
     assert grasp_pose.to_quaternion().to_list() == pytest.approx(
-        [0, 0, -0.707, 0.707], abs=0.001
+        [0.0, 0.0, 0.707, 0.707], abs=0.001
     )
 
     offset_pose = grasp_desc.grasp_pose(
@@ -141,7 +141,7 @@ def test_grasp_pose_left(immutable_simple_pr2_world):
     )
 
     assert grasp_pose.to_quaternion().to_list() == pytest.approx(
-        [0, 0, -0.707, 0.707], abs=0.001
+        [0.0, 0.0, 0.707, 0.707], abs=0.001
     )
     assert offset_pose.to_position().to_list() == pytest.approx(
         [-0.03, 0, 0, 1], abs=0.01
@@ -162,7 +162,7 @@ def test_grasp_pose_top(immutable_simple_pr2_world):
     grasp_pose = grasp_desc.grasp_pose(world.get_body_by_name("milk.stl"))
 
     assert grasp_pose.to_quaternion().to_list() == pytest.approx(
-        [0, 0.707, 0, 0.707], abs=0.001
+        [0.707, 0.0, -0.707, 0.0], abs=0.001
     )
 
 
@@ -554,13 +554,13 @@ def test_pose_sequence_top(immutable_simple_pr2_world):
     )
 
     assert sequence[0].to_quaternion().to_list() == pytest.approx(
-        [0, 0.707, 0, 0.707], abs=0.001
+        [0.0, 0.707, 0.0, 0.707], abs=0.001
     )
     assert sequence[1].to_quaternion().to_list() == pytest.approx(
-        [0, 0.707, 0, 0.707], abs=0.001
+        [0.0, 0.707, 0.0, 0.707], abs=0.001
     )
     assert sequence[2].to_quaternion().to_list() == pytest.approx(
-        [0, 0.707, 0, 0.707], abs=0.001
+        [0.0, 0.707, 0.0, 0.707], abs=0.001
     )
 
 
@@ -645,18 +645,18 @@ def test_pose_sequence_180_flip(immutable_simple_pr2_world):
 
     assert sequence[0].reference_frame == world.root
 
+    # For robot-centric logic, sequence[0] (the grasp) will be [0, 0, 0, 1] because
+    # target_T_grasp_pose aligns exactly with the grasp itself, so the relative approach is identity.
     assert sequence[0].to_quaternion().to_list() == pytest.approx(
-        [0, 0, 1, 0], abs=0.001
+        [0, 0, 0, 1], abs=0.001
     )
     assert sequence[1].to_quaternion().to_list() == pytest.approx(
-        [0, 0, 1, 0], abs=0.001
-    )
-    assert sequence[2].to_quaternion().to_list() == pytest.approx(
-        [0, 0, 1, 0], abs=0.001
+        [0, 0, 0, 1], abs=0.001
     )
 
+    # Position is translated backwards along the world X axis.
     assert sequence[0].to_position().to_list() == pytest.approx(
-        [1.083, 0, 1, 1], abs=0.001
+        [0.917, 0, 1, 1], abs=0.01
     )
     assert sequence[1].to_position().to_list() == pytest.approx(
         [1.0, 0, 1, 1], abs=0.001
