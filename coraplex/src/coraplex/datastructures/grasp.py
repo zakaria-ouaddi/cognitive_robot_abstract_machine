@@ -432,6 +432,17 @@ class GraspPose(Pose):
     """
     Grasp description corresponding to the grasp pose.
     """
+    approach: str = ''
+    """
+    Classified approach direction for this grasp pose, as returned by the Simox planner.
+    One of 'top', 'front', 'back', 'left', 'right', or '' if unknown.
+    Used by SimoxPickUpAction to adapt the lift strategy (height and motion type).
+    """
+    quality: float = 0.0
+    """
+    Simox wrench-space grasp quality score (0.0–1.0). Higher is better.
+    Used to rank candidates within the same approach direction group.
+    """
 
     def __init__(
             self,
@@ -440,12 +451,30 @@ class GraspPose(Pose):
             reference_frame: Optional[KinematicStructureEntity] = None,
             arm: Arms = None,
             grasp_description: GraspDescription = None,
+            approach: str = '',
+            quality: float = 0.0,
         ):
         super().__init__(position, orientation, reference_frame)
         self.arm = arm
         self.grasp_description = grasp_description
+        self.approach = approach
+        self.quality = quality
 
     @classmethod
-    def from_pose(cls, pose: Pose, arm: Arms, grasp_description: GraspDescription):
-        return cls(position=pose.to_position(), orientation=pose.to_quaternion(), reference_frame=pose.reference_frame,
-                   arm=arm, grasp_description=grasp_description)
+    def from_pose(
+        cls,
+        pose: Pose,
+        arm: Arms,
+        grasp_description: GraspDescription,
+        approach: str = '',
+        quality: float = 0.0,
+    ) -> 'GraspPose':
+        return cls(
+            position=pose.to_position(),
+            orientation=pose.to_quaternion(),
+            reference_frame=pose.reference_frame,
+            arm=arm,
+            grasp_description=grasp_description,
+            approach=approach,
+            quality=quality,
+        )
