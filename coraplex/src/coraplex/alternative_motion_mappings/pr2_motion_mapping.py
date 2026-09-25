@@ -154,7 +154,7 @@ class PR2ROS1TrajectoryTask:
         # 1. Read real joint states
         state_cmd = (
             "source /opt/ros/noetic/setup.bash && "
-            "source /catkin_ws/install/setup.bash && "
+            "([ -f /catkin_ws/install/setup.bash ] && source /catkin_ws/install/setup.bash || true) && "
             "python3 /workspace/read_robot_state.py"
         )
         try:
@@ -336,7 +336,7 @@ class PR2NavigateTask:
         # 1. Get true current state from ROS 1
         state_cmd = (
             "source /opt/ros/noetic/setup.bash && "
-            "source /catkin_ws/install/setup.bash && "
+            "([ -f /catkin_ws/install/setup.bash ] && source /catkin_ws/install/setup.bash || true) && "
             "python3 /workspace/read_robot_state.py"
         )
         try:
@@ -380,7 +380,7 @@ class PR2NavigateTask:
         params = json.dumps({'dx': dx_base, 'dy': dy_base, 'speed': self.speed})
         cmd = (
             f"source /opt/ros/noetic/setup.bash && "
-            f"source /catkin_ws/install/setup.bash && "
+            "([ -f /catkin_ws/install/setup.bash ] && source /catkin_ws/install/setup.bash || true) && "
             f"python3 /workspace/base_cmd_vel.py '{params}'"
         )
         timeout = distance / self.speed + 10.0

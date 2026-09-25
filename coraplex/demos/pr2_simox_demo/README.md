@@ -38,7 +38,7 @@ SimoxPickUpAction (coraplex/robot_plans/actions/core/pick_up.py)
 ### Step 1: Start the Simox Grasp Planner Service
 In **Terminal 1**:
 ```bash
-cd /home/zakaria/grasp_planner
+cd /grasp_planner
 bash scripts/launch_simox_service.sh
 ```
 
@@ -56,7 +56,7 @@ In RViz2:
 ### Step 3: Run the End-to-End Demo
 In **Terminal 3**:
 ```bash
-cd /home/zakaria/grasp_planner
+cd /grasp_planner
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 PYTHONPATH=cognitive_robot_abstract_machine/coraplex/src:$PYTHONPATH     ~/.virtualenvs/cram-env/bin/python cognitive_robot_abstract_machine/coraplex/demos/pr2_simox_demo/demo.py --spin

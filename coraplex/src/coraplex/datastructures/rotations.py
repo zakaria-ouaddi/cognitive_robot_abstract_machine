@@ -8,20 +8,16 @@ from coraplex.datastructures.enums import Grasp, ApproachDirection, VerticalAlig
 
 class Rotations(Dict[Optional[Union[Grasp, bool]], List[float]]):
     """
-    A dictionary that defines standard quaternions for different grasps and orientations.
+    A dictionary that defines standard quaternions for different grasps and
+    orientations.
 
-    All rotation tables are defined in the **robot's coordinate frame**. When composed
-    with the robot's live base orientation (``map_R_robot``) in
-    :meth:`~coraplex.datastructures.grasp.GraspDescription._world_frame_gripper_rotation`,
-    they are promoted to world-frame rotations and then projected into the object frame.
+    This is mainly used to automatically calculate all grasp descriptions of a robot gripper for the robot description.
 
-    SIDE_ROTATIONS: Quaternions for lateral approach directions (FRONT, BACK, LEFT, RIGHT)
-        expressed in the robot frame. FRONT corresponds to no rotation (identity), meaning
-        the gripper approaches from the direction the robot is facing.
-    VERTICAL_ROTATIONS: Quaternions for vertical alignment corrections in the robot frame.
-        TOP tilts the gripper downward to grasp from above; BOTTOM tilts it upward.
-    HORIZONTAL_ROTATIONS: Quaternions for gripper roll corrections in the robot frame.
-        Used when the gripper needs to be rotated 90° around its approach axis.
+    SIDE_ROTATIONS: The quaternions for the different approach directions (front, back, left, right)
+    VERTICAL_ROTATIONS: The quaternions for the different vertical alignments, in case the object requires for
+    example a top grasp
+    HORIZONTAL_ROTATIONS: The quaternions for the different horizontal alignments, in case the gripper needs to roll
+    90°
     """
 
     SIDE_ROTATIONS = {

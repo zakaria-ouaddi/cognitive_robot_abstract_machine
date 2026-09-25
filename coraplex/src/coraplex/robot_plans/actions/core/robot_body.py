@@ -2,14 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Tuple, List, Optional, Any
+from typing import Tuple, List
 
 from typing_extensions import Optional, Dict, Any
 
+from coraplex.plans.plan_node import PlanNode
 from krrood.entity_query_language.core.base_expressions import SymbolicExpression
 from krrood.entity_query_language.core.variable import Variable
 from coraplex.datastructures.dataclasses import Context
 from coraplex.robot_plans import MoveManipulatorMotion
+from krrood.entity_query_language.factories import variable_from
 from semantic_digital_twin.reasoning.predicates import allclose
 from semantic_digital_twin.robots.robot_parts import EndEffector
 from semantic_digital_twin.spatial_types.spatial_types import Pose
@@ -18,7 +20,11 @@ from coraplex.datastructures.enums import AxisIdentifier, Arms
 from coraplex.datastructures.trajectory import PoseTrajectory
 from coraplex.plans.factories import execute_single, sequential
 from coraplex.robot_plans.actions.base import ActionDescription, DescriptionType
-from coraplex.robot_plans.motions.gripper import MoveGripperMotion, MoveTCPWaypointsMotion
+from coraplex.robot_plans.mixins import HasMaxJointVelocity, HasTcpGoalThresholds
+from coraplex.robot_plans.motions.gripper import (
+    MoveGripperMotion,
+    MoveTCPWaypointsMotion,
+)
 from coraplex.robot_plans.motions.robot_body import MoveJointsMotion
 from coraplex.validation.goal_validator import create_multiple_joint_goal_validator
 from coraplex.view_manager import ViewManager
@@ -40,26 +46,27 @@ class MoveTorsoAction(ActionDescription):
     The state of the torso that should be set
     """
 
-    def execute(self) -> None:
+    @property
+    def _action_plan(self) -> PlanNode:
         joint_state = self.robot.get_torso().get_joint_state_by_type(self.torso_state)
-        self.add_subplan(
-            execute_single(
-                MoveJointsMotion(
-                    [c.name.name for c in joint_state.connections],
-                    joint_state.target_values,
-                ),
-            )
-        ).perform()
+        return execute_single(
+            MoveJointsMotion(
+                [c.name.name for c in joint_state.connections],
+                joint_state.target_values,
+            ),
+        )
 
     @staticmethod
     def post_condition(
-        variables, context: Context, kwargs: Dict[str, Any]
+        variables: Dict[str, Variable], context: Context, kwargs: Dict[str, Any]
     ) -> SymbolicExpression | bool:
         """
-        The target joint state for the torso needs to be archived
+        The target joint state for the torso needs to be achieved.
         """
-        joint_state = context.robot.torso.get_joint_state_by_type(kwargs["torso_state"])
-        return joint_state.is_achieved()
+        joint_state = context.robot.get_torso().get_joint_state_by_type(
+            kwargs["torso_state"]
+        )
+        return variable_from(joint_state).is_achieved()
 
 
 @dataclass
@@ -70,24 +77,24 @@ class SetGripperAction(ActionDescription):
 
     gripper: Arms
     """
-    The gripper that should be set 
-    """
-    motion: GripperState
-    """
-    The motion that should be set on the gripper
+    The gripper that should be set.
     """
 
-    def execute(self) -> None:
+    motion: GripperState
+    """
+    The motion that should be set on the gripper.
+    """
+
+    @property
+    def _action_plan(self) -> PlanNode:
         arms = [Arms.LEFT, Arms.RIGHT] if self.gripper == Arms.BOTH else [self.gripper]
-        self.add_subplan(
-            sequential(
-                [MoveGripperMotion(gripper=arm, motion=self.motion) for arm in arms]
-            )
-        ).perform()
+        return sequential(
+            [MoveGripperMotion(gripper=arm, motion=self.motion) for arm in arms]
+        )
 
 
 @dataclass
-class ParkArmsAction(ActionDescription):
+class ParkArmsAction(ActionDescription, HasMaxJointVelocity):
     """
     Park the arms of the robot.
     """
@@ -97,12 +104,17 @@ class ParkArmsAction(ActionDescription):
     Entry from the enum for which arm should be parked.
     """
 
-    def execute(self) -> None:
+    @property
+    def _action_plan(self) -> PlanNode:
         joint_names, joint_poses = self.get_joint_poses()
 
-        self.add_subplan(
-            execute_single(MoveJointsMotion(names=joint_names, positions=joint_poses))
-        ).perform()
+        return execute_single(
+            MoveJointsMotion(
+                names=joint_names,
+                positions=joint_poses,
+                max_joint_velocity=self.max_joint_velocity,
+            )
+        )
 
     def get_joint_poses(self) -> Tuple[List[str], List[float]]:
         """
@@ -121,7 +133,9 @@ class ParkArmsAction(ActionDescription):
 @dataclass
 class CarryAction(ActionDescription):
     """
-    Parks the robot's arms. And align the arm with the given Axis of a frame.
+    Parks the robot's arms.
+
+    And align the arm with the given Axis of a frame.
     """
 
     arm: Arms
@@ -203,10 +217,10 @@ class CarryAction(ActionDescription):
 
 
 @dataclass
-class FollowToolCenterPointPathAction(ActionDescription):
+class FollowToolCenterPointPathAction(ActionDescription, HasTcpGoalThresholds):
     """
-    Represents an action to move a robotic arm's TCP (Tool Center Point) along a
-    path of poses.
+    Represents an action to move a robotic arm's TCP (Tool Center Point) along a path of
+    poses.
     """
 
     target_locations: PoseTrajectory
@@ -219,16 +233,19 @@ class FollowToolCenterPointPathAction(ActionDescription):
     Entry from the enum for which arm should be parked.
     """
 
-    def execute(self) -> None:
+    @property
+    def _action_plan(self) -> PlanNode:
         target_locations = list(self.target_locations.poses)
 
         motion = MoveTCPWaypointsMotion(
             target_locations,
             self.arm,
             allow_gripper_collision=True,
+            position_threshold=self.position_threshold,
+            orientation_threshold=self.orientation_threshold,
         )
 
-        self.add_subplan(execute_single(motion)).perform()
+        return execute_single(motion)
 
     def validate(
         self,
@@ -239,7 +256,7 @@ class FollowToolCenterPointPathAction(ActionDescription):
 
 
 @dataclass
-class MoveManipulatorAction(ActionDescription):
+class MoveManipulatorAction(ActionDescription, HasTcpGoalThresholds):
     """
     Move the end_effector to a specific pose.
     """
@@ -259,22 +276,17 @@ class MoveManipulatorAction(ActionDescription):
     If the gripper can collide with something.
     """
 
-    threshold: float = 0.02
-    """
-    Position and orientation error convergence threshold.
-    """
-
-    def execute(self):
-        self.add_subplan(
-            execute_single(
-                MoveManipulatorMotion(
-                    self.target_pose,
-                    self.end_effector,
-                    self.allow_gripper_collision,
-                    threshold=self.threshold,
-                )
+    @property
+    def _action_plan(self) -> PlanNode:
+        return execute_single(
+            MoveManipulatorMotion(
+                self.target_pose,
+                self.end_effector,
+                self.allow_gripper_collision,
+                position_threshold=self.position_threshold,
+                orientation_threshold=self.orientation_threshold,
             )
-        ).perform()
+        )
 
     @staticmethod
     def post_condition(

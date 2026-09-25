@@ -25,7 +25,8 @@ from coraplex.datastructures.enums import (
     DetectionTechnique,
 )
 from coraplex.datastructures.grasp import GraspDescription
-from coraplex.plans.factories import sequential
+from coraplex.plans.factories import sequential, execute_single
+
 from coraplex.querying.predicates import GripperIsFree
 from coraplex.exceptions import PerceptionTargetMissing
 from coraplex.robot_plans.actions.base import ActionDescription
@@ -476,7 +477,13 @@ class SimoxPickUpAction(ActionDescription):
             return self._TOP_LIFT_HEIGHT
         return self.lift_height
 
+    @property
+    def _action_plan(self) -> PlanNode:
+        self.execute()
+        return sequential([])
+
     def execute(self) -> None:  # noqa: WPS231 (complexity ok here)
+
         from coraplex.external_interfaces.simox_grasp_planner import (
             plan_grasps_for_body,
             DEFAULT_ROBOT_XML,
